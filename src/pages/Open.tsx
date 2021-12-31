@@ -1,43 +1,40 @@
-import { useState } from "react";
-import { Col, Container, ListGroup, ListGroupItem, Row } from "react-bootstrap";
-import { Navigate } from "react-router";
+import { List, Row, Col, Typography, Tooltip, Button } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 
 import { useMods } from "../state/mods";
 
-import './Open.css'
+import "./Open.css";
 
 export function Open() {
-  const [selectedMod, setSelectedMod] = useState<string | null>(null);
-  const { mods } = useMods();
-  if (!mods) {
-    return <Navigate replace to="/" />;
+  const { selectMod, editableMods } = useMods();
+  if (!editableMods) {
+    return null;
   }
   return (
-      <div className="open-root">
-    <Container>
+    <div className="open-root">
       <Row>
-        <Col>
-          <h2>Select mod to edit</h2>
+        <Col span={24}>
+          <h2>
+            Select mod to edit
+            <Tooltip title="Add new mod">
+              <Button type="primary" shape="circle" icon={<PlusOutlined />} />
+            </Tooltip>
+          </h2>
         </Col>
       </Row>
       <Row>
-        <Col>
-          <ListGroup as="div">
-            {mods.map((mod) => (
-              <ListGroupItem
-                as="button"
-                action
-                key={mod.id}
-                active={selectedMod === mod.id}
-                onClick={() => setSelectedMod(mod.id)}
-              >
-                {mod.name} ({mod.version})
-              </ListGroupItem>
+        <Col span={24}>
+          <List>
+            {editableMods.map((mod) => (
+              <List.Item key={mod.id}>
+                <Typography.Link onClick={() => selectMod(mod)}>
+                  {mod.name} ({mod.version})
+                </Typography.Link>
+              </List.Item>
             ))}
-          </ListGroup>
+          </List>
         </Col>
       </Row>
-    </Container>
     </div>
   );
 }

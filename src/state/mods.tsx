@@ -1,7 +1,8 @@
+import { invoke } from "@tauri-apps/api";
 import { useCallback, useState } from "react";
 import { createContainer } from "unstated-next";
-import { invoke } from "@tauri-apps/api/tauri";
 import { z } from "zod";
+import { invokeWithSchema } from "../lib/invoke";
 
 const Mod = z.object({
   id: z.string(),
@@ -12,44 +13,110 @@ const Mod = z.object({
 
 type Mod = z.infer<typeof Mod>;
 
-interface ModsState {
-  loading: boolean;
-  error: Error | null;
-  mods: Array<Mod> | null;
+const EditableMod = Mod.extend({
+  path: z.string(),
+});
+
+type EditableMod = z.infer<typeof Mod>;
+
+interface LoadingModsState {
+  loading: true;
+  error: null;
+  selectedMod: null;
+  editableMods: null;
+  availableMods: null;
 }
 
+interface ErroredModsState {
+  loading: false;
+  error: Error;
+  selectedMod: null;
+  editableMods: null;
+  availableMods: null;
+}
+
+interface LoadedModsState {
+  loading: false,
+  error: null,
+  selectedMod: null,
+  editableMods: Array<EditableMod>,
+  availableMods: Array<Mod>,
+}
+
+interface SelectedModState {
+  loading: false,
+  error: null,
+  selectedMod: EditableMod,
+  editableMods: Array<EditableMod>,
+  availableMods: Array<Mod>,
+}
+
+type ModsState = LoadingModsState | ErroredModsState | LoadedModsState | SelectedModState;
+
 function useModsState(
-  initialState: ModsState = { loading: true, error: null, mods: null }
+  initialState: ModsState = { loading: true, error: null, selectedMod: null, editableMods: null, availableMods: null }
 ) {
-  const [modsState, setModsState] = useState(initialState);
+  const [modsState, setModsState] = useState<ModsState>(initialState);
   const modsLoading = useCallback(
     () =>
       setModsState({
         loading: true,
         error: null,
-        mods: null,
+        selectedMod: null,
+        editableMods: null,
+        availableMods: null,
       }),
     []
   );
   const modsLoadingSuccess = useCallback(
-    (mods: Array<Mod>) =>
+    (editableMods: Array<EditableMod>, availableMods: Array<Mod>) =>
       setModsState({
         loading: false,
         error: null,
-        mods,
+        selectedMod: null,
+        editableMods,
+        availableMods
       }),
     []
   );
-  const modsLoadingError = useCallback(
+  const modsError = useCallback(
     (error: Error) =>
       setModsState({
         loading: false,
         error,
-        mods: null,
+        selectedMod: null,
+        editableMods: null,
+        availableMods: null,
       }),
     []
   );
-  return { ...modsState, modsLoading, modsLoadingSuccess, modsLoadingError };
+  const selectMod = useCallback(
+    async (mod: EditableMod) => {
+      if (modsState.editableMods === null) {
+        modsError(new Error("cannot select mod while mods are loading"));
+        return;
+      }
+      if (!modsState.editableMods.find(m => m.id === mod.id)) {
+        modsError(new Error(`cannot select unknown mod "${mod.id}"`));
+        return;
+      }
+      try {
+        await invoke("set_selected_mod", {
+          modId: mod.id,
+        });
+
+        setModsState({
+          ...modsState,
+          selectedMod: mod,
+        });
+      } catch (e: any) {
+        console.log("error setting mod", e);
+        modsError(new Error(`cannot select mod "${mod.id}": ${e}`));
+      }
+    },
+    [modsState, modsError]
+  );
+  return { ...modsState, modsLoading, modsLoadingSuccess, modsError, selectMod };
 }
 
 const modsState = createContainer(useModsState);
@@ -57,21 +124,24 @@ const modsState = createContainer(useModsState);
 export const ModsProvider = modsState.Provider;
 export const useMods = modsState.useContainer;
 
+const MODS_SCHEMA = z.array(Mod);
+const EDITABLE_MODS_SCHEMA = z.array(EditableMod);
+
+
 export function useFetchMods() {
-  const { modsLoading, modsLoadingError, modsLoadingSuccess } = useMods();
+  const { modsLoading, modsError, modsLoadingSuccess } = useMods();
   const fetchMods = useCallback(async () => {
     modsLoading();
     try {
-      console.log("invoking mods");
-      const modsSchema = z.array(Mod);
-      const modsResponse = await invoke("get_available_mods");
-      const mods = modsSchema.parse(modsResponse);
-      modsLoadingSuccess(mods);
+      const [availableMods, editableMods] = await Promise.all([
+        invokeWithSchema(MODS_SCHEMA, "get_available_mods"),
+        invokeWithSchema(EDITABLE_MODS_SCHEMA, "get_editable_mods"),
+      ]);
+      modsLoadingSuccess(editableMods, availableMods);
     } catch (e) {
-      console.log("error", e);
-      modsLoadingError(new Error(`error loading mods: ${e}`));
+      modsError(new Error(`error loading mods: ${e}`));
     }
-  }, [modsLoading, modsLoadingError, modsLoadingSuccess]);
+  }, [modsLoading, modsError, modsLoadingSuccess]);
 
   return fetchMods;
 }

@@ -1,18 +1,23 @@
-# Getting Started with Create React App
+# Stracciatella Toolset
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This is a desktop application to edit mods for JA2 Stracciatella.
+
+## Features
+
+This app currently allows editing json data for JA2 Stracciatella only.
+
+Missing or broken:
+
+- Dealer Inventories
+- Strategic Map Stuff (needs its own editing ui)
 
 ## Available Scripts
 
 In the project directory, you can run:
 
-### `yarn start`
+### `yarn tauri dev`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Runs the app in the development mode. Will open a window for the app once compilation is done.
 
 ### `yarn test`
 

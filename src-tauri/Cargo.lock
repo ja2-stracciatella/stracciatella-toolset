@@ -3003,7 +3003,6 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "stracciatella"
 version = "0.1.0"
-source = "git+https://github.com/ja2-stracciatella/ja2-stracciatella.git?rev=972ddfcc889e0cb7176c527a80fb8dab09d0cc40#972ddfcc889e0cb7176c527a80fb8dab09d0cc40"
 dependencies = [
  "android_logger",
  "byteorder",

@@ -18,7 +18,7 @@ tauri-build = { version = "1.0.0-beta.4" }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 tauri = { version = "1.0.0-beta.8", features = ["api-all"] }
-stracciatella = { git = "https://github.com/ja2-stracciatella/ja2-stracciatella.git", rev = "972ddfcc889e0cb7176c527a80fb8dab09d0cc40" }
+stracciatella = { path = "../../ja2-stracciatella/rust/stracciatella" }
 lazy_static = "1.4.0"
 
 [features]
