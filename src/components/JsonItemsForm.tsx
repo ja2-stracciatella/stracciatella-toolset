@@ -1,9 +1,11 @@
-import { Alert, Collapse, Typography } from "antd";
 import ReactMarkdown from "react-markdown";
 import { useMemo } from "react";
+import { Alert, Accordion, Card } from "react-bootstrap";
 
 import { useJsonWithSchema } from "../hooks/useJsonWithSchema";
 import { JsonSchemaForm } from "./JsonSchemaForm";
+import { FullSizeLoader } from "./FullSizeLoader";
+import "./JsonItemsForm.css";
 
 export interface JsonItemsFormProps {
   file: string;
@@ -31,7 +33,12 @@ export function JsonItemsForm({ file, name }: JsonItemsFormProps) {
   }, [data, file]);
   const description = useMemo(() => {
     if (data) {
-      const description = [data.schema.description, data.schema.items.description].filter(v => !!v).join("\n\n");
+      const description = [
+        data.schema.items.description,
+        data.schema.description,
+      ]
+        .filter((v) => !!v)
+        .join("\n\n");
       return description;
     }
     return "";
@@ -41,9 +48,16 @@ export function JsonItemsForm({ file, name }: JsonItemsFormProps) {
       return data.content.map((item: any, index: number) => {
         const header = typeof name === "string" ? item[name] : name(item);
         return (
-          <Collapse.Panel key={index} header={header}>
-            <JsonSchemaForm schema={itemsSchema} content={item} />
-          </Collapse.Panel>
+          <Card>
+            <Accordion.Toggle as={Card.Header} eventKey={index.toString()}>
+              {header}
+            </Accordion.Toggle>
+            <Accordion.Collapse eventKey={index.toString()}>
+              <div className="json-items-form-form">
+                <JsonSchemaForm idPrefix={index.toString()} schema={itemsSchema} content={item} />
+              </div>
+            </Accordion.Collapse>
+          </Card>
         );
       });
     }
@@ -51,18 +65,20 @@ export function JsonItemsForm({ file, name }: JsonItemsFormProps) {
   }, [data, itemsSchema, name]);
 
   if (error) {
-    return <Alert type="error" message={error.toString()} />;
+    return <Alert variant="danger">{error.toString()}</Alert>;
   }
 
   if (!itemsSchema) {
-    return null;
+    return <FullSizeLoader />;
   }
 
   return (
     <div>
-      <Typography.Title>{title}</Typography.Title>
-      <div><ReactMarkdown>{description}</ReactMarkdown></div>
-      <Collapse accordion>{items}</Collapse>
+      <h1>{title}</h1>
+      <div>
+        <ReactMarkdown>{description}</ReactMarkdown>
+      </div>
+      <Accordion>{items}</Accordion>
     </div>
   );
 }

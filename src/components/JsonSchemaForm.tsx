@@ -1,26 +1,44 @@
 import { withTheme } from "@rjsf/core";
-// @ts-ignore
-import { Theme as AntDTheme } from "@rjsf/antd";
+import { Theme as Bootstrap4Theme } from "@rjsf/bootstrap-4";
 import ReactMarkdown from "react-markdown";
 
-const Form = withTheme(AntDTheme);
+const Form = withTheme(Bootstrap4Theme);
 
 export interface JsonSchemaFormProps {
+  idPrefix?: string;
   schema: any;
   content: any;
 }
 
-function DescriptionField({ id, description }: { id: string, description: string | undefined }) {
+function DescriptionField({
+  id,
+  description,
+}: {
+  id: string;
+  description: string | undefined;
+}) {
   if (!description) {
     return null;
   }
-  return <div id={id}><ReactMarkdown>{description}</ReactMarkdown></div>
+  return (
+    <div id={id}>
+      <ReactMarkdown>{description}</ReactMarkdown>
+    </div>
+  );
 }
 
 const fields = {
-  DescriptionField: DescriptionField
+  DescriptionField: DescriptionField,
 };
 
-export function JsonSchemaForm({ schema, content }: JsonSchemaFormProps) {
-  return <Form schema={schema} formData={content} children={true} fields={fields as any} />;
+export function JsonSchemaForm({ idPrefix, schema, content }: JsonSchemaFormProps) {
+  return (
+    <Form
+      idPrefix={idPrefix}
+      schema={schema}
+      formData={content}
+      children={true}
+      fields={fields as any}
+    />
+  );
 }

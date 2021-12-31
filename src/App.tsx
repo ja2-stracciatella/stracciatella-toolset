@@ -1,9 +1,8 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import "antd/dist/antd.compact.css";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 import { ModsProvider } from "./state/mods";
 
-import "./App.css";
 import { useMemo } from "react";
 import { ROUTES } from "./EditorRoutes";
 

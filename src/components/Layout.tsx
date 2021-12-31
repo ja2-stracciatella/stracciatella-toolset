@@ -1,10 +1,10 @@
 import { ReactNode, useMemo } from "react";
-import { Layout as AntdLayout, Menu } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { useMods } from "../state/mods";
 import "./Layout.css";
 import { ROUTES } from "../EditorRoutes";
+import { Container, Navbar, Nav } from "react-bootstrap";
 
 interface LayoutProps {
   children: ReactNode;
@@ -16,18 +16,16 @@ function SideMenu() {
   const menu = useMemo(() => {
     const selectedRoute = ROUTES.find((v) => v.url === location.pathname);
     return (
-      <Menu
-        theme="light"
-        mode="inline"
-        selectedKeys={selectedRoute ? [selectedRoute.id] : []}
-        className="editor-layout-menu"
+      <Nav
+        className="flex-column"
+        activeKey={selectedRoute ? selectedRoute.id : undefined}
       >
         {ROUTES.map((r) => (
-          <Menu.Item key={r.id} onClick={() => navigate(r.url)}>
-            {r.label}
-          </Menu.Item>
+          <Nav.Item key={r.id} onClick={() => navigate(r.url)}>
+            <Nav.Link eventKey={r.id}>{r.label}</Nav.Link>
+          </Nav.Item>
         ))}
-      </Menu>
+      </Nav>
     );
   }, [navigate, location]);
 
@@ -36,20 +34,25 @@ function SideMenu() {
 
 export function Layout({ children }: LayoutProps) {
   const { selectedMod } = useMods();
-  const modSuffix = useMemo(() => selectedMod ? ` - ${selectedMod.name}` : "", [selectedMod]);
+  const modSuffix = useMemo(
+    () => (selectedMod ? ` - ${selectedMod.name}` : ""),
+    [selectedMod]
+  );
   return (
-    <AntdLayout className="editor-layout">
-      <AntdLayout.Header className="editor-layout-header">
-        <h2>Stracciatella Toolset{modSuffix}</h2>
-      </AntdLayout.Header>
-      <AntdLayout>
-        <AntdLayout.Sider width={300} theme="light">
+    <>
+      <Navbar variant="dark" bg="dark">
+        <Container fluid>
+          <Navbar.Brand>Stracciatella Toolset{modSuffix}</Navbar.Brand>
+        </Container>
+      </Navbar>
+      <div className="editor-layout">
+        <aside>
           <SideMenu />
-        </AntdLayout.Sider>
-        <AntdLayout.Content>
+        </aside>
+        <section>
           <div className="editor-layout-content">{children}</div>
-        </AntdLayout.Content>
-      </AntdLayout>
-    </AntdLayout>
+        </section>
+      </div>
+    </>
   );
 }

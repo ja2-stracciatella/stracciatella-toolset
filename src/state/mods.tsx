@@ -11,13 +11,13 @@ const Mod = z.object({
   version: z.string(),
 });
 
-type Mod = z.infer<typeof Mod>;
+export type Mod = z.infer<typeof Mod>;
 
 const EditableMod = Mod.extend({
   path: z.string(),
 });
 
-type EditableMod = z.infer<typeof Mod>;
+export type EditableMod = z.infer<typeof Mod>;
 
 interface LoadingModsState {
   loading: true;

@@ -1,10 +1,10 @@
 import { PropsWithChildren, ReactNode, useEffect, useMemo } from "react";
-import { Alert } from "antd";
-import { LoadingOutlined } from "@ant-design/icons";
+import { Alert } from "react-bootstrap";
 import { useFetchMods, useMods } from "../state/mods";
 
 import "./WithOpenMod.css";
 import { Open } from "../pages/Open";
+import { FullSizeLoader } from "./FullSizeLoader";
 
 export function WithOpenMod({ children }: PropsWithChildren<{}>) {
   const { loading, error, selectedMod, editableMods } = useMods();
@@ -21,14 +21,14 @@ export function WithOpenMod({ children }: PropsWithChildren<{}>) {
     if (error) {
       message = (
         <div className="with-open-mod">
-          <Alert type="error" message={error.toString()} />
+          <Alert variant="danger">{error.toString()}</Alert>
         </div>
       );
     }
     if (loading) {
       message = (
         <div className="with-open-mod">
-          <LoadingOutlined style={{ fontSize: 24 }} spin />
+          <FullSizeLoader />
         </div>
       );
     }
