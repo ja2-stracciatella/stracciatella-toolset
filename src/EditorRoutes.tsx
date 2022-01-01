@@ -24,7 +24,16 @@ import { StrategicBloodcatSpawns } from "./pages/StrategicBloodcatSpawns";
 import { StrategicFactParams } from "./pages/StrategicFactParams";
 import { StrategicMapCacheSectors } from "./pages/StrategicMapCacheSectors";
 import { StrategicMapCreatureLairs } from "./pages/StrategicMapCreatureLairs";
+import { StrategicMapMovementCosts } from "./pages/StrategicMapMovementCosts";
 import { StrategicMapNpcPlacements } from "./pages/StrategicMapNpcPlacements";
+import { StrategicMapSamSites } from "./pages/StrategicMapSamSites";
+import { StrategicMapSamSitesAirControl } from "./pages/StrategicMapSamSitesAirControl";
+import { StrategicMapSecrets } from "./pages/StrategicMapSecrets";
+import { StrategicMapSectorsDescriptions } from "./pages/StrategicMapSectorsDescriptions";
+import { StrategicMapTowns } from "./pages/StrategicMapTowns";
+import { StrategicMapTraversibilityRatings } from "./pages/StrategicMapTraversibilityRatings";
+import { StrategicMapUndergroundSectors } from "./pages/StrategicMapUndergroundSectors";
+import { StrategicMines } from "./pages/StrategicMines";
 import { TacticalMapItemReplacements } from "./pages/TacticalMapItemReplacements";
 import { TacticalNpcActionParams } from "./pages/TacticalNpcActionParams";
 import { Vehicles } from "./pages/Vehicles";
@@ -188,10 +197,64 @@ export const ROUTES = [
     component: StrategicMapCreatureLairs,
   },
   {
+    id: "strategic-map-movement-costs",
+    label: "Strategic Map Movement Costs",
+    url: "/strategic-map-movement-costs",
+    component: StrategicMapMovementCosts,
+  },
+  {
     id: "strategic-map-npc-placements",
     label: "Strategic Map NPC Placements",
     url: "/strategic-map-npc-placements",
     component: StrategicMapNpcPlacements,
+  },
+  {
+    id: "strategic-map-sam-sites-air-control",
+    label: "Strategic Map Sam Sites Air Control",
+    url: "/strategic-map-sam-sites-air-control",
+    component: StrategicMapSamSitesAirControl,
+  },
+  {
+    id: "strategic-map-sam-sites",
+    label: "Strategic Map Sam Sites",
+    url: "/strategic-map-sam-sites",
+    component: StrategicMapSamSites,
+  },
+  {
+    id: "strategic-map-secrets",
+    label: "Strategic Map Secrets",
+    url: "/strategic-map-secrets",
+    component: StrategicMapSecrets,
+  },
+  {
+    id: "strategic-map-sectors-descriptions",
+    label: "Strategic Map Sector Descriptions",
+    url: "/strategic-map-sectors-descriptions",
+    component: StrategicMapSectorsDescriptions,
+  },
+  {
+    id: "strategic-map-towns",
+    label: "Strategic Map Towns",
+    url: "/strategic-map-towns",
+    component: StrategicMapTowns,
+  },
+  {
+    id: "strategic-map-traversibility-ratings",
+    label: "Strategic Map Traversibility Ratings",
+    url: "/strategic-map-traversibility-ratings",
+    component: StrategicMapTraversibilityRatings,
+  },
+  {
+    id: "strategic-map-underground-sectors",
+    label: "Strategic Map Underground Sectors",
+    url: "/strategic-map-underground-sectors",
+    component: StrategicMapUndergroundSectors,
+  },
+  {
+    id: "strategic-mines",
+    label: "Strategic Mines",
+    url: "/strategic-mines",
+    component: StrategicMines,
   },
   {
     id: "tactical-map-item-replacements",

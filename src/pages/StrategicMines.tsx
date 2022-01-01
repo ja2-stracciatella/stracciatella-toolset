@@ -3,11 +3,11 @@ import { JsonItemsForm } from "../components/JsonItemsForm";
 import { Layout } from "../components/Layout";
 import { WithOpenMod } from "../components/WithOpenMod";
 
-export function ShippingDestinations() {
+export function StrategicMines() {
   return (
     <WithOpenMod>
       <Layout>
-        <JsonItemsForm file="shipping-destinations.json" name="locationId" />
+        <JsonItemsForm file="strategic-mines.json" name="entranceSector" />
       </Layout>
     </WithOpenMod>
   );

@@ -48,7 +48,7 @@ export function JsonItemsForm({ file, name }: JsonItemsFormProps) {
       return data.content.map((item: any, index: number) => {
         const header = typeof name === "string" ? item[name] : name(item);
         return (
-          <Card>
+          <Card key={index}>
             <Accordion.Toggle as={Card.Header} eventKey={index.toString()}>
               {header}
             </Accordion.Toggle>
