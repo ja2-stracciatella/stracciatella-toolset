@@ -1,11 +1,14 @@
-import { Spinner } from "react-bootstrap";
+import { Spin } from 'antd';
+import { LoadingOutlined } from '@ant-design/icons';
 
 import "./FullSizeLoader.css";
+
+const antIcon = <LoadingOutlined style={{ fontSize: 24 }} spin />;
 
 export function FullSizeLoader() {
   return (
     <div className="full-size-loader">
-      <Spinner animation="border" variant="primary" />
+      <Spin indicator={antIcon} />
     </div>
   );
 }

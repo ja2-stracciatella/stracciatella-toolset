@@ -1,9 +1,11 @@
 import { useCallback, useState } from "react";
-import { ListGroup, Button } from "react-bootstrap";
+import { List, Button } from "antd";
 
 import { FullSizeLoader } from "../components/FullSizeLoader";
 import { EditableMod, useMods } from "../state/mods";
 import "./Open.css";
+
+const { Item } = List;
 
 export function Open() {
   const { selectMod, editableMods } = useMods();
@@ -24,15 +26,15 @@ export function Open() {
     <div className="open-root">
       <h2>
         Select mod to edit
-        <Button variant="primary">Add new mod</Button>
+        <Button>Add new mod</Button>
       </h2>
-      <ListGroup>
+      <List>
         {editableMods.map((mod) => (
-          <ListGroup.Item key={mod.id} onClick={() => onModClick(mod)}>
+          <Item key={mod.id} onClick={() => onModClick(mod)}>
             {mod.name} ({mod.version})
-          </ListGroup.Item>
+          </Item>
         ))}
-      </ListGroup>
+      </List>
     </div>
   );
 }

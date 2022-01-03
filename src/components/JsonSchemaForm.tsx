@@ -1,13 +1,13 @@
 import {
   FieldProps,
   FieldTemplateProps,
-  WidgetProps,
   withTheme,
 } from "@rjsf/core";
-import { Theme as Bootstrap4Theme, FieldTemplate } from "@rjsf/bootstrap-4";
+// @ts-ignore
+import { Theme as AntdTheme } from "@rjsf/antd";
+import { Form } from "antd";
 import ReactMarkdown from "react-markdown";
 import { useMemo } from "react";
-import { Form } from "react-bootstrap";
 
 export interface DescriptionFieldProps extends Partial<FieldProps> {
   description?: string;
@@ -24,81 +24,86 @@ function MarkdownDescriptionField({ id, description }: DescriptionFieldProps) {
   );
 }
 
-function MarkdownFieldTemplate(props: FieldTemplateProps) {
-  // Any is a workaround because FieldTemplate expects a string not a react element
-  const rawDescription: any = useMemo(() => {
-    if (!props.rawDescription) {
-      return props.rawDescription;
+
+const HORIZONTAL_LABEL_COL = { span: 6 };
+const HORIZONTAL_WRAPPER_COL = { span: 18 };
+
+// Cloned from Antd theme with some changes
+const MarkdownFieldTemplate = ({
+  children,
+  classNames,
+  description,
+  disabled,
+  displayLabel,
+  // errors,
+  // fields,
+  formContext,
+  help,
+  hidden,
+  id,
+  label,
+  onDropPropertyClick,
+  onKeyChange,
+  rawDescription,
+  rawErrors,
+  rawHelp,
+  readonly,
+  required,
+  schema,
+}: // uiSchema,
+FieldTemplateProps) => {
+  const { colon, wrapperStyle } = formContext;
+  const fieldErrors = useMemo(() => {
+    if (!rawErrors) {
+      return null;
     }
-    return <ReactMarkdown>{props.rawDescription}</ReactMarkdown>;
-  }, [props.rawDescription]);
-  return <FieldTemplate {...props} rawDescription={rawDescription} />;
-}
+    return [...Array.from(new Set(rawErrors))].map((error: any) => (
+      <div key={`field-${id}-error-${error}`}>{error}</div>
+    ));
+  }, [id, rawErrors]);
+  const renderedDescription = useMemo(() => {
+    if (!rawDescription) {
+      return null;
+    }
+    return <ReactMarkdown>{rawDescription}</ReactMarkdown>;
+  }, [rawDescription])
 
-const CheckboxWidgetWithDescription = (props: WidgetProps) => {
-  const {
-    id,
-    value,
-    required,
-    disabled,
-    readonly,
-    label,
-    schema,
-    autofocus,
-    onChange,
-    onBlur,
-    onFocus
-  } = props;
+  if (hidden) {
+    return <div className="field-hidden">{children}</div>;
+  }
 
-  const _onChange = ({
-    target: { checked },
-  }: React.FocusEvent<HTMLInputElement>) => onChange(checked);
-  const _onBlur = ({
-    target: { checked },
-  }: React.FocusEvent<HTMLInputElement>) => onBlur(id, checked);
-  const _onFocus = ({
-    target: { checked },
-  }: React.FocusEvent<HTMLInputElement>) => onFocus(id, checked);
-
-  const desc = label || schema.description;
-  return (
-    <Form.Group
-      className={`checkbox ${disabled || readonly ? "disabled" : ""}`}
+  return id === "root" ? (
+    children
+  ) : (
+    <Form.Item
+      colon={colon}
+      extra={schema.type !== "array" && schema.type !== "object" && renderedDescription}
+      hasFeedback={schema.type !== "array" && schema.type !== "object"}
+      help={schema.type !== "array" && schema.type !== "object" && fieldErrors}
+      htmlFor={id}
+      label={displayLabel && label}
+      labelCol={HORIZONTAL_LABEL_COL}
+      required={required}
+      style={wrapperStyle}
+      validateStatus={rawErrors ? "error" : undefined}
+      wrapperCol={HORIZONTAL_WRAPPER_COL}
     >
-      <Form.Check
-        id={id}
-        label={desc}
-        checked={typeof value === "undefined" ? false : value}
-        required={required}
-        disabled={disabled || readonly}
-        autoFocus={autofocus}
-        onChange={_onChange}
-        type="checkbox"
-        onBlur={_onBlur}
-        onFocus={_onFocus}
-      />
-      {schema.description ? (
-        <Form.Text
-          className="text-muted"
-        >
-          <ReactMarkdown>{schema.description}</ReactMarkdown>
-        </Form.Text>
-      ) : null}
-    </Form.Group>
+      {children}
+    </Form.Item>
   );
 };
 
 const RjsfForm = withTheme({
-  ...Bootstrap4Theme,
+  ...AntdTheme,
   FieldTemplate: MarkdownFieldTemplate,
   widgets: {
-    ...Bootstrap4Theme.widgets,
-    CheckboxWidget: CheckboxWidgetWithDescription,
+    ...AntdTheme.widgets,
+    // CheckboxWidget: CheckboxWidgetWithDescription,
   },
   fields: {
-    ...Bootstrap4Theme.fields,
+    ...AntdTheme.fields,
     DescriptionField: MarkdownDescriptionField,
-  }
+  },
 });
 
 export interface JsonSchemaFormProps {

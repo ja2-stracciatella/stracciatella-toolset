@@ -1,5 +1,5 @@
 import { PropsWithChildren, ReactNode, useEffect, useMemo } from "react";
-import { Alert } from "react-bootstrap";
+import { Alert } from "antd";
 import { useFetchMods, useMods } from "../state/mods";
 
 import "./WithOpenMod.css";
@@ -21,7 +21,7 @@ export function WithOpenMod({ children }: PropsWithChildren<{}>) {
     if (error) {
       message = (
         <div className="with-open-mod">
-          <Alert variant="danger">{error.toString()}</Alert>
+          <Alert type="error" message={error.toString()} />
         </div>
       );
     }

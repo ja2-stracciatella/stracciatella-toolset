@@ -1,14 +1,14 @@
 import { JsonForm } from "../components/JsonForm";
 
-import { Layout } from "../components/Layout";
+import { EditorLayout } from "../components/EditorLayout";
 import { WithOpenMod } from "../components/WithOpenMod";
 
 export function ArmyGunChoiceNormal() {
   return (
     <WithOpenMod>
-      <Layout>
+      <EditorLayout>
         <JsonForm file="army-gun-choice-normal.json" />
-      </Layout>
+      </EditorLayout>
     </WithOpenMod>
   );
 }

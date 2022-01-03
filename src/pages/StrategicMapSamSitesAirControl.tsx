@@ -1,14 +1,14 @@
 import { JsonForm } from "../components/JsonForm";
 
-import { Layout } from "../components/Layout";
+import { EditorLayout } from "../components/EditorLayout";
 import { WithOpenMod } from "../components/WithOpenMod";
 
 export function StrategicMapSamSitesAirControl() {
   return (
     <WithOpenMod>
-      <Layout>
+      <EditorLayout>
         <JsonForm file="strategic-map-sam-sites-air-control.json" />
-      </Layout>
+      </EditorLayout>
     </WithOpenMod>
   );
 }

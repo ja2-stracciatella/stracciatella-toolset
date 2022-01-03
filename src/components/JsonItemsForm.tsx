@@ -1,11 +1,13 @@
 import ReactMarkdown from "react-markdown";
 import { useMemo } from "react";
-import { Alert, Accordion, Card } from "react-bootstrap";
+import { Alert, Collapse, Typography } from "antd";
 
 import { useJsonWithSchema } from "../hooks/useJsonWithSchema";
 import { JsonSchemaForm } from "./JsonSchemaForm";
 import { FullSizeLoader } from "./FullSizeLoader";
 import "./JsonItemsForm.css";
+
+const { Panel } = Collapse;
 
 export interface JsonItemsFormProps {
   file: string;
@@ -48,16 +50,15 @@ export function JsonItemsForm({ file, name }: JsonItemsFormProps) {
       return data.content.map((item: any, index: number) => {
         const header = typeof name === "string" ? item[name] : name(item);
         return (
-          <Card key={index}>
-            <Accordion.Toggle as={Card.Header} eventKey={index.toString()}>
-              {header}
-            </Accordion.Toggle>
-            <Accordion.Collapse eventKey={index.toString()}>
-              <div className="json-items-form-form">
-                <JsonSchemaForm idPrefix={index.toString()} schema={itemsSchema} content={item} />
-              </div>
-            </Accordion.Collapse>
-          </Card>
+          <Panel key={index} header={header}>
+            <div className="json-items-form-form">
+              <JsonSchemaForm
+                idPrefix={index.toString()}
+                schema={itemsSchema}
+                content={item}
+              />
+            </div>
+          </Panel>
         );
       });
     }
@@ -65,7 +66,7 @@ export function JsonItemsForm({ file, name }: JsonItemsFormProps) {
   }, [data, itemsSchema, name]);
 
   if (error) {
-    return <Alert variant="danger">{error.toString()}</Alert>;
+    return <Alert type="error" message={error.toString()} />;
   }
 
   if (!itemsSchema) {
@@ -74,11 +75,13 @@ export function JsonItemsForm({ file, name }: JsonItemsFormProps) {
 
   return (
     <div>
-      <h1>{title}</h1>
+      <Typography.Title level={2}>{title}</Typography.Title>
       <div>
         <ReactMarkdown>{description}</ReactMarkdown>
       </div>
-      <Accordion>{items}</Accordion>
+      <Collapse bordered={false}>
+        {items}
+      </Collapse>
     </div>
   );
 }

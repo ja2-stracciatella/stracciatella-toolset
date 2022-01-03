@@ -1,14 +1,14 @@
 import { JsonItemsForm } from "../components/JsonItemsForm";
 
-import { Layout } from "../components/Layout";
+import { EditorLayout } from "../components/EditorLayout";
 import { WithOpenMod } from "../components/WithOpenMod";
 
 export function StrategicMapNpcPlacements() {
   return (
     <WithOpenMod>
-      <Layout>
+      <EditorLayout>
         <JsonItemsForm file="strategic-map-npc-placements.json" name="profileId" />
-      </Layout>
+      </EditorLayout>
     </WithOpenMod>
   );
 }

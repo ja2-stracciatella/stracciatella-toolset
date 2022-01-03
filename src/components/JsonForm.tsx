@@ -1,6 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import { useMemo } from "react";
-import { Alert } from "react-bootstrap";
+import { Alert, Typography } from "antd";
 
 import { JsonSchemaForm } from "./JsonSchemaForm";
 import { useJsonWithSchema } from "../hooks/useJsonWithSchema";
@@ -36,7 +36,7 @@ export function JsonForm({ file }: JsonFormProps) {
       };
     }, [data, file]);
   if (error) {
-    return <Alert variant="danger">{error.toString()}</Alert>;
+    return <Alert type="error" message={error.toString()} />;
   }
   if (!schema || !content) {
     return <FullSizeLoader />;
@@ -44,7 +44,7 @@ export function JsonForm({ file }: JsonFormProps) {
 
   return (
     <div>
-      <h1>{title}</h1>
+      <Typography.Title level={2}>{title}</Typography.Title>
       <div>
         <ReactMarkdown>{description}</ReactMarkdown>
       </div>

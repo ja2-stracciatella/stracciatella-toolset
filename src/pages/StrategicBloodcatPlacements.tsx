@@ -1,14 +1,14 @@
 import { JsonItemsForm } from "../components/JsonItemsForm";
 
-import { Layout } from "../components/Layout";
+import { EditorLayout } from "../components/EditorLayout";
 import { WithOpenMod } from "../components/WithOpenMod";
 
 export function StrategicBloodcatPlacements() {
   return (
     <WithOpenMod>
-      <Layout>
+      <EditorLayout>
         <JsonItemsForm file="strategic-bloodcat-placements.json" name="sector" />
-      </Layout>
+      </EditorLayout>
     </WithOpenMod>
   );
 }

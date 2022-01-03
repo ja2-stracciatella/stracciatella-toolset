@@ -1,14 +1,14 @@
 import { JsonItemsForm } from "../components/JsonItemsForm";
 
-import { Layout } from "../components/Layout";
+import { EditorLayout } from "../components/EditorLayout";
 import { WithOpenMod } from "../components/WithOpenMod";
 
 export function MercsRpcSmallFaces() {
   return (
     <WithOpenMod>
-      <Layout>
+      <EditorLayout>
         <JsonItemsForm file="mercs-rpc-small-faces.json" name="profileID" />
-      </Layout>
+      </EditorLayout>
     </WithOpenMod>
   );
 }

@@ -1,6 +1,6 @@
 import { JsonItemsForm } from "../components/JsonItemsForm";
 
-import { Layout } from "../components/Layout";
+import { EditorLayout } from "../components/EditorLayout";
 import { WithOpenMod } from "../components/WithOpenMod";
 
 function getCreatureLairName(item: any): string {
@@ -10,9 +10,9 @@ function getCreatureLairName(item: any): string {
 export function StrategicMapCreatureLairs() {
   return (
     <WithOpenMod>
-      <Layout>
+      <EditorLayout>
         <JsonItemsForm file="strategic-map-creature-lairs.json" name={getCreatureLairName} />
-      </Layout>
+      </EditorLayout>
     </WithOpenMod>
   );
 }

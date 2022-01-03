@@ -18,12 +18,12 @@ In the project directory, you can run:
 
 Runs the app in the development mode. Will open a window for the app once compilation is done.
 
-### `yarn test`
+### `npm test`
 
 Launches the test runner in the interactive watch mode.\
 See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-### `yarn tauri build`
+### `npm build`
 
 Builds the app for production.
 

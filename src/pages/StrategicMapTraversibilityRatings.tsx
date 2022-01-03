@@ -1,14 +1,14 @@
 import { JsonForm } from "../components/JsonForm";
 
-import { Layout } from "../components/Layout";
+import { EditorLayout } from "../components/EditorLayout";
 import { WithOpenMod } from "../components/WithOpenMod";
 
 export function StrategicMapTraversibilityRatings() {
   return (
     <WithOpenMod>
-      <Layout>
+      <EditorLayout>
         <JsonForm file="strategic-map-traversibility-ratings.json" />
-      </Layout>
+      </EditorLayout>
     </WithOpenMod>
   );
 }

@@ -1,12 +1,12 @@
-import { Layout } from "../components/Layout";
+import { EditorLayout } from "../components/EditorLayout";
 import { WithOpenMod } from "../components/WithOpenMod";
 
 export function Dashboard() {
   return (
     <WithOpenMod>
-      <Layout>
+      <EditorLayout>
         <h1>Dashboard</h1>
-      </Layout>
+      </EditorLayout>
     </WithOpenMod>
   );
 }

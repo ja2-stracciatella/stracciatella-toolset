@@ -1,6 +1,6 @@
 import { JsonItemsForm } from "../components/JsonItemsForm";
 
-import { Layout } from "../components/Layout";
+import { EditorLayout } from "../components/EditorLayout";
 import { WithOpenMod } from "../components/WithOpenMod";
 
 function getPatrolGroupName(item: any): string {
@@ -10,9 +10,9 @@ function getPatrolGroupName(item: any): string {
 export function ArmyPatrolGroups() {
   return (
     <WithOpenMod>
-      <Layout>
+      <EditorLayout>
         <JsonItemsForm file="army-patrol-groups.json" name={getPatrolGroupName} />
-      </Layout>
+      </EditorLayout>
     </WithOpenMod>
   );
 }

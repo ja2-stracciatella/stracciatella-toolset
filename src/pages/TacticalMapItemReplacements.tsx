@@ -1,6 +1,6 @@
 import { JsonItemsForm } from "../components/JsonItemsForm";
 
-import { Layout } from "../components/Layout";
+import { EditorLayout } from "../components/EditorLayout";
 import { WithOpenMod } from "../components/WithOpenMod";
 
 function getItemReplacementName(item: any): string {
@@ -10,9 +10,9 @@ function getItemReplacementName(item: any): string {
 export function TacticalMapItemReplacements() {
   return (
     <WithOpenMod>
-      <Layout>
+      <EditorLayout>
         <JsonItemsForm file="tactical-map-item-replacements.json" name={getItemReplacementName} />
-      </Layout>
+      </EditorLayout>
     </WithOpenMod>
   );
 }

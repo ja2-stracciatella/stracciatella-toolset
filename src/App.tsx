@@ -1,10 +1,11 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import 'bootstrap/dist/css/bootstrap.min.css';
+import 'antd/dist/antd.compact.less';
 
 import { ModsProvider } from "./state/mods";
 
 import { useMemo } from "react";
 import { ROUTES } from "./EditorRoutes";
+import './App.css';
 
 function App() {
   const routes = useMemo(() => {
