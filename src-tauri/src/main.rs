@@ -169,7 +169,7 @@ fn open_json_file_with_schema(file: String) -> Result<JsonFileWithSchema, String
     let json =
       std::fs::read_to_string(&path).map_err(|e| format!("error reading `{:?}`: {}", path, e))?;
     stracciatella::json::de::from_string(&json)
-      .map_err(|e| format!("error decoding schema for `{:?}`: {}", path, e))?
+      .map_err(|e| format!("error decoding data for `{:?}`: {}", path, e))?
   } else {
     let guard = VFS
       .lock()
@@ -179,9 +179,9 @@ fn open_json_file_with_schema(file: String) -> Result<JsonFileWithSchema, String
       .map_err(|e| format!("error opening `{:?}`: {}", file, e))?;
     let mut json = String::new();
     f.read_to_string(&mut json)
-      .map_err(|e| format!("error reading `{:?}`: {}", path, e))?;
+      .map_err(|e| format!("error reading `{:?}`: {}", file, e))?;
     stracciatella::json::de::from_string(&json)
-      .map_err(|e| format!("error decoding schema for `{:?}`: {}", path, e))?
+      .map_err(|e| format!("error decoding data for `{:?}`: {}", file, e))?
   };
 
   Ok(JsonFileWithSchema { content, schema })

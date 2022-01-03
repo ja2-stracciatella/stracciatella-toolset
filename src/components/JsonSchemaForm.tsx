@@ -61,7 +61,6 @@ const CheckboxWidgetWithDescription = (props: WidgetProps) => {
   }: React.FocusEvent<HTMLInputElement>) => onFocus(id, checked);
 
   const desc = label || schema.description;
-  console.log("checkbox widget", schema);
   return (
     <Form.Group
       className={`checkbox ${disabled || readonly ? "disabled" : ""}`}
