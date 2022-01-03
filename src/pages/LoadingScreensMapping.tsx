@@ -1,13 +1,12 @@
-import { JsonItemsForm } from "../components/JsonItemsForm";
-
 import { EditorLayout } from "../components/EditorLayout";
 import { WithOpenMod } from "../components/WithOpenMod";
+import { JsonStrategicMapForm } from "../components/StrategicMapForm";
 
 export function LoadingScreensMapping() {
   return (
     <WithOpenMod>
       <EditorLayout>
-        <JsonItemsForm file="loading-screens-mapping.json" name="sector" />
+        <JsonStrategicMapForm file="loading-screens-mapping.json" />
       </EditorLayout>
     </WithOpenMod>
   );

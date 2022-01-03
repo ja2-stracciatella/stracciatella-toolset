@@ -1,0 +1,25 @@
+.strategic-map {
+    display: flex;
+    width: calc(32px * 16 + 2px);
+    flex-wrap: wrap;
+    border: 1px solid black;
+}
+
+.strategic-map .strategic-map-tile {
+    width: 32px;
+    height: 24px;
+    background-color: darkgray;
+    border: 1px solid black;
+    cursor: pointer;
+    transition: border-color 0.25s;
+}
+
+.strategic-map .strategic-map-tile:hover {
+    border: 1px solid white;
+}
+
+.strategic-map .strategic-map-tile.highlighted {
+    width: 32px;
+    height: 24px;
+    background-color: darkgreen;
+}

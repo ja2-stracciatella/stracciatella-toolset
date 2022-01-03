@@ -83,6 +83,7 @@ FieldTemplateProps) => {
       htmlFor={id}
       label={displayLabel && label}
       labelCol={HORIZONTAL_LABEL_COL}
+      labelAlign="left"
       required={required}
       style={wrapperStyle}
       validateStatus={rawErrors ? "error" : undefined}

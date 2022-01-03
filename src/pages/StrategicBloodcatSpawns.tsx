@@ -1,13 +1,12 @@
-import { JsonItemsForm } from "../components/JsonItemsForm";
-
 import { EditorLayout } from "../components/EditorLayout";
+import { JsonStrategicMapForm } from "../components/StrategicMapForm";
 import { WithOpenMod } from "../components/WithOpenMod";
 
 export function StrategicBloodcatSpawns() {
   return (
     <WithOpenMod>
       <EditorLayout>
-        <JsonItemsForm file="strategic-bloodcat-spawns.json" name="sector" />
+        <JsonStrategicMapForm file="strategic-bloodcat-spawns.json" />
       </EditorLayout>
     </WithOpenMod>
   );

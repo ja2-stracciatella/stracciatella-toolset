@@ -1,13 +1,12 @@
-import { JsonItemsForm } from "../components/JsonItemsForm";
-
 import { EditorLayout } from "../components/EditorLayout";
 import { WithOpenMod } from "../components/WithOpenMod";
+import { JsonStrategicMapForm } from "../components/StrategicMapForm";
 
 export function StrategicMapSectorsDescriptions() {
   return (
     <WithOpenMod>
       <EditorLayout>
-        <JsonItemsForm file="strategic-map-sectors-descriptions.json" name="sector" />
+        <JsonStrategicMapForm file="strategic-map-sectors-descriptions.json" />
       </EditorLayout>
     </WithOpenMod>
   );
