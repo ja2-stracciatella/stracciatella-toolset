@@ -48,3 +48,10 @@ jobs:
       env:
         # Needs to be set to false otherwise build wont work currently
         CI: "false"
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: package
+        path: |
+          src-tauri/target/release/bundle/stracciatella-*.AppImage
+          src-tauri/target/release/stracciatella-*.exe
