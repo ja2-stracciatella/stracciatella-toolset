@@ -5,9 +5,11 @@ import { Alert, Typography } from "antd";
 import { JsonSchemaForm } from "./JsonSchemaForm";
 import { useJsonWithSchema } from "../hooks/useJsonWithSchema";
 import { FullSizeLoader } from "./FullSizeLoader";
+import { UiSchema } from "@rjsf/core";
 
 export interface JsonFormProps {
   file: string;
+  uiSchema?: UiSchema;
 }
 
 interface SchemaWithDescription {
@@ -17,7 +19,7 @@ interface SchemaWithDescription {
   content: any;
 }
 
-export function JsonForm({ file }: JsonFormProps) {
+export function JsonForm({ file, uiSchema }: JsonFormProps) {
   const { data, error } = useJsonWithSchema(file);
   const { schema, content, title, description } =
     useMemo((): SchemaWithDescription => {
@@ -48,7 +50,7 @@ export function JsonForm({ file }: JsonFormProps) {
       <div>
         <ReactMarkdown>{description}</ReactMarkdown>
       </div>
-      <JsonSchemaForm schema={schema} content={content} />
+      <JsonSchemaForm schema={schema} content={content} uiSchema={uiSchema} />
     </div>
   );
 }

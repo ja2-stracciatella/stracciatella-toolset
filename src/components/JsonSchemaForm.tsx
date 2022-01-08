@@ -1,6 +1,7 @@
 import {
   FieldProps,
   FieldTemplateProps,
+  UiSchema,
   withTheme,
 } from "@rjsf/core";
 // @ts-ignore
@@ -111,12 +112,14 @@ export interface JsonSchemaFormProps {
   idPrefix?: string;
   schema: any;
   content: any;
+  uiSchema?: UiSchema;
 }
 
 export function JsonSchemaForm({
   idPrefix,
   schema,
   content,
+  uiSchema
 }: JsonSchemaFormProps) {
   return (
     <RjsfForm
@@ -127,6 +130,7 @@ export function JsonSchemaForm({
       liveValidate={true}
       noHtml5Validate={true}
       showErrorList={false}
+      uiSchema={uiSchema}
     />
   );
 }
