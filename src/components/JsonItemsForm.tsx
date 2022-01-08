@@ -1,6 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import { useMemo } from "react";
-import { Alert, Collapse, Typography } from "antd";
+import { Alert, Collapse, Space, Typography } from "antd";
 
 import { useJsonWithSchema } from "../hooks/useJsonWithSchema";
 import { JsonSchemaForm } from "./JsonSchemaForm";
@@ -12,9 +12,10 @@ const { Panel } = Collapse;
 export interface JsonItemsFormProps {
   file: string;
   name: string | ((item: any) => string);
+  preview?: (item: any) => JSX.Element;
 }
 
-export function JsonItemsForm({ file, name }: JsonItemsFormProps) {
+export function JsonItemsForm({ file, name, preview }: JsonItemsFormProps) {
   const { data, error } = useJsonWithSchema(file);
   const itemsSchema = useMemo(() => {
     if (data) {
@@ -48,7 +49,16 @@ export function JsonItemsForm({ file, name }: JsonItemsFormProps) {
   const items = useMemo(() => {
     if (data) {
       return data.content.map((item: any, index: number) => {
-        const header = typeof name === "string" ? item[name] : name(item);
+        const label = typeof name === "string" ? item[name] : name(item);
+        const p = preview ? preview(item) : null;
+
+        const header = (
+          <Space direction="horizontal">
+            {p}
+            {label}
+          </Space>
+        );
+
         return (
           <Panel key={index} header={header}>
             <div className="json-items-form-form">
@@ -63,7 +73,7 @@ export function JsonItemsForm({ file, name }: JsonItemsFormProps) {
       });
     }
     return null;
-  }, [data, itemsSchema, name]);
+  }, [data, itemsSchema, name, preview]);
 
   if (error) {
     return <Alert type="error" message={error.toString()} />;
@@ -79,9 +89,7 @@ export function JsonItemsForm({ file, name }: JsonItemsFormProps) {
       <div>
         <ReactMarkdown>{description}</ReactMarkdown>
       </div>
-      <Collapse bordered={false}>
-        {items}
-      </Collapse>
+      <Collapse bordered={false}>{items}</Collapse>
     </div>
   );
 }

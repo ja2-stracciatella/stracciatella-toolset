@@ -4,7 +4,7 @@ import { Alert, Typography, Row, Col, Divider } from "antd";
 
 import { useJsonWithSchema } from "../hooks/useJsonWithSchema";
 import { FullSizeLoader } from "./FullSizeLoader";
-import { StrategicMap } from "./StrategicMap";
+import { StrategicMap } from "./content/StrategicMap";
 import { JsonSchemaForm } from "./JsonSchemaForm";
 
 export interface StrategicMapFormProps {

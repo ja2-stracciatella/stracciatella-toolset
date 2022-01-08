@@ -15,11 +15,15 @@ build = "src/build.rs"
 tauri-build = { version = "1.0.0-beta.4" }
 
 [dependencies]
+async-fs = "1.5"
+base64 = "0.13"
+futures-lite = "1.2"
+image = "0.23"
+lazy_static = "1.4"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
+stracciatella = { git = "https://github.com/ja2-stracciatella/ja2-stracciatella.git", rev = "2cefa258150e198a93cc6a4683117f0fff2498b5" }
 tauri = { version = "1.0.0-beta.8", features = ["api-all"] }
-stracciatella = { git = "https://github.com/ja2-stracciatella/ja2-stracciatella.git", rev = "fdbb464ebd368244d7784fadc11ddcec33b708a3" }
-lazy_static = "1.4.0"
 
 [features]
 default = [ "custom-protocol" ]

@@ -13,22 +13,20 @@ export function useJsonWithSchema(file: string) {
   const [error, setError] = useState<Error | null>(null);
   const [state, setState] = useState<JsonWithSchema | null>(null);
   const fetch = useCallback(async (file: string) => {
-    try {
-      const state = await invokeWithSchema(
-        JsonWithSchema,
-        "open_json_file_with_schema",
-        {
-          file,
-        }
-      );
-      setState(state);
-    } catch (e: any) {
-        setError(new Error(`error fetching json with schema: ${e}`));
-    }
+    const state = await invokeWithSchema(
+      JsonWithSchema,
+      "open_json_file_with_schema",
+      {
+        file,
+      }
+    );
+    setState(state);
   }, []);
 
   useEffect(() => {
-    fetch(file);
+    fetch(file).catch((e: any) =>
+      setError(new Error(`error fetching json with schema: ${e}`))
+    );
   }, [fetch, file]);
 
   return { error, data: state };
