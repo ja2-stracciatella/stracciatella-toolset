@@ -110,6 +110,7 @@ function useModsState(
           selectedMod: mod,
         });
       } catch (e: any) {
+        console.log("error", e);
         modsError(new Error(`cannot select mod "${mod.id}": ${e}`));
       }
     },

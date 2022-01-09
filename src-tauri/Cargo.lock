@@ -82,11 +82,14 @@ version = "0.1.0"
 dependencies = [
  "async-fs",
  "base64",
+ "directories",
  "futures-lite",
  "image",
  "lazy_static",
+ "log",
  "serde",
  "serde_json",
+ "simplelog 0.11.1",
  "stracciatella",
  "tauri",
  "tauri-build",
@@ -832,6 +835,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3dd60d1080a57a05ab032377049e0591415d2b31afd7028356dbf3cc6dcb066"
 dependencies = [
  "generic-array",
+]
+
+[[package]]
+name = "directories"
+version = "4.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f51c5d4ddabd36886dd3e1438cb358cdcb0d7c499cb99cb4ac2e38e18b5cb210"
+dependencies = [
+ "dirs-sys",
 ]
 
 [[package]]
@@ -3077,6 +3089,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "simplelog"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ecabc0118918611790b8615670ab79296272cbe09496b6884b02b1e929c20886"
+dependencies = [
+ "chrono",
+ "log",
+ "termcolor",
+]
+
+[[package]]
 name = "siphasher"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3171,7 +3194,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "serde_yaml",
- "simplelog",
+ "simplelog 0.10.2",
  "tempfile",
  "unicode-normalization",
  "winapi",

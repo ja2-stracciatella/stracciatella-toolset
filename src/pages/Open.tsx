@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { List, Button } from "antd";
+import { List, Button, Alert } from "antd";
 
 import { FullSizeLoader } from "../components/FullSizeLoader";
 import { EditableMod, useMods } from "../state/mods";
@@ -8,17 +8,20 @@ import "./Open.css";
 const { Item } = List;
 
 export function Open() {
-  const { selectMod, editableMods } = useMods();
+  const { error, selectMod, editableMods } = useMods();
   const [isSelecting, setIsSelecting] = useState(false);
   const onModClick = useCallback(
     async (mod: EditableMod) => {
       setIsSelecting(true);
       await selectMod(mod);
-      setIsSelecting(false);
     },
     [selectMod]
   );
 
+  console.log(error);
+  if (error) {
+    return <Alert type="error" message={error.toString()} />;
+  }
   if (!editableMods || isSelecting) {
     return <FullSizeLoader />;
   }
