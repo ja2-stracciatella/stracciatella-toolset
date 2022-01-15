@@ -6,7 +6,7 @@ import { useCallback } from "react";
 import { MercPreview } from "../components/content/MercPreview";
 
 export function StrategicMapNpcPlacements() {
-  const preview = useCallback((item: any) => <MercPreview profileId={item.profileId} />, []);
+  const preview = useCallback((item: any) => <MercPreview profile={item.profile} />, []);
   return (
     <WithOpenMod>
       <EditorLayout>

@@ -21,6 +21,8 @@ function graphicTypeToItemPrefix(graphicType: number): string {
     return "P3ITEM"
 }
 
+const crispEdgesStyle = {imageRendering: "crisp-edges" as const};
+
 export function ItemPreview({ graphicType, graphicIndex }: ItemPreviewProps) {
     const graphic = useMemo(() => {
         const prefix = graphicTypeToItemPrefix(graphicType);
@@ -42,5 +44,5 @@ export function ItemPreview({ graphicType, graphicIndex }: ItemPreviewProps) {
         return <span>Error loading image: {error.toString()}</span>
     }
 
-    return <Avatar shape="square" {...additionalAvatarProps} />;
+    return <Avatar shape="square" {...additionalAvatarProps} style={crispEdgesStyle} />;
 }

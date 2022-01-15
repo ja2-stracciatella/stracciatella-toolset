@@ -6,7 +6,7 @@ const ImageFile = z.string();
 
 type ImageFile = z.infer<typeof ImageFile>;
 
-export function useImageFile(file: string) {
+export function useImageFile(file: string | null) {
   const [error, setError] = useState<Error | null>(null);
   const [state, setState] = useState<ImageFile | null>(null);
   const fetch = useCallback(async (file: string) => {
@@ -17,6 +17,9 @@ export function useImageFile(file: string) {
   }, []);
 
   useEffect(() => {
+    if (!file) {
+      return;
+    }
     fetch(file).catch((e: any) =>
       setError(new Error(`error fetching image: ${e}`))
     );

@@ -6,11 +6,11 @@ import { useCallback } from "react";
 import { MercPreview } from "../components/content/MercPreview";
 
 export function Dealers() {
-  const preview = useCallback((item: any) => <MercPreview profileId={item.profileID} />, []);
+  const preview = useCallback((item: any) => <MercPreview profile={item.profile} />, []);
   return (
     <WithOpenMod>
       <EditorLayout>
-        <JsonItemsForm file="dealers.json" name="internalName" preview={preview} />
+        <JsonItemsForm file="dealers.json" name="profile" preview={preview} />
       </EditorLayout>
     </WithOpenMod>
   );

@@ -6,7 +6,7 @@ import { MercPreview } from "../components/content/MercPreview";
 import { useCallback } from "react";
 
 export function MercsProfileInfo() {
-  const preview = useCallback((item: any) => <MercPreview profileId={item.profileID} />, []);
+  const preview = useCallback((item: any) => <MercPreview profile={item.internalName} />, []);
   return (
     <WithOpenMod>
       <EditorLayout>

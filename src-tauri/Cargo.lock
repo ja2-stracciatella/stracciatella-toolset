@@ -3166,7 +3166,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "stracciatella"
 version = "0.1.0"
-source = "git+https://github.com/ja2-stracciatella/ja2-stracciatella.git?rev=2cefa258150e198a93cc6a4683117f0fff2498b5#2cefa258150e198a93cc6a4683117f0fff2498b5"
+source = "git+https://github.com/ja2-stracciatella/ja2-stracciatella.git?rev=73d34f00268eaad6d949133d1fb32adf7e35e9b9#73d34f00268eaad6d949133d1fb32adf7e35e9b9"
 dependencies = [
  "android_logger",
  "bitflags",
