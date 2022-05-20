@@ -1,14 +1,10 @@
 # Stracciatella Toolset
 
-This is a desktop application to edit mods for JA2 Stracciatella.
+This is a prototye desktop application with the goal of being an editor for mods for JA2 Stracciatella.
 
 ## Features
 
-This app currently allows viewing json data for JA2 Stracciatella only.
-
-Missing or broken:
-
-- Dealer Inventories
+This app currently allows viewing json data for JA2 Stracciatella only. Some things might be missing or broken.
 
 ## Available Scripts
 
