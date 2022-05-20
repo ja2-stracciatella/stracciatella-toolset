@@ -4,7 +4,7 @@ This is a desktop application to edit mods for JA2 Stracciatella.
 
 ## Features
 
-This app currently allows editing json data for JA2 Stracciatella only.
+This app currently allows viewing json data for JA2 Stracciatella only.
 
 Missing or broken:
 
