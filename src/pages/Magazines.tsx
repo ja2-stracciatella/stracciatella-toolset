@@ -6,7 +6,7 @@ import { ItemPreview } from "../components/content/ItemPreview";
 import { useCallback } from "react";
 
 export function Magazines() {
-  const preview = useCallback((item: any) => <ItemPreview graphicType={item.ubGraphicType} graphicIndex={item.ubGraphicNum} />, []);
+  const preview = useCallback((item: any) => <ItemPreview inventoryGraphics={item.inventoryGraphics} />, []);
   return (
     <WithOpenMod>
       <EditorLayout>

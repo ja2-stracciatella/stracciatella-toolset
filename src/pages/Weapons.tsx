@@ -6,7 +6,7 @@ import { useCallback } from "react";
 import { ItemPreview } from "../components/content/ItemPreview";
 
 export function Weapons() {
-  const preview = useCallback((item: any) => <ItemPreview graphicType={item.ubGraphicType} graphicIndex={item.ubGraphicNum} />, []);
+  const preview = useCallback((item: any) => <ItemPreview inventoryGraphics={item.inventoryGraphics} />, []);
   return (
     <WithOpenMod>
       <EditorLayout>

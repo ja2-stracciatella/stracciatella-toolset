@@ -3,9 +3,16 @@ import { Avatar } from "antd";
 import { useMemo } from "react";
 import { useImageFile } from "../../hooks/useImage";
 
+interface SubImage {
+    path: string,
+    index: number
+}
+
 interface ItemPreviewProps {
-    graphicType: number,
-    graphicIndex: number,
+    inventoryGraphics: {
+        small: SubImage,
+        big: SubImage,
+    }
 }
 
 function graphicTypeToItemPrefix(graphicType: number): string {
@@ -23,12 +30,8 @@ function graphicTypeToItemPrefix(graphicType: number): string {
 
 const crispEdgesStyle = {imageRendering: "crisp-edges" as const};
 
-export function ItemPreview({ graphicType, graphicIndex }: ItemPreviewProps) {
-    const graphic = useMemo(() => {
-        const prefix = graphicTypeToItemPrefix(graphicType);
-        return `bigitems/${prefix}${graphicIndex.toString().padStart(2, '0')}.sti`;
-    }, [graphicIndex, graphicType]);
-    const { data: image, error } = useImageFile(graphic);
+export function ItemPreview({ inventoryGraphics: { big } }: ItemPreviewProps) {
+    const { data: image, error } = useImageFile(big.path);
     const additionalAvatarProps = useMemo(() => {
         if (error) {
             console.error(error);

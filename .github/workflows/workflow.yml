@@ -53,5 +53,6 @@ jobs:
       with:
         name: package
         path: |
-          src-tauri/target/release/bundle/stracciatella-*.AppImage
+          src-tauri/target/release/bundle/deb/stracciatella-*.deb
+          src-tauri/target/release/bundle/appimage/stracciatella-*.AppImage
           src-tauri/target/release/stracciatella-*.exe

@@ -48,7 +48,7 @@ pub enum ToolsetState {
 impl ToolsetState {
   pub fn configure(config: ToolsetConfig) -> Self {
     let engine_options = config.to_engine_options();
-    let mod_manager = ModManager::new_unchecked(&engine_options, &engine_options.assets_dir);
+    let mod_manager = ModManager::new_unchecked(&engine_options);
     ToolsetState::Configured {
       config: config.clone(),
       schema_manager: SchemaManager::default(),
