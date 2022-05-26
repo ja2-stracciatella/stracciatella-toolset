@@ -1,6 +1,10 @@
 use std::sync::{Arc, Mutex};
 
-use stracciatella::{mods::{ModManager, Mod}, vfs::Vfs, schemas::SchemaManager};
+use stracciatella::{
+  mods::{Mod, ModManager},
+  schemas::SchemaManager,
+  vfs::Vfs,
+};
 
 use crate::config::{self, ToolsetConfig};
 
@@ -17,13 +21,13 @@ impl OpenedMod {
     mod_id: &str,
   ) -> Result<OpenedMod, String> {
     let m = mod_manager
-      .get_mod_by_id(&mod_id)
+      .get_mod_by_id(mod_id)
       .ok_or_else(|| format!("cannot open unknown mod: {}", mod_id))?
       .clone();
     let mut vfs = Vfs::new();
     let engine_options = config.to_engine_options();
     vfs
-      .init(&engine_options, &mod_manager)
+      .init(&engine_options, mod_manager)
       .map_err(|e| format!("error initializing vfs: {}", e))?;
 
     Ok(OpenedMod {
@@ -50,7 +54,7 @@ impl ToolsetState {
     let engine_options = config.to_engine_options();
     let mod_manager = ModManager::new_unchecked(&engine_options);
     ToolsetState::Configured {
-      config: config.clone(),
+      config,
       schema_manager: SchemaManager::default(),
       mod_manager,
       opened_mod: Arc::new(Mutex::new(None)),

@@ -73,7 +73,7 @@ async fn get_editable_mods(
               continue;
             }
             let toolset_file =
-              resolve_existing_components(&Path::new(ModSettings::filename()), Some(p), true);
+              resolve_existing_components(Path::new(ModSettings::filename()), Some(p), true);
             let settings = read_to_string(&toolset_file)
               .await
               .ok()
@@ -119,7 +119,10 @@ fn get_available_mods(state: tauri::State<'_, state::ToolsetState>) -> Result<Ve
 }
 
 #[tauri::command]
-fn set_selected_mod(state: tauri::State<'_, state::ToolsetState>, mod_id: String) -> Result<(), String> {
+fn set_selected_mod(
+  state: tauri::State<'_, state::ToolsetState>,
+  mod_id: String,
+) -> Result<(), String> {
   match state.inner() {
     state::ToolsetState::Configured {
       config,
@@ -159,7 +162,7 @@ fn get_selected_mod(state: &state::ToolsetState) -> Result<state::OpenedMod, Str
 fn get_mod_data_path(m: &StracciatellaMod, file_path: &str) -> PathBuf {
   let file_path = PathBuf::from("data").join(file_path);
   match m.path() {
-    ModPath::Path(p) => resolve_existing_components(&Path::new(&file_path), Some(p), true),
+    ModPath::Path(p) => resolve_existing_components(Path::new(&file_path), Some(p), true),
   }
 }
 
@@ -177,7 +180,7 @@ async fn open_json_file_with_schema(
   match state.inner() {
     state::ToolsetState::Configured { schema_manager, .. } => {
       let schema = schema_manager
-        .get(&Path::new(&file))
+        .get(Path::new(&file))
         .ok_or_else(|| format!("schema for `{}` not found", file))?;
       let schema = Value::from_str(schema.as_str())
         .map_err(|e| format!("error decoding schema for `{}`: {}", file, e))?;
@@ -327,7 +330,7 @@ async fn read_image_file(
           let height = usize::from(sub_image.dimensions.1);
           for y in 0..height {
             for x in 0..width {
-              let index = usize::from((y * width) + x);
+              let index = (y * width) + x;
               let stci_pixel = palette.colors[usize::from(sub_image.data[index])];
               let pixel = image.get_pixel_mut(x as u32, y as u32);
 
@@ -384,18 +387,16 @@ fn main() {
     "Toolset config path: `{}`",
     toolset_config_path.to_string_lossy()
   );
-  let toolset_config = if toolset_config_path.exists() {
+  let config = if toolset_config_path.exists() {
     let c = std::fs::read_to_string(&toolset_config_path).expect("reading toolset config failed");
     serde_json::from_str(&c).expect("parsing toolset config failed")
   } else {
     config::PartialToolsetConfig::guess()
   };
-  let initial_state = if let Some(config) = toolset_config.to_config() {
+  let initial_state = if let Some(config) = config.to_config() {
     state::ToolsetState::configure(config)
   } else {
-    state::ToolsetState::NotConfigured {
-      config: toolset_config.clone(),
-    }
+    state::ToolsetState::NotConfigured { config }
   };
 
   tauri::Builder::default()
