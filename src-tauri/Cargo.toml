@@ -12,7 +12,7 @@ build = "src/build.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "1.0.0-rc.8", features = [] }
+tauri-build = { version = "1.0.0", features = [] }
 
 [dependencies]
 async-fs = "1.5"
@@ -25,8 +25,8 @@ log = "0.4"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 simplelog = "0.11"
-stracciatella = { git = "https://github.com/ja2-stracciatella/ja2-stracciatella.git", rev = "40d269607fcb5f12fcb2e59f88a527d2cecb0146" }
-tauri = { version = "1.0.0-rc.8", features = ["api-all"] }
+stracciatella = { git = "https://github.com/ja2-stracciatella/ja2-stracciatella.git", rev = "9b86961a0f79e1ed05660dc065c2da02d24bd019" }
+tauri = { version = "1.0.0", features = ["api-all"] }
 
 [features]
 default = [ "custom-protocol" ]
