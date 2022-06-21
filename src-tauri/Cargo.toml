@@ -16,6 +16,7 @@ tauri-build = { version = "1.0.0", features = [] }
 
 [dependencies]
 async-fs = "1.5"
+async-lock = "2.5"
 base64 = "0.13"
 directories = "4.0"
 futures-lite = "1.2"

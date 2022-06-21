@@ -3,11 +3,11 @@ import { List, Button, Alert } from "antd";
 
 import { FullSizeLoader } from "../components/FullSizeLoader";
 import { EditableMod, useMods } from "../state/mods";
-import "./Open.css";
+import "./OpenMod.css";
 
 const { Item } = List;
 
-export function Open() {
+export function OpenMod() {
   const { error, selectMod, editableMods } = useMods();
   const [isSelecting, setIsSelecting] = useState(false);
   const onModClick = useCallback(
@@ -18,7 +18,6 @@ export function Open() {
     [selectMod]
   );
 
-  console.log(error);
   if (error) {
     return <Alert type="error" message={error.toString()} />;
   }

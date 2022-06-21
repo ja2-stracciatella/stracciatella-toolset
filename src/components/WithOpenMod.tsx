@@ -3,7 +3,7 @@ import { Alert } from "antd";
 import { useFetchMods, useMods } from "../state/mods";
 
 import "./WithOpenMod.css";
-import { Open } from "../pages/Open";
+import { OpenMod } from "./OpenMod";
 import { FullSizeLoader } from "./FullSizeLoader";
 
 export function WithOpenMod({ children }: PropsWithChildren<{}>) {
@@ -27,17 +27,17 @@ export function WithOpenMod({ children }: PropsWithChildren<{}>) {
     }
     if (loading) {
       message = (
-        <div className="with-open-mod">
+        <div>
           <FullSizeLoader />
         </div>
       );
     }
     if (!selectedMod) {
-      message = <Open />;
+      message = <OpenMod />;
     }
 
     return message;
-  }, [children, error, loading, selectedMod])
+  }, [children, error, loading, selectedMod]);
 
   return <>{content}</>;
 }

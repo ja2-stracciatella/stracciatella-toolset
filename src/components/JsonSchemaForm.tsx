@@ -1,8 +1,11 @@
 import {
+  ErrorSchema,
   FieldProps,
   FieldTemplateProps,
+  IChangeEvent,
+  ISubmitEvent,
   UiSchema,
-  withTheme,
+  withTheme
 } from "@rjsf/core";
 // @ts-ignore
 import { Theme as AntdTheme } from "@rjsf/antd";
@@ -113,24 +116,32 @@ export interface JsonSchemaFormProps {
   schema: any;
   content: any;
   uiSchema?: UiSchema;
+  renderButton?: boolean;
+  onChange?: (e: IChangeEvent<any>, es?: ErrorSchema) => any;
+  onSubmit?: (e: ISubmitEvent<any>) => any,
 }
 
 export function JsonSchemaForm({
   idPrefix,
   schema,
   content,
-  uiSchema
+  uiSchema,
+  renderButton,
+  onChange,
+  onSubmit
 }: JsonSchemaFormProps) {
   return (
     <RjsfForm
       idPrefix={idPrefix}
       schema={schema}
       formData={content}
-      children={true}
+      children={renderButton ? undefined : true}
       liveValidate={true}
       noHtml5Validate={true}
       showErrorList={false}
       uiSchema={uiSchema}
+      onChange={onChange}
+      onSubmit={onSubmit}
     />
   );
 }

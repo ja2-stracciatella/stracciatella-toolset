@@ -36,25 +36,35 @@ interface ErroredModsState {
 }
 
 interface LoadedModsState {
-  loading: false,
-  error: null,
-  selectedMod: null,
-  editableMods: Array<EditableMod>,
-  availableMods: Array<Mod>,
+  loading: false;
+  error: null;
+  selectedMod: null;
+  editableMods: Array<EditableMod>;
+  availableMods: Array<Mod>;
 }
 
 interface SelectedModState {
-  loading: false,
-  error: null,
-  selectedMod: EditableMod,
-  editableMods: Array<EditableMod>,
-  availableMods: Array<Mod>,
+  loading: false;
+  error: null;
+  selectedMod: EditableMod;
+  editableMods: Array<EditableMod>;
+  availableMods: Array<Mod>;
 }
 
-type ModsState = LoadingModsState | ErroredModsState | LoadedModsState | SelectedModState;
+type ModsState =
+  | LoadingModsState
+  | ErroredModsState
+  | LoadedModsState
+  | SelectedModState;
 
 function useModsState(
-  initialState: ModsState = { loading: true, error: null, selectedMod: null, editableMods: null, availableMods: null }
+  initialState: ModsState = {
+    loading: true,
+    error: null,
+    selectedMod: null,
+    editableMods: null,
+    availableMods: null,
+  }
 ) {
   const [modsState, setModsState] = useState<ModsState>(initialState);
   const modsLoading = useCallback(
@@ -75,7 +85,7 @@ function useModsState(
         error: null,
         selectedMod: null,
         editableMods,
-        availableMods
+        availableMods,
       }),
     []
   );
@@ -96,7 +106,7 @@ function useModsState(
         modsError(new Error("cannot select mod while mods are loading"));
         return;
       }
-      if (!modsState.editableMods.find(m => m.id === mod.id)) {
+      if (!modsState.editableMods.find((m) => m.id === mod.id)) {
         modsError(new Error(`cannot select unknown mod "${mod.id}"`));
         return;
       }
@@ -116,7 +126,13 @@ function useModsState(
     },
     [modsState, modsError]
   );
-  return { ...modsState, modsLoading, modsLoadingSuccess, modsError, selectMod };
+  return {
+    ...modsState,
+    modsLoading,
+    modsLoadingSuccess,
+    modsError,
+    selectMod,
+  };
 }
 
 const modsState = createContainer(useModsState);
@@ -126,7 +142,6 @@ export const useMods = modsState.useContainer;
 
 const MODS_SCHEMA = z.array(Mod);
 const EDITABLE_MODS_SCHEMA = z.array(EditableMod);
-
 
 export function useFetchMods() {
   const { modsLoading, modsError, modsLoadingSuccess } = useMods();

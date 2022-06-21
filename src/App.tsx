@@ -1,11 +1,15 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import 'antd/dist/antd.compact.less';
+import "antd/dist/antd.compact.less";
 
 import { ModsProvider } from "./state/mods";
 
 import { useMemo } from "react";
 import { ROUTES } from "./EditorRoutes";
-import './App.css';
+import "./App.css";
+import { ToolsetConfigProvider } from "./state/toolset";
+import { WithToolsetConfig } from "./components/WithToolsetConfig";
+import { WithOpenMod } from "./components/WithOpenMod";
+import { EditorLayout } from "./components/EditorLayout";
 
 function App() {
   const routes = useMemo(() => {
@@ -16,9 +20,17 @@ function App() {
   return (
     <div className="app-root">
       <ModsProvider>
-        <BrowserRouter>
-          <Routes>{routes}</Routes>
-        </BrowserRouter>
+        <ToolsetConfigProvider>
+          <WithToolsetConfig>
+            <WithOpenMod>
+              <BrowserRouter>
+                <EditorLayout>
+                  <Routes>{routes}</Routes>
+                </EditorLayout>
+              </BrowserRouter>
+            </WithOpenMod>
+          </WithToolsetConfig>
+        </ToolsetConfigProvider>
       </ModsProvider>
     </div>
   );
