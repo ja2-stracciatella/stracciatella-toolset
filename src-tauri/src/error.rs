@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 pub struct Error(String);
 
 impl Error {
-    pub fn new(msg: String) -> Self {
-        Self(msg)
+    pub fn new<S: AsRef<str>>(msg: S) -> Self {
+        Self(String::from(msg.as_ref()))
     }
 }
 

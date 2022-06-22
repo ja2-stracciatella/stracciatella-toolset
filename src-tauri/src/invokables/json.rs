@@ -21,49 +21,32 @@ pub async fn open_json_file_with_schema(
     state: tauri::State<'_, state::TauriState>,
     file: String,
 ) -> Result<JsonFileWithSchema> {
-    let state = state.read().await;
-    match *state {
-        state::ToolsetState::Configured {
-            ref schema_manager, ..
-        } => {
-            let schema = schema_manager
-                .get(Path::new(&file))
-                .ok_or_else(|| Error::new(format!("schema for `{}` not found", file)))?;
-            let schema = Value::from_str(schema.as_str())
-                .map_err(|e| Error::new(format!("error decoding schema for `{}`: {}", file, e)))?;
-            let selected_mod = super::mods::get_selected_mod(&state)?;
-
-            if file.contains("..") {
-                return Err(Error::new("file path cannot contain `..`".to_owned()));
-            }
-
-            let path = super::mods::get_mod_data_path(&selected_mod.m, &file);
-            let content: Value = if path.exists() {
-                let json = read_to_string(&path)
-                    .await
-                    .map_err(|e| Error::new(format!("error reading `{:?}`: {}", path, e)))?;
-                stracciatella::json::de::from_string(&json).map_err(|e| {
-                    Error::new(format!("error decoding data for `{:?}`: {}", path, e))
-                })?
-            } else {
-                let mut f = selected_mod
-                    .vfs
-                    .open(&Nfc::caseless(&file))
-                    .map_err(|e| Error::new(format!("error opening `{:?}`: {}", file, e)))?;
-                let mut json = String::new();
-                f.read_to_string(&mut json)
-                    .map_err(|e| Error::new(format!("error reading `{:?}`: {}", file, e)))?;
-                stracciatella::json::de::from_string(&json).map_err(|e| {
-                    Error::new(format!("error decoding data for `{:?}`: {}", file, e))
-                })?
-            };
-
-            Ok(JsonFileWithSchema { content, schema })
-        }
-        _ => Err(Error::new(
-            "open_json_file_with_schema mods not available in this editor state".to_owned(),
-        )),
+    if file.contains("..") {
+        return Err(Error::new("file path cannot contain `..`"));
     }
+
+    let state = state.read().await;
+    let schema_manager = state.try_schema_manager()?;
+    let selected_mod = state.try_selected_mod()?;
+    let schema = schema_manager
+        .get(Path::new(&file))
+        .ok_or_else(|| Error::new(format!("schema for `{}` not found", file)))?;
+    let schema = Value::from_str(schema.as_str())?;
+    let path = selected_mod.data_path(&file);
+
+    let content: Value = if path.exists() {
+        let json = read_to_string(&path).await?;
+        stracciatella::json::de::from_string(&json)
+            .map_err(|e| Error::new(format!("error decoding data for `{:?}`: {}", file, e)))?
+    } else {
+        let mut f = selected_mod.vfs.open(&Nfc::caseless(&file))?;
+        let mut json = String::new();
+        f.read_to_string(&mut json)?;
+        stracciatella::json::de::from_string(&json)
+            .map_err(|e| Error::new(format!("error decoding data for `{:?}`: {}", file, e)))?
+    };
+
+    Ok(JsonFileWithSchema { content, schema })
 }
 
 #[tauri::command]
@@ -72,14 +55,13 @@ pub async fn persist_json_file(
     path: String,
     content: Value,
 ) -> Result<()> {
-    let state = state.read().await;
-
     if path.contains("..") {
-        return Err(Error::new("file path cannot contain `..`".to_owned()));
+        return Err(Error::new("file path cannot contain `..`"));
     }
 
-    let selected_mod = super::mods::get_selected_mod(&state)?.clone();
-    let path = super::mods::get_mod_data_path(&selected_mod.m, &path);
+    let state = state.read().await;
+    let selected_mod = state.try_selected_mod()?;
+    let path = selected_mod.data_path(&path);
     let content = serde_json::to_string(&content)?;
 
     write(&path, &content).await?;

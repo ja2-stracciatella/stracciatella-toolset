@@ -1,8 +1,12 @@
 use async_lock::{RwLock, RwLockReadGuard, RwLockWriteGuard};
-use std::sync::Arc;
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use stracciatella::{
-    mods::{Mod, ModManager},
+    fs::resolve_existing_components,
+    mods::{Mod, ModManager, ModPath},
     schemas::SchemaManager,
     vfs::Vfs,
 };
@@ -36,6 +40,13 @@ impl OpenedMod {
             m,
         })
     }
+
+    pub fn data_path(&self, file_path: &str) -> PathBuf {
+        let file_path = PathBuf::from("data").join(file_path);
+        match self.m.path() {
+            ModPath::Path(p) => resolve_existing_components(Path::new(&file_path), Some(p), true),
+        }
+    }
 }
 
 pub enum ToolsetState {
@@ -51,6 +62,7 @@ pub enum ToolsetState {
 }
 
 impl ToolsetState {
+    /// Creates a `ToolsetState::Configured` from a toolset config
     pub fn configured(config: ToolsetConfig) -> Self {
         let engine_options = config.to_engine_options();
         let mod_manager = ModManager::new_unchecked(&engine_options);
@@ -62,8 +74,40 @@ impl ToolsetState {
         }
     }
 
+    /// Creates a `ToolsetState::NotConfigured` from a partial toolset config
     pub fn not_configured(config: PartialToolsetConfig) -> Self {
         return ToolsetState::NotConfigured { config };
+    }
+
+    pub fn try_selected_mod(&self) -> Result<&OpenedMod> {
+        match self {
+            ToolsetState::Configured {
+                opened_mod: Some(opened_mod),
+                ..
+            } => Ok(opened_mod),
+            _ => Err(Error::new("no mod selected")),
+        }
+    }
+
+    pub fn try_schema_manager(&self) -> Result<&SchemaManager> {
+        match self {
+            ToolsetState::Configured { schema_manager, .. } => Ok(schema_manager),
+            _ => Err(Error::new("schema manager not initialized")),
+        }
+    }
+
+    pub fn try_mod_manager(&self) -> Result<&ModManager> {
+        match self {
+            ToolsetState::Configured { mod_manager, .. } => Ok(mod_manager),
+            _ => Err(Error::new("mod manager not initialized")),
+        }
+    }
+
+    pub fn try_config(&self) -> Result<&ToolsetConfig> {
+        match self {
+            ToolsetState::Configured { config, .. } => Ok(config),
+            _ => Err(Error::new("config not initialized")),
+        }
     }
 }
 

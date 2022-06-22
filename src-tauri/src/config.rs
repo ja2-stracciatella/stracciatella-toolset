@@ -58,9 +58,7 @@ impl ToolsetConfig {
     pub fn path() -> Result<PathBuf> {
         let project_dirs =
             directories::ProjectDirs::from("io", "ja2-stracciatella", "stracciatella-toolset")
-                .ok_or_else(|| {
-                    Error::new("could not determine toolset config directory".to_owned())
-                })?;
+                .ok_or_else(|| Error::new("could not determine toolset config directory"))?;
         let config_dir = project_dirs.config_dir();
 
         Ok(config_dir.join("toolset-config.json"))
@@ -92,7 +90,7 @@ impl ToolsetConfig {
             Ok(config)
         } else {
             Err((
-                Error::new("failed to load full configuration".to_owned()),
+                Error::new("failed to load full configuration"),
                 PartialToolsetConfig::guess(),
             ))
         }

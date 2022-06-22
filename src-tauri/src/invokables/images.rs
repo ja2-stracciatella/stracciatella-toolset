@@ -54,12 +54,12 @@ pub async fn read_image_file(
     file: String,
 ) -> Result<Base64Image> {
     if file.contains("..") {
-        return Err(Error::new("file path cannot contain `..`".to_owned()));
+        return Err(Error::new("file path cannot contain `..`"));
     }
 
     let state = state.read().await;
-    let selected_mod = super::mods::get_selected_mod(&state)?.clone();
-    let path = super::mods::get_mod_data_path(&selected_mod.m, &file);
+    let selected_mod = state.try_selected_mod()?;
+    let path = selected_mod.data_path(&file);
 
     let content: Vec<u8> = if path.exists() {
         let mut f = OpenOptions::new().open(&path).await?;
@@ -80,9 +80,7 @@ pub async fn read_image_file(
     let size = match &stci {
         Stci::Indexed { sub_images, .. } => sub_images
             .get(0)
-            .ok_or_else(|| {
-                Error::new("indexed stci does not have at least one subimage".to_owned())
-            })
+            .ok_or_else(|| Error::new("indexed stci does not have at least one subimage"))
             .map(|s| (u32::from(s.dimensions.0), u32::from(s.dimensions.1))),
         Stci::Rgb { width, height, .. } => Ok((u32::from(*width), u32::from(*height))),
     }?;

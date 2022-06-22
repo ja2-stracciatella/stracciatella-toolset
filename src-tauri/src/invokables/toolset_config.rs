@@ -42,7 +42,7 @@ pub async fn set_toolset_config(
             *state = state::ToolsetState::not_configured(config.config.clone());
         } else {
             let config = config.config.to_full_config().ok_or_else(|| {
-                Error::new("partial flag set to false, but incomplete config".to_owned())
+                Error::new("failed to create full config, but partial flag set to true")
             })?;
 
             // Test toolset config for errors
