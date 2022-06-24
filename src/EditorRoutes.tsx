@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { ReactElement, useCallback } from "react";
 import { stringReferenceTo } from "./components/form/StringReferenceWidget";
 import { JsonForm } from "./components/JsonForm";
 import { JsonItemsForm } from "./components/JsonItemsForm";
@@ -7,109 +7,134 @@ import { Dashboard } from "./components/Dashboard";
 import { MercPreview } from "./components/content/MercPreview";
 import { ItemPreview } from "./components/content/ItemPreview";
 
-export const ROUTES = [
+export interface Route {
+  id: string;
+  label: string;
+  url: string;
+  component: () => ReactElement;
+}
+
+export interface Item {
+  type: "Item";
+  id: string;
+  label: string;
+  component: () => ReactElement;
+}
+
+export interface Submenu {
+  type: "Submenu";
+  id: string;
+  label: string;
+  children: Array<Item | Submenu>;
+}
+
+export type MenuItem = Item | Submenu;
+
+export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
   {
+    type: "Item",
     id: "dashboard",
     label: "Dashboard",
-    url: "/",
     component: Dashboard,
   },
   {
-    id: "ammo-types",
-    label: "Ammo Types",
-    url: "/ammo-types",
-    component: function AmmoTypes() {
-      return <JsonItemsForm file="ammo-types.json" name="internalName" />;
-    },
-  },
-  {
-    id: "army-compositions",
-    label: "Army Compositions",
-    url: "/army-compositions",
-    component: function ArmyCompositions() {
-      return <JsonItemsForm file="army-compositions.json" name="name" />;
-    },
-  },
-  {
-    id: "army-garrison-groups",
-    label: "Army Garrison Groups",
-    url: "/army-garrison-groups",
-    component: function ArmyGarrisonGroups() {
-      const uiSchema = {
-        composition: {
-          "ui:widget": stringReferenceTo("army-compositions.json", "name"),
+    type: "Submenu",
+    id: "army",
+    label: "Army",
+    children: [
+      {
+        type: "Item",
+        id: "ai-policy",
+        label: "Strategic AI Policy",
+        component: function StrategicAIPolicy() {
+          return <JsonForm file="strategic-ai-policy.json" />;
         },
-      };
-      return (
-        <JsonStrategicMapForm
-          file="army-garrison-groups.json"
-          uiSchema={uiSchema}
-        />
-      );
-    },
-  },
-  {
-    id: "army-gun-choice-extended",
-    label: "Army Gun Choice Extended",
-    url: "/army-gun-choice-extended",
-    component: function ArmyGunChoiceExtended() {
-      const uiSchema = {
-        items: {
-          items: {
-            "ui:widget": stringReferenceTo("weapons.json", "internalName"),
-          },
+      },
+      {
+        type: "Item",
+        id: "compositions",
+        label: "Compositions",
+        component: function ArmyCompositions() {
+          return <JsonItemsForm file="army-compositions.json" name="name" />;
         },
-      };
-      return (
-        <JsonForm file="army-gun-choice-extended.json" uiSchema={uiSchema} />
-      );
-    },
-  },
-  {
-    id: "army-gun-choice-normal",
-    label: "Army Gun Choice Normal",
-    url: "/army-gun-choice-normal",
-    component: function ArmyGunChoiceNormal() {
-      const uiSchema = {
-        items: {
-          items: {
-            "ui:widget": stringReferenceTo("weapons.json", "internalName"),
-          },
+      },
+      {
+        type: "Item",
+        id: "garrison-groups",
+        label: "Garrison Groups",
+        component: function ArmyGarrisonGroups() {
+          const uiSchema = {
+            composition: {
+              "ui:widget": stringReferenceTo("army-compositions.json", "name"),
+            },
+          };
+          return (
+            <JsonStrategicMapForm
+              file="army-garrison-groups.json"
+              uiSchema={uiSchema}
+            />
+          );
         },
-      };
-      return (
-        <JsonForm file="army-gun-choice-normal.json" uiSchema={uiSchema} />
-      );
-    },
+      },
+      {
+        type: "Item",
+        id: "gun-choice-extended",
+        label: "Gun Choice Extended",
+        component: function ArmyGunChoiceExtended() {
+          const uiSchema = {
+            items: {
+              items: {
+                "ui:widget": stringReferenceTo("weapons.json", "internalName"),
+              },
+            },
+          };
+          return (
+            <JsonForm
+              file="army-gun-choice-extended.json"
+              uiSchema={uiSchema}
+            />
+          );
+        },
+      },
+      {
+        type: "Item",
+        id: "gun-choice-normal",
+        label: "Gun Choice Normal",
+        component: function ArmyGunChoiceNormal() {
+          const uiSchema = {
+            items: {
+              items: {
+                "ui:widget": stringReferenceTo("weapons.json", "internalName"),
+              },
+            },
+          };
+          return (
+            <JsonForm file="army-gun-choice-normal.json" uiSchema={uiSchema} />
+          );
+        },
+      },
+      {
+        type: "Item",
+        id: "patrol-groups",
+        label: "Patrol Groups",
+        component: function ArmyPatrolGroups() {
+          const getPatrolGroupName = useCallback((item: any) => {
+            return item.points.join(", ") as string;
+          }, []);
+          return (
+            <JsonItemsForm
+              file="army-patrol-groups.json"
+              name={getPatrolGroupName}
+            />
+          );
+        },
+      },
+    ],
   },
   {
-    id: "army-patrol-groups",
-    label: "Army Patrol Groups",
-    url: "/army-patrol-groups",
-    component: function ArmyPatrolGroups() {
-      const getPatrolGroupName = useCallback((item: any) => {
-        return item.points.join(", ") as string;
-      }, []);
-      return (
-        <JsonItemsForm
-          file="army-patrol-groups.json"
-          name={getPatrolGroupName}
-        />
-      );
-    },
-  },
-  {
-    id: "calibres",
-    label: "Calibres",
-    url: "/calibres",
-    component: function Calibres() {
-      return <JsonItemsForm file="calibres.json" name="internalName" />;
-    },
-  },
-  {
+    type: "Item",
     id: "dealers",
     label: "Dealers",
-    url: "/dealers",
     component: function Dealers() {
       const preview = useCallback(
         (item: any) => <MercPreview profile={item.profile} />,
@@ -121,143 +146,209 @@ export const ROUTES = [
     },
   },
   {
+    type: "Item",
     id: "game",
     label: "Game",
-    url: "/game",
     component: function Game() {
       return <JsonForm file="game.json" />;
     },
   },
   {
+    type: "Item",
     id: "imp",
     label: "IMP",
-    url: "/imp",
     component: function Imp() {
       return <JsonForm file="imp.json" />;
     },
   },
   {
+    type: "Submenu",
     id: "items",
     label: "Items",
-    url: "/items",
-    component: function Items() {
-      const preview = useCallback(
-        (item: any) => (
-          <ItemPreview inventoryGraphics={item.inventoryGraphics} />
-        ),
-        []
-      );
-      return (
-        <JsonItemsForm
-          file="items.json"
-          name="internalName"
-          preview={preview}
-        />
-      );
-    },
+    children: [
+      {
+        type: "Item",
+        id: "ammo-types",
+        label: "Ammo Types",
+        component: function AmmoTypes() {
+          return <JsonItemsForm file="ammo-types.json" name="internalName" />;
+        },
+      },
+      {
+        type: "Item",
+        id: "calibres",
+        label: "Calibres",
+        component: function Calibres() {
+          return <JsonItemsForm file="calibres.json" name="internalName" />;
+        },
+      },
+      {
+        type: "Item",
+        id: "items",
+        label: "Items",
+        component: function Items() {
+          const preview = useCallback(
+            (item: any) => (
+              <ItemPreview inventoryGraphics={item.inventoryGraphics} />
+            ),
+            []
+          );
+          return (
+            <JsonItemsForm
+              file="items.json"
+              name="internalName"
+              preview={preview}
+            />
+          );
+        },
+      },
+      {
+        type: "Item",
+        id: "magazines",
+        label: "Magazines",
+        component: function Magazines() {
+          const preview = useCallback(
+            (item: any) => (
+              <ItemPreview inventoryGraphics={item.inventoryGraphics} />
+            ),
+            []
+          );
+          return (
+            <JsonItemsForm
+              file="magazines.json"
+              name="internalName"
+              preview={preview}
+            />
+          );
+        },
+      },
+      {
+        type: "Item",
+        id: "tactical-map-item-replacements",
+        label: "Tactical Map Item Replacements",
+        component: function TacticalMapItemReplacements() {
+          const getItemReplacementName = useCallback((item: any) => {
+            return `${item.from} to ${item.to}`;
+          }, []);
+          return (
+            <JsonItemsForm
+              file="tactical-map-item-replacements.json"
+              name={getItemReplacementName}
+            />
+          );
+        },
+      },
+      {
+        type: "Item",
+        id: "weapons",
+        label: "Weapons",
+        component: function Weapons() {
+          const preview = useCallback(
+            (item: any) => (
+              <ItemPreview inventoryGraphics={item.inventoryGraphics} />
+            ),
+            []
+          );
+          return (
+            <JsonItemsForm
+              file="weapons.json"
+              name="internalName"
+              preview={preview}
+            />
+          );
+        },
+      },
+    ],
   },
   {
+    type: "Item",
     id: "loading-screens-mapping",
     label: "Loading Screens Mapping",
-    url: "/loading-screens-mapping",
     component: function LoadingScreensMapping() {
       return <JsonStrategicMapForm file="loading-screens-mapping.json" />;
     },
   },
   {
+    type: "Item",
     id: "loading-screens",
     label: "Loading Screens",
-    url: "/loading-screens",
     component: function LoadingScreens() {
       return <JsonItemsForm file="loading-screens.json" name="internalName" />;
     },
   },
   {
-    id: "magazines",
-    label: "Magazines",
-    url: "/magazines",
-    component: function Magazines() {
-      const preview = useCallback(
-        (item: any) => (
-          <ItemPreview inventoryGraphics={item.inventoryGraphics} />
-        ),
-        []
-      );
-      return (
-        <JsonItemsForm
-          file="magazines.json"
-          name="internalName"
-          preview={preview}
-        />
-      );
-    },
+    type: "Submenu",
+    id: "mercs",
+    label: "Mercs",
+    children: [
+      {
+        type: "Item",
+        id: "merc-listings",
+        label: "M.E.R.C. Listings",
+        component: function MercsMERCListings() {
+          const preview = useCallback(
+            (item: any) => <MercPreview profile={item.profile} />,
+            []
+          );
+          return (
+            <JsonItemsForm
+              file="mercs-MERC-listings.json"
+              name="profile"
+              preview={preview}
+            />
+          );
+        },
+      },
+      {
+        type: "Item",
+        id: "profiles",
+        label: "Profiles",
+        component: function MercsProfileInfo() {
+          const preview = useCallback(
+            (item: any) => <MercPreview profile={item.internalName} />,
+            []
+          );
+          return (
+            <JsonItemsForm
+              file="mercs-profile-info.json"
+              name="internalName"
+              preview={preview}
+            />
+          );
+        },
+      },
+      {
+        type: "Item",
+        id: "rpc-small-faces",
+        label: "RPC Small Faces",
+        component: function MercsRpcSmallFaces() {
+          const preview = useCallback(
+            (item: any) => <MercPreview profile={item.profile} />,
+            []
+          );
+          return (
+            <JsonItemsForm
+              file="mercs-rpc-small-faces.json"
+              name="profile"
+              preview={preview}
+            />
+          );
+        },
+      },
+    ],
   },
   {
-    id: "mercs-MERC-listings",
-    label: "M.E.R.C. Listings",
-    url: "/mercs-MERC-listings",
-    component: function MercsMERCListings() {
-      const preview = useCallback(
-        (item: any) => <MercPreview profile={item.profile} />,
-        []
-      );
-      return (
-        <JsonItemsForm
-          file="mercs-MERC-listings.json"
-          name="profile"
-          preview={preview}
-        />
-      );
-    },
-  },
-  {
-    id: "mercs-profile-info",
-    label: "Mercs Profile Info",
-    url: "/mercs-profile-info",
-    component: function MercsProfileInfo() {
-      const preview = useCallback(
-        (item: any) => <MercPreview profile={item.internalName} />,
-        []
-      );
-      return (
-        <JsonItemsForm
-          file="mercs-profile-info.json"
-          name="internalName"
-          preview={preview}
-        />
-      );
-    },
-  },
-  {
-    id: "mercs-rpc-small-faces",
-    label: "Mercs RPC Small Faces",
-    url: "/mercs-rpc-small-faces",
-    component: function MercsRpcSmallFaces() {
-      const preview = useCallback(
-        (item: any) => <MercPreview profile={item.profile} />,
-        []
-      );
-      return (
-        <JsonItemsForm
-          file="mercs-rpc-small-faces.json"
-          name="profile"
-          preview={preview}
-        />
-      );
-    },
-  },
-  {
+    type: "Item",
     id: "music",
     label: "Music",
-    url: "/music",
     component: function Music() {
       return <JsonForm file="music.json" />;
     },
   },
   {
+    type: "Item",
     id: "shipping-destinations",
     label: "Shipping Destinations",
-    url: "/shipping-destinations",
     component: function ShippingDestinations() {
       return (
         <JsonItemsForm file="shipping-destinations.json" name="locationId" />
@@ -265,180 +356,169 @@ export const ROUTES = [
     },
   },
   {
-    id: "strategic-ai-policy",
-    label: "Strategic AI Policy",
-    url: "/strategic-ai-policy",
-    component: function StrategicAIPolicy() {
-      return <JsonForm file="strategic-ai-policy.json" />;
-    },
+    type: "Submenu",
+    id: "strategic-map",
+    label: "Strategic Map",
+    children: [
+      {
+        type: "Item",
+        id: "bloodcat-placements",
+        label: "Bloodcat Placements",
+        component: function StrategicBloodcatPlacements() {
+          return (
+            <JsonStrategicMapForm file="strategic-bloodcat-placements.json" />
+          );
+        },
+      },
+      {
+        type: "Item",
+        id: "bloodcat-spawns",
+        label: "Bloodcat Spawns",
+        component: function StrategicBloodcatSpawns() {
+          return <JsonStrategicMapForm file="strategic-bloodcat-spawns.json" />;
+        },
+      },
+      {
+        type: "Item",
+        id: "fact-params",
+        label: "Fact Params",
+        component: function StrategicFactParams() {
+          return (
+            <JsonItemsForm file="strategic-fact-params.json" name="fact" />
+          );
+        },
+      },
+      {
+        type: "Item",
+        id: "cache-sectors",
+        label: "Weapon Cache Sectors",
+        component: function StrategicMapCacheSectors() {
+          return <JsonForm file="strategic-map-cache-sectors.json" />;
+        },
+      },
+      {
+        type: "Item",
+        id: "creature-lairs",
+        label: "Creature Lairs",
+        component: function StrategicMapCreatureLairs() {
+          const getCreatureLairName = useCallback((item: any) => {
+            return item.entranceSector[0];
+          }, []);
+          return (
+            <JsonItemsForm
+              file="strategic-map-creature-lairs.json"
+              name={getCreatureLairName}
+            />
+          );
+        },
+      },
+      {
+        type: "Item",
+        id: "movement-costs",
+        label: "Movement Costs",
+        component: function StrategicMapMovementCosts() {
+          return <JsonForm file="strategic-map-movement-costs.json" />;
+        },
+      },
+      {
+        type: "Item",
+        id: "npc-placements",
+        label: "NPC Placements",
+        component: function StrategicMapNpcPlacements() {
+          const preview = useCallback(
+            (item: any) => <MercPreview profile={item.profile} />,
+            []
+          );
+          return (
+            <JsonItemsForm
+              file="strategic-map-npc-placements.json"
+              name="profileId"
+              preview={preview}
+            />
+          );
+        },
+      },
+      {
+        type: "Item",
+        id: "sam-sites-air-control",
+        label: "Sam Sites Air Control",
+        component: function StrategicMapSamSitesAirControl() {
+          return <JsonForm file="strategic-map-sam-sites-air-control.json" />;
+        },
+      },
+      {
+        type: "Item",
+        id: "sam-sites",
+        label: "Sam Sites",
+        component: function StrategicMapSamSites() {
+          return <JsonStrategicMapForm file="strategic-map-sam-sites.json" />;
+        },
+      },
+      {
+        type: "Item",
+        id: "secrets",
+        label: "Secrets",
+        component: function StrategicMapSecrets() {
+          return <JsonStrategicMapForm file="strategic-map-secrets.json" />;
+        },
+      },
+      {
+        type: "Item",
+        id: "sectors-descriptions",
+        label: "Sector Descriptions",
+        component: function StrategicMapSectorsDescriptions() {
+          return (
+            <JsonStrategicMapForm file="strategic-map-sectors-descriptions.json" />
+          );
+        },
+      },
+      {
+        type: "Item",
+        id: "towns",
+        label: "Towns",
+        component: function StrategicMapTowns() {
+          return (
+            <JsonItemsForm file="strategic-map-towns.json" name="townId" />
+          );
+        },
+      },
+      {
+        type: "Item",
+        id: "traversibility-ratings",
+        label: "Traversibility Ratings",
+        component: function StrategicMapTraversibilityRatings() {
+          return <JsonForm file="strategic-map-traversibility-ratings.json" />;
+        },
+      },
+      {
+        type: "Item",
+        id: "underground-sectors",
+        label: "Underground Sectors",
+        component: function StrategicMapUndergroundSectors() {
+          return (
+            <JsonStrategicMapForm file="strategic-map-underground-sectors.json" />
+          );
+        },
+      },
+      {
+        type: "Item",
+        id: "mines",
+        label: "Mines",
+        component: function StrategicMines() {
+          return (
+            <JsonStrategicMapForm
+              file="strategic-mines.json"
+              property="entranceSector"
+            />
+          );
+        },
+      },
+    ],
   },
   {
-    id: "strategic-bloodcat-placements",
-    label: "Strategic Bloodcat Placements",
-    url: "/strategic-bloodcat-placements",
-    component: function StrategicBloodcatPlacements() {
-      return <JsonStrategicMapForm file="strategic-bloodcat-placements.json" />;
-    },
-  },
-  {
-    id: "strategic-bloodcat-spawns",
-    label: "Strategic Bloodcat Spawns",
-    url: "/strategic-bloodcat-spawns",
-    component: function StrategicBloodcatSpawns() {
-      return <JsonStrategicMapForm file="strategic-bloodcat-spawns.json" />;
-    },
-  },
-  {
-    id: "strategic-fact-params",
-    label: "Strategic Fact Params",
-    url: "/strategic-fact-params",
-    component: function StrategicFactParams() {
-      return <JsonItemsForm file="strategic-fact-params.json" name="fact" />;
-    },
-  },
-  {
-    id: "strategic-map-cache-sectors",
-    label: "Strategic Map Cache Sectors",
-    url: "/strategic-map-cache-sectors",
-    component: function StrategicMapCacheSectors() {
-      return <JsonForm file="strategic-map-cache-sectors.json" />;
-    },
-  },
-  {
-    id: "strategic-map-creature-lairs",
-    label: "Strategic Map Creature Lairs",
-    url: "/strategic-map-creature-lairs",
-    component: function StrategicMapCreatureLairs() {
-      const getCreatureLairName = useCallback((item: any) => {
-        return item.entranceSector[0];
-      }, []);
-      return (
-        <JsonItemsForm
-          file="strategic-map-creature-lairs.json"
-          name={getCreatureLairName}
-        />
-      );
-    },
-  },
-  {
-    id: "strategic-map-movement-costs",
-    label: "Strategic Map Movement Costs",
-    url: "/strategic-map-movement-costs",
-    component: function StrategicMapMovementCosts() {
-      return <JsonForm file="strategic-map-movement-costs.json" />;
-    },
-  },
-  {
-    id: "strategic-map-npc-placements",
-    label: "Strategic Map NPC Placements",
-    url: "/strategic-map-npc-placements",
-    component: function StrategicMapNpcPlacements() {
-      const preview = useCallback(
-        (item: any) => <MercPreview profile={item.profile} />,
-        []
-      );
-      return (
-        <JsonItemsForm
-          file="strategic-map-npc-placements.json"
-          name="profileId"
-          preview={preview}
-        />
-      );
-    },
-  },
-  {
-    id: "strategic-map-sam-sites-air-control",
-    label: "Strategic Map Sam Sites Air Control",
-    url: "/strategic-map-sam-sites-air-control",
-    component: function StrategicMapSamSitesAirControl() {
-      return <JsonForm file="strategic-map-sam-sites-air-control.json" />;
-    },
-  },
-  {
-    id: "strategic-map-sam-sites",
-    label: "Strategic Map Sam Sites",
-    url: "/strategic-map-sam-sites",
-    component: function StrategicMapSamSites() {
-      return <JsonStrategicMapForm file="strategic-map-sam-sites.json" />;
-    },
-  },
-  {
-    id: "strategic-map-secrets",
-    label: "Strategic Map Secrets",
-    url: "/strategic-map-secrets",
-    component: function StrategicMapSecrets() {
-      return <JsonStrategicMapForm file="strategic-map-secrets.json" />;
-    },
-  },
-  {
-    id: "strategic-map-sectors-descriptions",
-    label: "Strategic Map Sector Descriptions",
-    url: "/strategic-map-sectors-descriptions",
-    component: function StrategicMapSectorsDescriptions() {
-      return (
-        <JsonStrategicMapForm file="strategic-map-sectors-descriptions.json" />
-      );
-    },
-  },
-  {
-    id: "strategic-map-towns",
-    label: "Strategic Map Towns",
-    url: "/strategic-map-towns",
-    component: function StrategicMapTowns() {
-      return <JsonItemsForm file="strategic-map-towns.json" name="townId" />;
-    },
-  },
-  {
-    id: "strategic-map-traversibility-ratings",
-    label: "Strategic Map Traversibility Ratings",
-    url: "/strategic-map-traversibility-ratings",
-    component: function StrategicMapTraversibilityRatings() {
-      return <JsonForm file="strategic-map-traversibility-ratings.json" />;
-    },
-  },
-  {
-    id: "strategic-map-underground-sectors",
-    label: "Strategic Map Underground Sectors",
-    url: "/strategic-map-underground-sectors",
-    component: function StrategicMapUndergroundSectors() {
-      return (
-        <JsonStrategicMapForm file="strategic-map-underground-sectors.json" />
-      );
-    },
-  },
-  {
-    id: "strategic-mines",
-    label: "Strategic Mines",
-    url: "/strategic-mines",
-    component: function StrategicMines() {
-      return (
-        <JsonStrategicMapForm
-          file="strategic-mines.json"
-          property="entranceSector"
-        />
-      );
-    },
-  },
-  {
-    id: "tactical-map-item-replacements",
-    label: "Tactical Map Item Replacements",
-    url: "/tactical-map-item-replacements",
-    component: function TacticalMapItemReplacements() {
-      const getItemReplacementName = useCallback((item: any) => {
-        return `${item.from} to ${item.to}`;
-      }, []);
-      return (
-        <JsonItemsForm
-          file="tactical-map-item-replacements.json"
-          name={getItemReplacementName}
-        />
-      );
-    },
-  },
-  {
+    type: "Item",
     id: "tactical-npc-action-params",
     label: "Tactical Npc Action Params",
-    url: "/tactical-npc-action-params",
     component: function TacticalNpcActionParams() {
       return (
         <JsonItemsForm
@@ -449,9 +529,9 @@ export const ROUTES = [
     },
   },
   {
+    type: "Item",
     id: "vehicles",
     label: "Vehicles",
-    url: "/vehicles",
     component: function Vehicles() {
       const preview = useCallback(
         (item: any) => <MercPreview profile={item.profile} />,
@@ -462,24 +542,26 @@ export const ROUTES = [
       );
     },
   },
-  {
-    id: "weapons",
-    label: "Weapons",
-    url: "/weapons",
-    component: function Weapons() {
-      const preview = useCallback(
-        (item: any) => (
-          <ItemPreview inventoryGraphics={item.inventoryGraphics} />
-        ),
-        []
-      );
-      return (
-        <JsonItemsForm
-          file="weapons.json"
-          name="internalName"
-          preview={preview}
-        />
-      );
-    },
-  },
 ];
+
+const menuItemToRoutes =
+  (parentPath: string) =>
+  (item: MenuItem): Array<Route> => {
+    if (item.type === "Item") {
+      return [
+        {
+          id: item.id,
+          label: item.label,
+          url: `${parentPath}/${item.id}`,
+          component: item.component,
+        },
+      ];
+    } else {
+      const mapFn = menuItemToRoutes(`${parentPath}/${item.id}`);
+      return item.children.flatMap(mapFn);
+    }
+  };
+
+export const ROUTES: Readonly<Array<Readonly<Route>>> = MENU.flatMap(
+  menuItemToRoutes("")
+);
