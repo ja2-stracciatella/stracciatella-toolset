@@ -6,6 +6,7 @@ import { useJsonWithSchema } from "../hooks/useJsonWithSchema";
 import { JsonSchemaForm } from "./JsonSchemaForm";
 import { FullSizeLoader } from "./FullSizeLoader";
 import "./JsonItemsForm.css";
+import { UiSchema } from "@rjsf/core";
 
 const { Panel } = Collapse;
 
@@ -13,9 +14,15 @@ export interface JsonItemsFormProps {
   file: string;
   name: string | ((item: any) => string);
   preview?: (item: any) => JSX.Element;
+  uiSchema?: UiSchema;
 }
 
-export function JsonItemsForm({ file, name, preview }: JsonItemsFormProps) {
+export function JsonItemsForm({
+  file,
+  name,
+  preview,
+  uiSchema,
+}: JsonItemsFormProps) {
   const { data, error } = useJsonWithSchema(file);
   const itemsSchema = useMemo(() => {
     if (data) {
@@ -66,6 +73,7 @@ export function JsonItemsForm({ file, name, preview }: JsonItemsFormProps) {
                 idPrefix={index.toString()}
                 schema={itemsSchema}
                 content={item}
+                uiSchema={uiSchema}
               />
             </div>
           </Panel>
@@ -73,7 +81,7 @@ export function JsonItemsForm({ file, name, preview }: JsonItemsFormProps) {
       });
     }
     return null;
-  }, [data, itemsSchema, name, preview]);
+  }, [data, itemsSchema, name, preview, uiSchema]);
 
   if (error) {
     return <Alert type="error" message={error.toString()} />;

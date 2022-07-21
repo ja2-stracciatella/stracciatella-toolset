@@ -1,4 +1,4 @@
-import { ReactElement, useCallback } from "react";
+import { ReactElement, useCallback, useMemo } from "react";
 import { stringReferenceTo } from "./components/form/StringReferenceWidget";
 import { JsonForm } from "./components/JsonForm";
 import { JsonItemsForm } from "./components/JsonItemsForm";
@@ -6,6 +6,8 @@ import { JsonStrategicMapForm } from "./components/StrategicMapForm";
 import { Dashboard } from "./components/Dashboard";
 import { MercPreview } from "./components/content/MercPreview";
 import { ItemPreview } from "./components/content/ItemPreview";
+import { resourceReference } from "./components/form/ResourceReferenceWidget";
+import { ResourceType } from "./lib/listDir";
 
 export interface Route {
   id: string;
@@ -63,11 +65,17 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: "garrison-groups",
         label: "Garrison Groups",
         component: function ArmyGarrisonGroups() {
-          const uiSchema = {
-            composition: {
-              "ui:widget": stringReferenceTo("army-compositions.json", "name"),
-            },
-          };
+          const uiSchema = useMemo(
+            () => ({
+              composition: {
+                "ui:widget": stringReferenceTo(
+                  "army-compositions.json",
+                  "name"
+                ),
+              },
+            }),
+            []
+          );
           return (
             <JsonStrategicMapForm
               file="army-garrison-groups.json"
@@ -81,13 +89,19 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: "gun-choice-extended",
         label: "Gun Choice Extended",
         component: function ArmyGunChoiceExtended() {
-          const uiSchema = {
-            items: {
+          const uiSchema = useMemo(
+            () => ({
               items: {
-                "ui:widget": stringReferenceTo("weapons.json", "internalName"),
+                items: {
+                  "ui:widget": stringReferenceTo(
+                    "weapons.json",
+                    "internalName"
+                  ),
+                },
               },
-            },
-          };
+            }),
+            []
+          );
           return (
             <JsonForm
               file="army-gun-choice-extended.json"
@@ -101,13 +115,19 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: "gun-choice-normal",
         label: "Gun Choice Normal",
         component: function ArmyGunChoiceNormal() {
-          const uiSchema = {
-            items: {
+          const uiSchema = useMemo(
+            () => ({
               items: {
-                "ui:widget": stringReferenceTo("weapons.json", "internalName"),
+                items: {
+                  "ui:widget": stringReferenceTo(
+                    "weapons.json",
+                    "internalName"
+                  ),
+                },
               },
-            },
-          };
+            }),
+            []
+          );
           return (
             <JsonForm file="army-gun-choice-normal.json" uiSchema={uiSchema} />
           );
@@ -179,7 +199,25 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: "calibres",
         label: "Calibres",
         component: function Calibres() {
-          return <JsonItemsForm file="calibres.json" name="internalName" />;
+          const uiSchema = useMemo(
+            () => ({
+              sound: {
+                "ui:widget": resourceReference(ResourceType.Sound),
+              },
+              silencedSound: {
+                "ui:widget": resourceReference(ResourceType.Sound),
+              },
+            }),
+            []
+          );
+
+          return (
+            <JsonItemsForm
+              file="calibres.json"
+              name="internalName"
+              uiSchema={uiSchema}
+            />
+          );
         },
       },
       {
@@ -249,11 +287,24 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             ),
             []
           );
+          const uiSchema = useMemo(
+            () => ({
+              sound: {
+                "ui:widget": resourceReference(ResourceType.Sound),
+              },
+              silencedSound: {
+                "ui:widget": resourceReference(ResourceType.Sound),
+              },
+            }),
+            []
+          );
+
           return (
             <JsonItemsForm
               file="weapons.json"
               name="internalName"
               preview={preview}
+              uiSchema={uiSchema}
             />
           );
         },
@@ -342,7 +393,33 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     id: "music",
     label: "Music",
     component: function Music() {
-      return <JsonForm file="music.json" />;
+      const uiSchema = useMemo(
+        () =>
+          Object.fromEntries(
+            [
+              "main_menu",
+              "laptop",
+              "tactical",
+              "tactical_enemypresent",
+              "tactical_battle",
+              "tactical_creature",
+              "tactical_creature_enemypresent",
+              "tactical_creature_battle",
+              "tactical_victory",
+              "tactical_defeat",
+            ].map((k) => [
+              k,
+              {
+                items: {
+                  "ui:widget": resourceReference(ResourceType.Sound),
+                },
+              },
+            ])
+          ),
+        []
+      );
+
+      return <JsonForm file="music.json" uiSchema={uiSchema} />;
     },
   },
   {

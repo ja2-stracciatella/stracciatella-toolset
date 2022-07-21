@@ -2,15 +2,15 @@ import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 import { invokeWithSchema } from "../lib/invoke";
 
-const ImageFile = z.string();
+const imageFileSchema = z.string();
 
-type ImageFile = z.infer<typeof ImageFile>;
+type ImageFile = z.infer<typeof imageFileSchema>;
 
 export function useImageFile(file: string | null) {
   const [error, setError] = useState<Error | null>(null);
   const [state, setState] = useState<ImageFile | null>(null);
   const fetch = useCallback(async (file: string) => {
-    const state = await invokeWithSchema(ImageFile, "read_image_file", {
+    const state = await invokeWithSchema(imageFileSchema, "read_image_file", {
       file,
     });
     setState(state);

@@ -4,7 +4,7 @@ import { Layout, Menu, Typography } from "antd";
 
 import { useMods } from "../state/mods";
 import "./EditorLayout.css";
-import { Route, MENU, MenuItem } from "../EditorRoutes";
+import { MENU, MenuItem } from "../EditorRoutes";
 import { ItemType } from "antd/lib/menu/hooks/useItems";
 
 const { Header, Sider } = Layout;

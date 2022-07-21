@@ -3045,7 +3045,6 @@ dependencies = [
 [[package]]
 name = "stracciatella"
 version = "0.1.0"
-source = "git+https://github.com/ja2-stracciatella/ja2-stracciatella.git?rev=9b86961a0f79e1ed05660dc065c2da02d24bd019#9b86961a0f79e1ed05660dc065c2da02d24bd019"
 dependencies = [
  "android_logger",
  "bitflags",

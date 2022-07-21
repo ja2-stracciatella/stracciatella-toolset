@@ -47,7 +47,9 @@ fn main() {
             invokables::mods::set_selected_mod,
             invokables::json::open_json_file_with_schema,
             invokables::json::persist_json_file,
-            invokables::images::read_image_file
+            invokables::images::read_image_file,
+            invokables::resources::list_resources,
+            invokables::sounds::read_sound,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

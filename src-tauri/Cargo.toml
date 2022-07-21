@@ -26,7 +26,8 @@ log = "0.4"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 simplelog = "0.11"
-stracciatella = { git = "https://github.com/ja2-stracciatella/ja2-stracciatella.git", rev = "9b86961a0f79e1ed05660dc065c2da02d24bd019" }
+# stracciatella = { git = "https://github.com/ja2-stracciatella/ja2-stracciatella.git", rev = "9b86961a0f79e1ed05660dc065c2da02d24bd019" }
+stracciatella = { path = "../../ja2-stracciatella/rust/stracciatella" }
 tauri = { version = "1.0.0", features = ["api-all"] }
 
 [features]
