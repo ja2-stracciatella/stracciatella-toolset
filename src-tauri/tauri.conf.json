@@ -30,6 +30,9 @@
       "deb": {
         "depends": []
       },
+      "appimage": {
+        "bundleMediaFramework": true
+      },
       "macOS": {
         "frameworks": [],
         "minimumSystemVersion": "",
