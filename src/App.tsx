@@ -10,6 +10,7 @@ import { ToolsetConfigProvider } from "./state/toolset";
 import { WithToolsetConfig } from "./components/WithToolsetConfig";
 import { WithOpenMod } from "./components/WithOpenMod";
 import { EditorLayout } from "./components/EditorLayout";
+import { FilesProvider } from "./state/files";
 
 function App() {
   const routes = useMemo(() => {
@@ -21,15 +22,17 @@ function App() {
     <div className="app-root">
       <ModsProvider>
         <ToolsetConfigProvider>
-          <WithToolsetConfig>
-            <WithOpenMod>
-              <BrowserRouter>
-                <EditorLayout>
-                  <Routes>{routes}</Routes>
-                </EditorLayout>
-              </BrowserRouter>
-            </WithOpenMod>
-          </WithToolsetConfig>
+          <FilesProvider>
+            <WithToolsetConfig>
+              <WithOpenMod>
+                <BrowserRouter>
+                  <EditorLayout>
+                    <Routes>{routes}</Routes>
+                  </EditorLayout>
+                </BrowserRouter>
+              </WithOpenMod>
+            </WithToolsetConfig>
+          </FilesProvider>
         </ToolsetConfigProvider>
       </ModsProvider>
     </div>

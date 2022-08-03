@@ -98,9 +98,7 @@ export function EditorLayout({ children }: LayoutProps) {
         <Sider width="300px" className="editor-layout-sidebar">
           <SideMenu />
         </Sider>
-        <Layout>
-          <div className="editor-layout-content">{children}</div>
-        </Layout>
+        <Layout>{children}</Layout>
       </Layout>
     </Layout>
   );

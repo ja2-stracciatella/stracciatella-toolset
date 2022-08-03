@@ -7,6 +7,7 @@ import { FullSizeLoader } from "./FullSizeLoader";
 import { StrategicMap } from "./content/StrategicMap";
 import { JsonSchemaForm } from "./JsonSchemaForm";
 import { UiSchema } from "@rjsf/core";
+import { EditorContent } from "./EditorContent";
 
 export interface StrategicMapFormProps {
   file: string;
@@ -27,10 +28,14 @@ export function JsonStrategicMapForm({
   property = "sector",
   uiSchema,
 }: StrategicMapFormProps) {
-  const { data, error } = useJsonWithSchema(file);
+  const {
+    schema: origSchema,
+    content: origContent,
+    error,
+  } = useJsonWithSchema(file);
   const { schema, content, sectorsWithContent, title, description } =
     useMemo((): ReadySchema => {
-      if (!data) {
+      if (!origContent) {
         return {
           schema: null,
           content: null,
@@ -40,15 +45,15 @@ export function JsonStrategicMapForm({
         };
       }
       return {
-        title: data.schema.items.title ?? file,
-        description: data.schema.items.description,
-        schema: data.schema.items,
-        content: data.content,
-        sectorsWithContent: data.content.map((d: any) =>
+        title: origSchema.items.title ?? file,
+        description: origSchema.items.description,
+        schema: origSchema.items,
+        content: origContent,
+        sectorsWithContent: origContent.map((d: any) =>
           d[property].toLowerCase()
         ),
       };
-    }, [data, file, property]);
+    }, [file, origContent, origSchema, property]);
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
   const onSectorClick = useCallback(
     (sectorId: string) => {
@@ -77,7 +82,7 @@ export function JsonStrategicMapForm({
   }
 
   return (
-    <div>
+    <EditorContent path={file}>
       <Space direction="horizontal" align="start" size="large">
         <StrategicMap
           highlightedSectorIds={sectorsWithContent}
@@ -91,6 +96,6 @@ export function JsonStrategicMapForm({
           {c}
         </div>
       </Space>
-    </div>
+    </EditorContent>
   );
 }

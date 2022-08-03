@@ -19,11 +19,3 @@
 .editor-layout .editor-layout-sidebar {
     overflow-y: scroll;
 }
-
-.editor-layout .editor-layout-content {
-    background: white;
-    margin: 20px;
-    padding: 20px;
-    overflow-y: auto;
-    height: calc(100% - 40px);
-}

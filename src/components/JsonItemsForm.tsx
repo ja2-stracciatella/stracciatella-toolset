@@ -1,14 +1,70 @@
 import ReactMarkdown from "react-markdown";
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Alert, Collapse, Space, Typography } from "antd";
 
-import { useJsonWithSchema } from "../hooks/useJsonWithSchema";
 import { JsonSchemaForm } from "./JsonSchemaForm";
 import { FullSizeLoader } from "./FullSizeLoader";
 import "./JsonItemsForm.css";
-import { UiSchema } from "@rjsf/core";
+import { IChangeEvent, UiSchema } from "@rjsf/core";
+import { useModifyableJsonWithSchema } from "../state/files";
+import { EditorContent } from "./EditorContent";
 
-const { Panel } = Collapse;
+interface JsonItemFormProps {
+  name: string | ((item: any) => string);
+  preview?: (item: any) => JSX.Element;
+  schema: any;
+  uiSchema?: UiSchema;
+  index: number;
+  item: any;
+  onItemChange: (index: number, ev: IChangeEvent<any>) => unknown;
+}
+
+function JsonItemForm({
+  name,
+  preview,
+  schema,
+  uiSchema,
+  index,
+  item,
+  onItemChange,
+}: JsonItemFormProps) {
+  const [isCollapsed, setCollapsed] = useState(true);
+  const label = useMemo(
+    () => (typeof name === "string" ? item[name] : name(item)),
+    [item, name]
+  );
+  const p = useMemo(() => (preview ? preview(item) : null), [item, preview]);
+  const header = useMemo(
+    () => (
+      <Space direction="horizontal">
+        {p}
+        {label}
+      </Space>
+    ),
+    [label, p]
+  );
+  const onPanelChange = useCallback((v) => {
+    setCollapsed(v.length === 0);
+  }, []);
+
+  return (
+    <Collapse onChange={onPanelChange}>
+      <Collapse.Panel key={index} header={header}>
+        <div className="json-items-form-form">
+          {isCollapsed ? null : (
+            <JsonSchemaForm
+              idPrefix={index.toString()}
+              schema={schema}
+              content={item}
+              uiSchema={uiSchema}
+              onChange={(v) => onItemChange(index, v)}
+            />
+          )}
+        </div>
+      </Collapse.Panel>
+    </Collapse>
+  );
+}
 
 export interface JsonItemsFormProps {
   file: string;
@@ -23,65 +79,49 @@ export function JsonItemsForm({
   preview,
   uiSchema,
 }: JsonItemsFormProps) {
-  const { data, error } = useJsonWithSchema(file);
+  const { content, schema, error, fileChanged } =
+    useModifyableJsonWithSchema(file);
   const itemsSchema = useMemo(() => {
-    if (data) {
+    if (schema) {
       return {
-        ...data.schema.items,
+        ...schema.items,
         // Title and description are not necessary to render within an item
         title: undefined,
         description: undefined,
       };
     }
     return null;
-  }, [data]);
+  }, [schema]);
   const title = useMemo(() => {
-    if (data) {
-      return data.schema.title ?? file;
+    if (!schema) {
+      return "";
     }
-    return "";
-  }, [data, file]);
+    return schema.title ?? file;
+  }, [schema, file]);
   const description = useMemo(() => {
-    if (data) {
-      const description = [
-        data.schema.items.description,
-        data.schema.description,
-      ]
-        .filter((v) => !!v)
-        .join("\n\n");
-      return description;
+    if (!schema) {
+      return "";
     }
-    return "";
-  }, [data]);
-  const items = useMemo(() => {
-    if (data) {
-      return data.content.map((item: any, index: number) => {
-        const label = typeof name === "string" ? item[name] : name(item);
-        const p = preview ? preview(item) : null;
-
-        const header = (
-          <Space direction="horizontal">
-            {p}
-            {label}
-          </Space>
-        );
-
-        return (
-          <Panel key={index} header={header}>
-            <div className="json-items-form-form">
-              <JsonSchemaForm
-                idPrefix={index.toString()}
-                schema={itemsSchema}
-                content={item}
-                uiSchema={uiSchema}
-              />
-            </div>
-          </Panel>
-        );
+    const description = [schema.items.description, schema.description]
+      .filter((v) => !!v)
+      .join("\n\n");
+    return description;
+  }, [schema]);
+  const onItemChange = useCallback(
+    (index: number, ev: IChangeEvent<any>) => {
+      if (!content) {
+        return;
+      }
+      const newData = content.map((v: any, idx: number) => {
+        if (idx === index) {
+          return ev.formData;
+        }
+        return v;
       });
-    }
-    return null;
-  }, [data, itemsSchema, name, preview, uiSchema]);
+      fileChanged(newData);
+    },
+    [content, fileChanged]
+  );
 
   if (error) {
     return <Alert type="error" message={error.toString()} />;
@@ -92,12 +132,27 @@ export function JsonItemsForm({
   }
 
   return (
-    <div>
+    <EditorContent path={file}>
       <Typography.Title level={2}>{title}</Typography.Title>
       <div>
         <ReactMarkdown>{description}</ReactMarkdown>
       </div>
-      <Collapse bordered={false}>{items}</Collapse>
-    </div>
+      <Space direction="vertical" style={{ width: "100%" }}>
+        {content.map((item: any, index: number) => {
+          return (
+            <JsonItemForm
+              key={index}
+              name={name}
+              schema={itemsSchema}
+              index={index}
+              item={item}
+              onItemChange={onItemChange}
+              preview={preview}
+              uiSchema={uiSchema}
+            />
+          );
+        }) ?? null}
+      </Space>
+    </EditorContent>
   );
 }

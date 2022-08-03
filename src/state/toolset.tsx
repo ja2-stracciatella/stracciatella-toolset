@@ -3,27 +3,27 @@ import { createContainer } from "unstated-next";
 import { z } from "zod";
 import { invokeWithSchema } from "../lib/invoke";
 
-const PartialToolsetConfig = z.object({
+const partialToolsetConfigSchema = z.object({
   stracciatellaHome: z.union([z.string(), z.null()]),
   vanillaGameDir: z.union([z.string(), z.null()]),
   stracciatellaInstallDir: z.union([z.string(), z.null()]),
   lastSelectedMod: z.union([z.string(), z.null()]),
 });
 
-export type PartialToolsetConfig = z.infer<typeof PartialToolsetConfig>;
+export type PartialToolsetConfig = z.infer<typeof partialToolsetConfigSchema>;
 
-const ToolsetConfig = z.object({
+const toolsetConfigSchema = z.object({
   stracciatellaHome: z.string(),
   vanillaGameDir: z.string(),
   stracciatellaInstallDir: z.string(),
   lastSelectedMod: z.union([z.string(), z.null()]),
 });
 
-export type ToolsetConfig = z.infer<typeof ToolsetConfig>;
+export type ToolsetConfig = z.infer<typeof toolsetConfigSchema>;
 
 const SerializedSchema = z.object({
   partial: z.boolean(),
-  config: PartialToolsetConfig,
+  config: partialToolsetConfigSchema,
 });
 
 interface LoadingState {
@@ -171,7 +171,7 @@ export function useFetchToolsetConfig() {
       if (partial) {
         toolsetPartialSuccess(config);
       } else {
-        const fullConfig = ToolsetConfig.parse(config);
+        const fullConfig = toolsetConfigSchema.parse(config);
         toolsetSuccess(fullConfig);
       }
     } catch (e) {

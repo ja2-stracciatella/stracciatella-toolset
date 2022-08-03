@@ -4,20 +4,20 @@ import { createContainer } from "unstated-next";
 import { z } from "zod";
 import { invokeWithSchema } from "../lib/invoke";
 
-const Mod = z.object({
+const modSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
   version: z.string(),
 });
 
-export type Mod = z.infer<typeof Mod>;
+export type Mod = z.infer<typeof modSchema>;
 
-const EditableMod = Mod.extend({
+const editableModSchema = modSchema.extend({
   path: z.string(),
 });
 
-export type EditableMod = z.infer<typeof Mod>;
+export type EditableMod = z.infer<typeof editableModSchema>;
 
 interface LoadingModsState {
   loading: true;
@@ -140,8 +140,8 @@ const modsState = createContainer(useModsState);
 export const ModsProvider = modsState.Provider;
 export const useMods = modsState.useContainer;
 
-const MODS_SCHEMA = z.array(Mod);
-const EDITABLE_MODS_SCHEMA = z.array(EditableMod);
+const MODS_SCHEMA = z.array(modSchema);
+const EDITABLE_MODS_SCHEMA = z.array(editableModSchema);
 
 export function useFetchMods() {
   const { modsLoading, modsError, modsLoadingSuccess } = useMods();

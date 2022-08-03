@@ -15,13 +15,13 @@ export function StringReferenceWidget({
   referenceFile,
   referenceProperty,
 }: StringReferenceWidgetProps) {
-  const { data, error } = useJsonWithSchema(referenceFile);
+  const { content, error } = useJsonWithSchema(referenceFile);
   const options = useMemo(() => {
-    if (data?.content) {
-      return data.content.map((d: any) => ({ value: d[referenceProperty] }));
+    if (content) {
+      return content.map((d: any) => ({ value: d[referenceProperty] }));
     }
     return [];
-  }, [data, referenceProperty]);
+  }, [content, referenceProperty]);
 
   if (error) {
     return <Input value={value} onChange={onChange} required={required} />;
