@@ -1,11 +1,12 @@
 import { invoke } from "@tauri-apps/api";
+import { z } from "zod";
 import { useCallback, useEffect, useState } from "react";
 import { createContainer } from "unstated-next";
 import { useJsonWithSchema } from "../hooks/useJsonWithSchema";
 
 interface FilesState {
   inMemory: {
-    [path: string]: string | undefined;
+    [path: string]: any;
   };
   saveErrors: {
     [path: string]: Error | undefined;
@@ -83,16 +84,20 @@ const filesState = createContainer(useFilesState);
 export const FilesProvider = filesState.Provider;
 export const useFiles = filesState.useContainer;
 
-export function useModifyableJsonWithSchema(path: string) {
+export function useModifyableJsonWithSchema<Schema, Content>(
+  schemaSchema: z.ZodType<Schema>,
+  contentSchema: z.ZodType<Content>,
+  path: string
+) {
   const { inMemory, fileChanged: fileChangedInternal } = useFiles();
   const {
     content = null,
     schema = null,
     error,
     refetch,
-  } = useJsonWithSchema(path);
+  } = useJsonWithSchema(schemaSchema, contentSchema, path);
   const fileChanged = useCallback(
-    (value: any) => fileChangedInternal(path, value),
+    (value: Content) => fileChangedInternal(path, value),
     [fileChangedInternal, path]
   );
 
@@ -109,7 +114,7 @@ export function useModifyableJsonWithSchema(path: string) {
   return {
     fileChanged,
     modified: !!inMemory[path],
-    content: inMemory[path] ?? content,
+    content: (inMemory[path] as Content) ?? content,
     schema,
     error,
   };

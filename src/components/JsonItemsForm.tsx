@@ -8,6 +8,7 @@ import "./JsonItemsForm.css";
 import { IChangeEvent, UiSchema } from "@rjsf/core";
 import { useModifyableJsonWithSchema } from "../state/files";
 import { EditorContent } from "./EditorContent";
+import { z } from "zod";
 
 interface JsonItemFormProps {
   name: string | ((item: any) => string);
@@ -66,6 +67,21 @@ function JsonItemForm({
   );
 }
 
+export const jsonItemsSchemaSchema = z.object({
+  type: z.literal("array"),
+  title: z.optional(z.string()),
+  description: z.optional(z.string()),
+  items: z.object({
+    type: z.literal("object"),
+    title: z.optional(z.string()),
+    description: z.optional(z.string()),
+    properties: z.any(),
+    required: z.any(),
+  }),
+});
+
+export const jsonItemsContentSchma = z.array(z.record(z.any()));
+
 export interface JsonItemsFormProps {
   file: string;
   name: string | ((item: any) => string);
@@ -79,8 +95,11 @@ export function JsonItemsForm({
   preview,
   uiSchema,
 }: JsonItemsFormProps) {
-  const { content, schema, error, fileChanged } =
-    useModifyableJsonWithSchema(file);
+  const { content, schema, error, fileChanged } = useModifyableJsonWithSchema(
+    jsonItemsSchemaSchema,
+    jsonItemsContentSchma,
+    file
+  );
   const itemsSchema = useMemo(() => {
     if (schema) {
       return {
@@ -127,7 +146,7 @@ export function JsonItemsForm({
     return <Alert type="error" message={error.toString()} />;
   }
 
-  if (!itemsSchema) {
+  if (!itemsSchema || !content) {
     return <FullSizeLoader />;
   }
 

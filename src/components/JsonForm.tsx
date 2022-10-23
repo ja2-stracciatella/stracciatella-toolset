@@ -7,6 +7,7 @@ import { FullSizeLoader } from "./FullSizeLoader";
 import { IChangeEvent, UiSchema } from "@rjsf/core";
 import { EditorContent } from "./EditorContent";
 import { useModifyableJsonWithSchema } from "../state/files";
+import { z } from "zod";
 
 export interface JsonFormProps {
   file: string;
@@ -20,21 +21,29 @@ interface SchemaWithDescription {
   content: any;
 }
 
+const jsonFormSchemaSchema = z.any();
+
+const jsonFormSchemaContent = z.any();
+
 export function JsonForm({ file, uiSchema }: JsonFormProps) {
   const {
     content: origContent,
     schema: origSchema,
     error,
     fileChanged,
-  } = useModifyableJsonWithSchema(file);
+  } = useModifyableJsonWithSchema(
+    jsonFormSchemaSchema,
+    jsonFormSchemaContent,
+    file
+  );
   const { schema, content, title, description } =
     useMemo((): SchemaWithDescription => {
       if (!origContent) {
         return { schema: null, content: null, title: "", description: "" };
       }
       return {
-        title: origSchema.title ?? file,
-        description: origSchema.description,
+        title: origSchema?.title ?? file,
+        description: origSchema?.description,
         schema: {
           ...origSchema,
           title: undefined,

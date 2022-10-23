@@ -1,12 +1,17 @@
 import { WidgetProps } from "@rjsf/core";
 import { Input, AutoComplete } from "antd";
 import { useMemo } from "react";
+import { z } from "zod";
 import { useJsonWithSchema } from "../../hooks/useJsonWithSchema";
 
 interface StringReferenceWidgetProps extends WidgetProps {
   referenceFile: string;
   referenceProperty: string;
 }
+
+const schemaSchema = z.any();
+
+const contentSchema = z.array(z.record(z.any()));
 
 export function StringReferenceWidget({
   value,
@@ -15,10 +20,14 @@ export function StringReferenceWidget({
   referenceFile,
   referenceProperty,
 }: StringReferenceWidgetProps) {
-  const { content, error } = useJsonWithSchema(referenceFile);
+  const { content, error } = useJsonWithSchema(
+    schemaSchema,
+    contentSchema,
+    referenceFile
+  );
   const options = useMemo(() => {
     if (content) {
-      return content.map((d: any) => ({ value: d[referenceProperty] }));
+      return content.map((d) => ({ value: d[referenceProperty] }));
     }
     return [];
   }, [content, referenceProperty]);

@@ -2,12 +2,13 @@ import ReactMarkdown from "react-markdown";
 import { useCallback, useMemo, useState } from "react";
 import { Alert, Typography, Space } from "antd";
 
-import { useJsonWithSchema } from "../hooks/useJsonWithSchema";
 import { FullSizeLoader } from "./FullSizeLoader";
 import { StrategicMap } from "./content/StrategicMap";
 import { JsonSchemaForm } from "./JsonSchemaForm";
 import { UiSchema } from "@rjsf/core";
 import { EditorContent } from "./EditorContent";
+import { useModifyableJsonWithSchema } from "../state/files";
+import { jsonItemsContentSchma, jsonItemsSchemaSchema } from "./JsonItemsForm";
 
 export interface StrategicMapFormProps {
   file: string;
@@ -17,7 +18,7 @@ export interface StrategicMapFormProps {
 
 interface ReadySchema {
   title: string;
-  description: string;
+  description?: string;
   schema: any;
   content: any;
   sectorsWithContent: string[];
@@ -32,10 +33,14 @@ export function JsonStrategicMapForm({
     schema: origSchema,
     content: origContent,
     error,
-  } = useJsonWithSchema(file);
+  } = useModifyableJsonWithSchema(
+    jsonItemsSchemaSchema,
+    jsonItemsContentSchma,
+    file
+  );
   const { schema, content, sectorsWithContent, title, description } =
     useMemo((): ReadySchema => {
-      if (!origContent) {
+      if (!origSchema || !origContent) {
         return {
           schema: null,
           content: null,
@@ -91,7 +96,7 @@ export function JsonStrategicMapForm({
         <div>
           <Typography.Title level={2}>{title}</Typography.Title>
           <div>
-            <ReactMarkdown>{description}</ReactMarkdown>
+            <ReactMarkdown>{description || ""}</ReactMarkdown>
           </div>
           {c}
         </div>
