@@ -1,0 +1,24 @@
+[package]
+name = "stracciatella-toolset"
+version = "0.1.0"
+description = "Rust part of the stracciatella toolset"
+license = "MIT"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+base64 = "0.13"
+directories = "4.0"
+image = "0.23"
+log = "0.4"
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+simplelog = "0.11"
+stracciatella = { git = "https://github.com/ja2-stracciatella/ja2-stracciatella.git", rev = "6aef2a3c8f3b2115d9acf316838cb3dcf9d3c85c" }
+
+[dependencies.neon]
+version = "0.10.1"
+default-features = false
+features = ["napi-6", "promise-api", "task-api"]
