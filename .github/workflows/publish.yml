@@ -40,3 +40,28 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm exec electron-builder -- --publish never
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v3
+        if: contains(matrix.os, 'ubuntu')
+        with:
+          name: stracciatella-toolset-linux-appimage
+          if-no-files-found: error
+          path: |
+            release/build/*.AppImage
+      - name: Upload Windows installer artifact
+        uses: actions/upload-artifact@v3
+        if: contains(matrix.os, 'windows')
+        with:
+          name: stracciatella-toolset-windows-exe
+          if-no-files-found: error
+          path: |
+            release/build/*.exe
+      - name: Upload macOS dmg artifact
+        uses: actions/upload-artifact@v3
+        if: contains(matrix.os, 'macos')
+        with:
+          name: stracciatella-toolset-macos-dmg
+          if-no-files-found: error
+          path: |
+            release/build/*.dmg
