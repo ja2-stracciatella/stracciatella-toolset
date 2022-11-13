@@ -1,8 +1,8 @@
 // import { invoke, InvokeArgs } from '@tauri-apps/api/tauri';
 import { z } from 'zod';
 
-function invoke(func: string, params?: any): unknown {
-  return electronAPI.invoke({ func, params });
+function invoke(func: string, params: Record<string, unknown>): unknown {
+  return window.electronAPI.invoke({ func, params });
 }
 
 export async function invokeWithSchema<T>(

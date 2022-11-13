@@ -44,7 +44,7 @@ function JsonItemForm({
     ),
     [label, p]
   );
-  const onPanelChange = useCallback((v) => {
+  const onPanelChange = useCallback((v: any) => {
     setCollapsed(v.length === 0);
   }, []);
 
