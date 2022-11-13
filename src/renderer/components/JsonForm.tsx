@@ -2,7 +2,8 @@ import ReactMarkdown from 'react-markdown';
 import { useCallback, useMemo } from 'react';
 import { Alert, Typography } from 'antd';
 
-import { IChangeEvent, UiSchema } from '@rjsf/core';
+import { IChangeEvent } from '@rjsf/core';
+import { UiSchema } from '@rjsf/utils';
 import { z } from 'zod';
 import { JsonSchemaForm } from './JsonSchemaForm';
 import { FullSizeLoader } from './FullSizeLoader';

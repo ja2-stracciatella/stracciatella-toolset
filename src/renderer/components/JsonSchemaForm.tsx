@@ -1,18 +1,12 @@
-import {
-  ErrorSchema,
-  FieldProps,
-  FieldTemplateProps,
-  IChangeEvent,
-  ISubmitEvent,
-  UiSchema,
-  withTheme,
-} from '@rjsf/core';
+import { IChangeEvent, withTheme } from '@rjsf/core';
+import { UiSchema, FieldTemplateProps, FieldProps } from '@rjsf/utils';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { Theme as AntdTheme } from '@rjsf/antd';
 import { Form } from 'antd';
 import ReactMarkdown from 'react-markdown';
 import { useMemo } from 'react';
+import validator from '@rjsf/validator-ajv8';
 
 export interface DescriptionFieldProps extends Partial<FieldProps> {
   description?: string;
@@ -104,7 +98,6 @@ FieldTemplateProps) => {
 
 const RjsfForm = withTheme({
   ...AntdTheme,
-  FieldTemplate: MarkdownFieldTemplate,
   widgets: {
     ...AntdTheme.widgets,
     // CheckboxWidget: CheckboxWidgetWithDescription,
@@ -112,6 +105,10 @@ const RjsfForm = withTheme({
   fields: {
     ...AntdTheme.fields,
     DescriptionField: MarkdownDescriptionField,
+  },
+  templates: {
+    ...AntdTheme.templates,
+    FieldTemplate: MarkdownFieldTemplate,
   },
 });
 
@@ -121,8 +118,8 @@ export interface JsonSchemaFormProps {
   content: any;
   uiSchema?: UiSchema;
   renderButton?: boolean;
-  onChange?: (e: IChangeEvent<any>, es?: ErrorSchema) => any;
-  onSubmit?: (e: ISubmitEvent<any>) => any;
+  onChange?: (e: IChangeEvent<any>, id?: string) => any;
+  onSubmit?: (e: IChangeEvent<any>) => any;
 }
 
 export function JsonSchemaForm({
@@ -140,6 +137,7 @@ export function JsonSchemaForm({
       schema={schema}
       formData={content}
       children={renderButton ? undefined : true}
+      validator={validator}
       liveValidate
       noHtml5Validate
       showErrorList={false}

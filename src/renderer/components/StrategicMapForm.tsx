@@ -2,7 +2,7 @@ import ReactMarkdown from 'react-markdown';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, Typography, Space } from 'antd';
 
-import { UiSchema } from '@rjsf/core';
+import { UiSchema } from '@rjsf/utils';
 import { FullSizeLoader } from './FullSizeLoader';
 import { StrategicMap } from './content/StrategicMap';
 import { JsonSchemaForm } from './JsonSchemaForm';

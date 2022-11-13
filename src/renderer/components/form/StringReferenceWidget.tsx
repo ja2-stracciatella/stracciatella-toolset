@@ -1,4 +1,4 @@
-import { WidgetProps } from '@rjsf/core';
+import { WidgetProps } from '@rjsf/utils';
 import { Input, AutoComplete } from 'antd';
 import { useMemo } from 'react';
 import { z } from 'zod';

@@ -1,4 +1,4 @@
-import { WidgetProps } from '@rjsf/core';
+import { WidgetProps } from '@rjsf/utils';
 import { Input, Button, Space, Row, Col } from 'antd';
 import { useCallback, useMemo, useState } from 'react';
 import { ResourceType } from '../../lib/listDir';
