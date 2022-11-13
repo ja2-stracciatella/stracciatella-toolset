@@ -70,7 +70,7 @@ export function ResourceSelectorModal({
         const path = array.slice(0, currIndex + 1).join('/');
         return [
           ...prev,
-          <Breadcrumb.Item>
+          <Breadcrumb.Item key={path}>
             <Button onClick={() => setCurrentDir(path)}>
               <FolderOpenOutlined />
               &nbsp;&nbsp;{curr}
@@ -79,7 +79,7 @@ export function ResourceSelectorModal({
         ];
       },
       [
-        <Breadcrumb.Item>
+        <Breadcrumb.Item key="">
           <Button onClick={() => setCurrentDir('')}>
             <HomeOutlined />
           </Button>
@@ -132,7 +132,7 @@ export function ResourceSelectorModal({
   return (
     <Modal
       title="Select resource"
-      visible={isOpen}
+      open={isOpen}
       onOk={modalOnOk}
       onCancel={onCancel}
       width="calc(100vw - 400px)"

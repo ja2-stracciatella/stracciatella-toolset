@@ -103,12 +103,8 @@ export function JsonItemsForm({
   );
   const itemsSchema = useMemo(() => {
     if (schema) {
-      return {
-        ...schema.items,
-        // Title and description are not necessary to render within an item
-        title: undefined,
-        description: undefined,
-      };
+      const { title, description, ...rest } = schema.items;
+      return rest;
     }
     return null;
   }, [schema]);

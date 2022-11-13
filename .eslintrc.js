@@ -8,11 +8,13 @@ module.exports = {
     'react/react-in-jsx-scope': 'off',
     // Not autofixable, thus annoying
     'import/order': 'off',
-    // Does not make sense
+    // imho named exports are better
     'import/prefer-default-export': 'off',
-    // Below should be considered after migration
+    // imho shadowing is fine with strict types
     '@typescript-eslint/no-shadow': 'off',
+    // useful for forwarding props
     'react/jsx-props-no-spreading': 'off',
+    // Below should be considered after migration
     'react/require-default-props': 'off',
     'react/no-array-index-key': 'off',
     'react/no-children-prop': 'off',
