@@ -12,31 +12,36 @@ import { WithOpenMod } from './components/WithOpenMod';
 import { EditorLayout } from './components/EditorLayout';
 import { FilesProvider } from './state/files';
 
-function App() {
+export function AppWithoutProviders() {
   const routes = useMemo(() => {
     return ROUTES.map((r) => (
       <Route key={r.id} path={r.url} element={<r.component />} />
     ));
   }, []);
+
+  return (
+    <WithToolsetConfig>
+      <WithOpenMod>
+        <BrowserRouter>
+          <EditorLayout>
+            <Routes>{routes}</Routes>
+          </EditorLayout>
+        </BrowserRouter>
+      </WithOpenMod>
+    </WithToolsetConfig>
+  );
+}
+
+export default function App() {
   return (
     <div className="app-root">
       <ModsProvider>
         <ToolsetConfigProvider>
           <FilesProvider>
-            <WithToolsetConfig>
-              <WithOpenMod>
-                <BrowserRouter>
-                  <EditorLayout>
-                    <Routes>{routes}</Routes>
-                  </EditorLayout>
-                </BrowserRouter>
-              </WithOpenMod>
-            </WithToolsetConfig>
+            <AppWithoutProviders />
           </FilesProvider>
         </ToolsetConfigProvider>
       </ModsProvider>
     </div>
   );
 }
-
-export default App;

@@ -35,35 +35,29 @@
     ]
   },
   "jest": {
-    "moduleDirectories": [
-      "node_modules",
-      "release/app/node_modules",
-      "src"
-    ],
-    "moduleFileExtensions": [
-      "js",
-      "jsx",
-      "ts",
-      "tsx",
-      "json"
-    ],
+    "preset": "ts-jest",
     "moduleNameMapper": {
       "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/.erb/mocks/fileMock.js",
-      "\\.(css|less|sass|scss)$": "identity-obj-proxy"
+      "\\.(css|less|sass|scss)$": "identity-obj-proxy",
+      "react-markdown": "<rootDir>/node_modules/react-markdown/react-markdown.min.js",
+      "nanoid": "<rootDir>/node_modules/nanoid/index.cjs"
     },
     "setupFiles": [
       "./.erb/scripts/check-build-exists.ts"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/src/__tests__/setupJestRenderer.ts"
     ],
     "testEnvironment": "jsdom",
     "testEnvironmentOptions": {
       "url": "http://localhost/"
     },
     "testPathIgnorePatterns": [
-      "release/app/dist"
-    ],
-    "transform": {
-      "\\.(ts|tsx|js|jsx)$": "ts-jest"
-    }
+      ".erb",
+      "release/app/dist",
+      "test-utils",
+      "setupJestRenderer.ts"
+    ]
   },
   "dependencies": {
     "@ant-design/icons": "^4.7.0",
