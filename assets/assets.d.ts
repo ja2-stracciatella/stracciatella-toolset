@@ -1,3 +1,5 @@
+import React from 'react';
+
 type Styles = Record<string, string>;
 
 declare module '*.svg' {

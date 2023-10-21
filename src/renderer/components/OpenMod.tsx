@@ -1,28 +1,24 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { List, Button, Alert } from 'antd';
-
-import { FullSizeLoader } from './FullSizeLoader';
-import { EditableMod, useMods } from '../state/mods';
 import './OpenMod.css';
+import { useAppDispatch, useAppSelector } from '../hooks/state';
+import { EditableMod, setSelectedMod } from '../state/mods';
 
 const { Item } = List;
 
 export function OpenMod() {
-  const { error, selectMod, editableMods } = useMods();
-  const [isSelecting, setIsSelecting] = useState(false);
+  const dispatch = useAppDispatch();
+  const error = useAppSelector((s) => s.mods.error);
+  const editableMods = useAppSelector((s) => s.mods.mods?.editable) ?? [];
   const onModClick = useCallback(
     async (mod: EditableMod) => {
-      setIsSelecting(true);
-      await selectMod(mod);
+      dispatch(setSelectedMod(mod));
     },
-    [selectMod]
+    [dispatch],
   );
 
   if (error) {
     return <Alert type="error" message={error.toString()} />;
-  }
-  if (!editableMods || isSelecting) {
-    return <FullSizeLoader />;
   }
   return (
     <div className="open-root">

@@ -53,7 +53,7 @@ export function ResourceSelectorModal({
 
       setSelectedEntry(entry);
     },
-    [currentDir, onSelect, selectedEntry]
+    [currentDir, onSelect, selectedEntry],
   );
   const setToParentDir = useCallback(() => {
     if (currentDir === '') {
@@ -84,7 +84,7 @@ export function ResourceSelectorModal({
             <HomeOutlined />
           </Button>
         </Breadcrumb.Item>,
-      ]
+      ],
     );
   }, [currentDir]);
   const content = useMemo(() => {

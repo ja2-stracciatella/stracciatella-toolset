@@ -1,17 +1,12 @@
 import { WidgetProps } from '@rjsf/utils';
 import { Input, AutoComplete } from 'antd';
 import { useMemo } from 'react';
-import { z } from 'zod';
-import { useJsonWithSchema } from '../../hooks/useJsonWithSchema';
+import { useJson } from '../../hooks/files';
 
 interface StringReferenceWidgetProps extends WidgetProps {
   referenceFile: string;
   referenceProperty: string;
 }
-
-const schemaSchema = z.any();
-
-const contentSchema = z.array(z.record(z.any()));
 
 export function StringReferenceWidget({
   value,
@@ -20,16 +15,12 @@ export function StringReferenceWidget({
   referenceFile,
   referenceProperty,
 }: StringReferenceWidgetProps) {
-  const { content, error } = useJsonWithSchema(
-    schemaSchema,
-    contentSchema,
-    referenceFile
-  );
+  const { content, error } = useJson(referenceFile);
   const options = useMemo(() => {
-    if (content) {
-      return content.map((d) => ({ value: d[referenceProperty] }));
+    if (!content) {
+      return [];
     }
-    return [];
+    return content.value.map((d: any) => ({ value: d[referenceProperty] }));
   }, [content, referenceProperty]);
 
   if (error) {
@@ -47,11 +38,13 @@ export function StringReferenceWidget({
 }
 
 export function stringReferenceTo(file: string, property: string) {
-  return (props: WidgetProps) => (
-    <StringReferenceWidget
-      referenceFile={file}
-      referenceProperty={property}
-      {...props}
-    />
-  );
+  return function StringReference(props: WidgetProps) {
+    return (
+      <StringReferenceWidget
+        referenceFile={file}
+        referenceProperty={property}
+        {...props}
+      />
+    );
+  };
 }

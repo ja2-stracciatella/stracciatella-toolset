@@ -1,5 +1,5 @@
 module.exports = {
-  extends: 'erb',
+  extends: ['erb', 'plugin:@typescript-eslint/recommended'],
   rules: {
     // A temporary hack related to IDE not resolving correct package.json
     'import/no-extraneous-dependencies': 'off',
@@ -20,10 +20,24 @@ module.exports = {
     'react/no-children-prop': 'off',
     '@typescript-eslint/ban-types': 'off',
     'no-plusplus': 'off',
+    'no-shadow': 'off',
     'consistent-return': 'off',
     'jsx-a11y/click-events-have-key-events': 'off',
     'jsx-a11y/no-static-element-interactions': 'off',
     'promise/catch-or-return': 'off',
+    'import/extensions': [
+      'error',
+      'ignorePackages',
+      {
+        js: 'never',
+        jsx: 'never',
+        ts: 'never',
+        tsx: 'never',
+      },
+    ],
+    'react/jsx-filename-extension': [1, { extensions: ['.jsx', '.tsx'] }],
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-unused-vars': 'off',
   },
   parserOptions: {
     ecmaVersion: 2020,

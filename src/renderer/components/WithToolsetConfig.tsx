@@ -1,21 +1,15 @@
-import {
-  PropsWithChildren,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { PropsWithChildren, useCallback, useEffect, useState } from 'react';
 import { Alert } from 'antd';
 import { IChangeEvent } from '@rjsf/core';
 import {
   PartialToolsetConfig,
-  ToolsetConfig,
-  useFetchToolsetConfig,
-  useToolsetConfig,
+  FullToolsetConfig,
+  getToolsetConfig,
+  setToolsetConfig,
 } from '../state/toolset';
 import { FullSizeLoader } from './FullSizeLoader';
 import { JsonSchemaForm } from './JsonSchemaForm';
+import { useAppDispatch, useAppSelector } from '../hooks/state';
 
 const CONFIG_JSON_SCHEMA = {
   type: 'object',
@@ -48,25 +42,23 @@ const CONFIG_JSON_SCHEMA = {
   required: ['stracciatellaHome', 'vanillaGameDir', 'stracciatellaInstallDir'],
 };
 
-function Configure({
-  config,
-  onSubmit,
-}: {
-  config: PartialToolsetConfig | null;
-  onSubmit: (t: ToolsetConfig) => any;
-}) {
-  const { error } = useToolsetConfig();
+function Configure() {
+  const config = useAppSelector((s) => s.toolset.config.value);
+  const error = useAppSelector((s) => s.toolset.error);
+
   const [state, setState] = useState(config);
   const [valid, setValid] = useState(false);
   const change = useCallback((ev: IChangeEvent<PartialToolsetConfig>) => {
-    setState(ev.formData);
-    setValid(ev.errors.length === 0);
+    if (ev.formData) {
+      setState(ev.formData);
+      setValid(ev.errors.length === 0);
+    }
   }, []);
   const submit = useCallback(() => {
     if (valid) {
-      onSubmit(state as ToolsetConfig);
+      setToolsetConfig(state as FullToolsetConfig);
     }
-  }, [onSubmit, state, valid]);
+  }, [state, valid]);
   const errbox = error ? (
     <div className="with-toolset-config">
       <Alert type="error" message={error.toString()} />
@@ -88,31 +80,23 @@ function Configure({
 }
 
 export function WithToolsetConfig({ children }: PropsWithChildren<{}>) {
-  const { loading, error, config, partial, setToolsetConfig } =
-    useToolsetConfig();
-  const fetchToolsetConfig = useFetchToolsetConfig();
+  const dispatch = useAppDispatch();
+  const loading = useAppSelector((s) => s.toolset.loading);
+  const partial = useAppSelector((s) => s.toolset.config.partial);
 
   useEffect(() => {
-    if (!config && !error) {
-      fetchToolsetConfig();
-    }
-  }, [loading, config, error, fetchToolsetConfig]);
+    dispatch(getToolsetConfig());
+  }, [dispatch]);
 
-  const content = useMemo(() => {
-    let message: ReactNode = children;
-    if (loading) {
-      message = (
-        <div>
-          <FullSizeLoader />
-        </div>
-      );
-    }
-    if ((config && partial) || error) {
-      message = <Configure config={config} onSubmit={setToolsetConfig} />;
-    }
-
-    return message;
-  }, [children, config, error, loading, partial, setToolsetConfig]);
-
-  return <>{content}</>;
+  if (loading) {
+    return (
+      <div>
+        <FullSizeLoader />
+      </div>
+    );
+  }
+  if (partial) {
+    return <Configure />;
+  }
+  return <div>{children}</div>;
 }

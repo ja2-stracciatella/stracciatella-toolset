@@ -1,26 +1,26 @@
 import { ExclamationCircleOutlined, SaveOutlined } from '@ant-design/icons';
 import { Button, Space } from 'antd';
-import { ReactNode, useCallback, useMemo } from 'react';
-import { useFiles } from '../state/files';
-
+import { ReactNode, memo, useCallback, useMemo } from 'react';
 import './EditorContent.css';
+import { useAppDispatch, useAppSelector } from '../hooks/state';
+import { saveJSON } from '../state/files';
 
 interface ContentProps {
   path: string;
   children: ReactNode;
 }
 
-function EditorContentHeader({ path }: { path: string }) {
-  const { saveFile, inMemory, saveErrors } = useFiles();
-  const disabled = useMemo(() => !inMemory[path], [inMemory, path]);
-  const error = useMemo(() => saveErrors[path], [path, saveErrors]);
+const EditorContentHeader = memo(({ path }: { path: string }) => {
+  const dispatch = useAppDispatch();
+  const modified = useAppSelector((s) => s.files.json[path]?.content?.modified);
+  const error = useAppSelector((s) => s.files.json[path]?.error);
   const errorStyle = useMemo(() => ({ color: '#9d1e1c' }), []);
   const saveFileToPath = useCallback(() => {
-    saveFile(path);
-  }, [path, saveFile]);
+    dispatch(saveJSON(path));
+  }, [dispatch, path]);
   return (
     <Space>
-      <Button disabled={disabled}>
+      <Button disabled={!modified}>
         <SaveOutlined onClick={saveFileToPath} />
       </Button>
       {error ? (
@@ -31,7 +31,7 @@ function EditorContentHeader({ path }: { path: string }) {
       ) : null}
     </Space>
   );
-}
+});
 
 export function EditorContent({ path, children }: ContentProps) {
   return (
@@ -43,5 +43,3 @@ export function EditorContent({ path, children }: ContentProps) {
     </div>
   );
 }
-
-EditorContent.whyDidYouRender = true;

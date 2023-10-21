@@ -2,10 +2,10 @@ import { ReactNode, useMemo } from 'react';
 import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 import { Layout, Menu, Typography } from 'antd';
 
-import { useMods } from '../state/mods';
 import './EditorLayout.css';
 import { MENU, MenuItem } from '../EditorRoutes';
 import { ItemType } from 'antd/lib/menu/hooks/useItems';
+import { useAppSelector } from '../hooks/state';
 
 const { Header, Sider } = Layout;
 
@@ -16,7 +16,7 @@ interface LayoutProps {
 function routeToItem(
   navigate: NavigateFunction,
   parentPath: string,
-  menuItem: MenuItem
+  menuItem: MenuItem,
 ): ItemType {
   const path = `${parentPath}/${menuItem.id}`;
   if (menuItem.type === 'Item') {
@@ -28,7 +28,7 @@ function routeToItem(
   }
   const sorted = [...menuItem.children];
   sorted.sort((a, b) =>
-    a.label.localeCompare(b.label, 'en', { ignorePunctuation: true })
+    a.label.localeCompare(b.label, 'en', { ignorePunctuation: true }),
   );
   return {
     key: path,
@@ -60,7 +60,7 @@ function SideMenu() {
   const items = useMemo(() => {
     const [dashboard, ...sorted] = MENU;
     sorted.sort((a, b) =>
-      a.label.localeCompare(b.label, 'en', { ignorePunctuation: true })
+      a.label.localeCompare(b.label, 'en', { ignorePunctuation: true }),
     );
     return [dashboard, ...sorted].map((r) => routeToItem(navigate, '', r));
   }, [navigate]);
@@ -77,10 +77,10 @@ function SideMenu() {
 }
 
 export function EditorLayout({ children }: LayoutProps) {
-  const { selectedMod } = useMods();
+  const selectedModName = useAppSelector((s) => s.mods.selected?.name);
   const modSuffix = useMemo(
-    () => (selectedMod ? ` - ${selectedMod.name}` : ''),
-    [selectedMod]
+    () => (selectedModName ? ` - ${selectedModName}` : ''),
+    [selectedModName],
   );
   return (
     <Layout className="editor-layout">

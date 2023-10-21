@@ -1,6 +1,6 @@
 import { IChangeEvent, withTheme } from '@rjsf/core';
 import { UiSchema, FieldTemplateProps, FieldProps } from '@rjsf/utils';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// eslint-disable-next-line
 // @ts-ignore
 import { Theme as AntdTheme } from '@rjsf/antd';
 import { Form } from 'antd';
@@ -27,7 +27,7 @@ const HORIZONTAL_LABEL_COL = { span: 6 };
 const HORIZONTAL_WRAPPER_COL = { span: 18 };
 
 // Cloned from Antd theme with some changes
-const MarkdownFieldTemplate = ({
+function MarkdownFieldTemplate({
   children,
   classNames,
   description,
@@ -49,7 +49,7 @@ const MarkdownFieldTemplate = ({
   required,
   schema,
 }: // uiSchema,
-FieldTemplateProps) => {
+FieldTemplateProps) {
   const { colon, wrapperStyle } = formContext;
   const fieldErrors = useMemo(() => {
     if (!rawErrors) {
@@ -94,7 +94,7 @@ FieldTemplateProps) => {
       {children}
     </Form.Item>
   );
-};
+}
 
 const RjsfForm = withTheme({
   ...AntdTheme,

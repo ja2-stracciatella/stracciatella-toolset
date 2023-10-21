@@ -21,8 +21,7 @@ export function ItemPreview({ inventoryGraphics: { big } }: ItemPreviewProps) {
   const { data: image, error } = useImageFile(big.path);
   const additionalAvatarProps = useMemo(() => {
     if (error) {
-      console.error(error);
-      return { icon: <ExclamationOutlined /> };
+      return { icon: <ExclamationOutlined />, title: error.toString() };
     }
     if (!image) {
       return {};

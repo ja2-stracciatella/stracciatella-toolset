@@ -8,7 +8,7 @@ function invoke(func: string, params: Record<string, unknown>): unknown {
 export async function invokeWithSchema<T>(
   schema: z.ZodType<T>,
   func: string,
-  params: Record<string, unknown> = {}
+  params: Record<string, unknown> = {},
 ): Promise<T> {
   const res = await invoke(func, params);
   return schema.parse(res);

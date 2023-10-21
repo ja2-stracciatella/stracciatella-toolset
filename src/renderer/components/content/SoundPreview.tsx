@@ -9,11 +9,11 @@ export function SoundPreview({ path }: { path: string }) {
     if (!audio) {
       // load audio
       const src = await readSound(path);
-      const audio = new Audio(src);
+      const a = new Audio(src);
 
-      audio.onpause = () => setAudio(null);
+      a.onpause = () => setAudio(null);
 
-      setAudio(audio);
+      setAudio(a);
     } else if (audio) {
       audio.pause();
     }

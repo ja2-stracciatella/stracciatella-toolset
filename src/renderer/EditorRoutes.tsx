@@ -70,11 +70,11 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               composition: {
                 'ui:widget': stringReferenceTo(
                   'army-compositions.json',
-                  'name'
+                  'name',
                 ),
               },
             }),
-            []
+            [],
           );
           return (
             <JsonStrategicMapForm
@@ -95,12 +95,12 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                 items: {
                   'ui:widget': stringReferenceTo(
                     'weapons.json',
-                    'internalName'
+                    'internalName',
                   ),
                 },
               },
             }),
-            []
+            [],
           );
           return (
             <JsonForm
@@ -121,12 +121,12 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                 items: {
                   'ui:widget': stringReferenceTo(
                     'weapons.json',
-                    'internalName'
+                    'internalName',
                   ),
                 },
               },
             }),
-            []
+            [],
           );
           return (
             <JsonForm file="army-gun-choice-normal.json" uiSchema={uiSchema} />
@@ -158,7 +158,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     component: function Dealers() {
       const preview = useCallback(
         (item: any) => <MercPreview profile={item.profile} />,
-        []
+        [],
       );
       return (
         <JsonItemsForm file="dealers.json" name="profile" preview={preview} />
@@ -208,7 +208,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                 'ui:widget': resourceReference(ResourceType.Sound),
               },
             }),
-            []
+            [],
           );
 
           return (
@@ -229,7 +229,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             (item: any) => (
               <ItemPreview inventoryGraphics={item.inventoryGraphics} />
             ),
-            []
+            [],
           );
           return (
             <JsonItemsForm
@@ -249,7 +249,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             (item: any) => (
               <ItemPreview inventoryGraphics={item.inventoryGraphics} />
             ),
-            []
+            [],
           );
           return (
             <JsonItemsForm
@@ -285,7 +285,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             (item: any) => (
               <ItemPreview inventoryGraphics={item.inventoryGraphics} />
             ),
-            []
+            [],
           );
           const uiSchema = useMemo(
             () => ({
@@ -296,7 +296,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                 'ui:widget': resourceReference(ResourceType.Sound),
               },
             }),
-            []
+            [],
           );
 
           return (
@@ -339,7 +339,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         component: function MercsMERCListings() {
           const preview = useCallback(
             (item: any) => <MercPreview profile={item.profile} />,
-            []
+            [],
           );
           return (
             <JsonItemsForm
@@ -357,7 +357,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         component: function MercsProfileInfo() {
           const preview = useCallback(
             (item: any) => <MercPreview profile={item.internalName} />,
-            []
+            [],
           );
           return (
             <JsonItemsForm
@@ -375,7 +375,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         component: function MercsRpcSmallFaces() {
           const preview = useCallback(
             (item: any) => <MercPreview profile={item.profile} />,
-            []
+            [],
           );
           return (
             <JsonItemsForm
@@ -414,9 +414,9 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                   'ui:widget': resourceReference(ResourceType.Sound),
                 },
               },
-            ])
+            ]),
           ),
-        []
+        [],
       );
 
       return <JsonForm file="music.json" uiSchema={uiSchema} />;
@@ -504,7 +504,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         component: function StrategicMapNpcPlacements() {
           const preview = useCallback(
             (item: any) => <MercPreview profile={item.profile} />,
-            []
+            [],
           );
           return (
             <JsonItemsForm
@@ -612,7 +612,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     component: function Vehicles() {
       const preview = useCallback(
         (item: any) => <MercPreview profile={item.profile} />,
-        []
+        [],
       );
       return (
         <JsonItemsForm file="vehicles.json" name="profile" preview={preview} />
@@ -639,5 +639,5 @@ const menuItemToRoutes =
   };
 
 export const ROUTES: Readonly<Array<Readonly<Route>>> = MENU.flatMap(
-  menuItemToRoutes('')
+  menuItemToRoutes(''),
 );

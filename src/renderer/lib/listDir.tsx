@@ -21,14 +21,14 @@ export type DirEntry = z.infer<typeof dirEntrySchema>;
 
 export async function listDir(
   resourceType: ResourceType,
-  dir: string
+  dir: string,
 ): Promise<Array<DirEntry>> {
   let entries = await invokeWithSchema(
     z.array(dirEntrySchema),
     'list_resources',
     {
       dir,
-    }
+    },
   );
 
   // Disallow referencing slfs
@@ -36,7 +36,7 @@ export async function listDir(
   if (resourceType === ResourceType.Sound) {
     entries = entries.filter(
       (e) =>
-        e.type === 'Dir' || e.path.endsWith('.ogg') || e.path.endsWith('.wav')
+        e.type === 'Dir' || e.path.endsWith('.ogg') || e.path.endsWith('.wav'),
     );
   }
 

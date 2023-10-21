@@ -1,61 +1,33 @@
-import ReactMarkdown from 'react-markdown';
 import { useCallback, useMemo } from 'react';
-import { Alert, Typography } from 'antd';
-
+import { Alert } from 'antd';
 import { IChangeEvent } from '@rjsf/core';
 import { UiSchema } from '@rjsf/utils';
-import { z } from 'zod';
 import { JsonSchemaForm } from './JsonSchemaForm';
 import { FullSizeLoader } from './FullSizeLoader';
 import { EditorContent } from './EditorContent';
-import { useModifyableJsonWithSchema } from '../state/files';
+import { JsonFormHeader } from './form/JsonFormHeader';
+import { useJson } from '../hooks/files';
 
 export interface JsonFormProps {
   file: string;
   uiSchema?: UiSchema;
 }
 
-interface SchemaWithDescription {
-  title: string;
-  description: string;
-  schema: any;
-  content: any;
-}
-
-const jsonFormSchemaSchema = z.any();
-
-const jsonFormSchemaContent = z.any();
-
 export function JsonForm({ file, uiSchema }: JsonFormProps) {
-  const {
-    content: origContent,
-    schema: origSchema,
-    error,
-    fileChanged,
-  } = useModifyableJsonWithSchema(
-    jsonFormSchemaSchema,
-    jsonFormSchemaContent,
-    file
-  );
-  const { schema, content, title, description } =
-    useMemo((): SchemaWithDescription => {
-      if (!origContent) {
-        return { schema: null, content: null, title: '', description: '' };
-      }
-      return {
-        title: origSchema?.title ?? file,
-        description: origSchema?.description,
-        schema: {
-          ...origSchema,
-          title: undefined,
-          description: undefined,
-        },
-        content: origContent,
-      };
-    }, [file, origContent, origSchema]);
+  const { content, update, error } = useJson(file);
+  const schema = useMemo(() => {
+    if (!content?.schema) {
+      return null;
+    }
+    return {
+      ...content.schema,
+      title: undefined,
+      description: undefined,
+    };
+  }, [content?.schema]);
   const onFormChange = useCallback(
-    (data: IChangeEvent<any>) => fileChanged(data.formData),
-    [fileChanged]
+    (value: IChangeEvent<any>) => update(value.formData),
+    [update],
   );
 
   if (error) {
@@ -67,13 +39,10 @@ export function JsonForm({ file, uiSchema }: JsonFormProps) {
 
   return (
     <EditorContent path={file}>
-      <Typography.Title level={2}>{title}</Typography.Title>
-      <div>
-        <ReactMarkdown>{description}</ReactMarkdown>
-      </div>
+      <JsonFormHeader file={file} />
       <JsonSchemaForm
         schema={schema}
-        content={content}
+        content={content.value}
         uiSchema={uiSchema}
         onChange={onFormChange}
       />

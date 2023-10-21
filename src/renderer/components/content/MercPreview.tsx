@@ -1,9 +1,8 @@
 import { QuestionOutlined } from '@ant-design/icons';
 import { Avatar } from 'antd';
 import { useMemo } from 'react';
-import { z } from 'zod';
 import { useImageFile } from '../../hooks/useImage';
-import { useJsonWithSchema } from '../../hooks/useJsonWithSchema';
+import { useJson } from '../../hooks/files';
 
 interface MercPreviewProps {
   profile: string;
@@ -11,26 +10,13 @@ interface MercPreviewProps {
 
 const crispEdgesStyle = { imageRendering: 'crisp-edges' as const };
 
-const schemaSchema = z.any();
-
-const contentSchema = z.array(
-  z.object({
-    profileID: z.number(),
-    internalName: z.string(),
-  })
-);
-
 export function MercPreview({ profile }: MercPreviewProps) {
-  const { content } = useJsonWithSchema(
-    schemaSchema,
-    contentSchema,
-    'mercs-profile-info.json'
-  );
+  const { content } = useJson('mercs-profile-info.json');
   const profileId = useMemo(() => {
     if (!content) {
       return null;
     }
-    const p = content.find((p) => p.internalName === profile);
+    const p = content.value.find((it: any) => it.internalName === profile);
     if (!p) {
       return null;
     }

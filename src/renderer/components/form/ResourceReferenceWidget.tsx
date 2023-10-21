@@ -22,7 +22,7 @@ export function ResourceReferenceWidget({
       onChange(path);
       closeModal();
     },
-    [closeModal, onChange]
+    [closeModal, onChange],
   );
   const preview = useMemo(() => {
     let element = null;
@@ -70,7 +70,7 @@ export function ResourceReferenceWidget({
 }
 
 export function resourceReference(type: ResourceType = ResourceType.Any) {
-  return (props: WidgetProps) => (
-    <ResourceReferenceWidget resourceType={type} {...props} />
-  );
+  return function ResourceReference(props: WidgetProps) {
+    return <ResourceReferenceWidget resourceType={type} {...props} />;
+  };
 }

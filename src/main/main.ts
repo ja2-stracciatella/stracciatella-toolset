@@ -1,4 +1,4 @@
-/* eslint global-require: off, no-console: off, promise/always-return: off */
+/* eslint global-require: off, no-console: off, promise/always-return: off, @typescript-eslint/no-var-requires: off */
 
 /**
  * This module executes inside of electron's main process. You can start
@@ -32,7 +32,7 @@ const handleInvoke = async (event: IpcMainInvokeEvent, payload: unknown) => {
   const { func, params } = await invokeSchema.parseAsync(payload);
   const result = await rustInterface.invoke(
     state,
-    JSON.stringify({ func, params })
+    JSON.stringify({ func, params }),
   );
   return JSON.parse(result);
 };
@@ -56,12 +56,12 @@ if (isDebug) {
 const installExtensions = async () => {
   const installer = require('electron-devtools-installer');
   const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-  const extensions = ['REACT_DEVELOPER_TOOLS'];
+  const extensions = ['REACT_DEVELOPER_TOOLS', 'REDUX_DEVTOOLS'];
 
   return installer
     .default(
       extensions.map((name) => installer[name]),
-      forceDownload
+      forceDownload,
     )
     .catch(console.log);
 };

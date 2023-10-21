@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { createContainer } from 'unstated-next';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import type { SerializedError } from '@reduxjs/toolkit';
 import { z } from 'zod';
 import { invokeWithSchema } from '../lib/invoke';
 
@@ -12,172 +12,131 @@ const partialToolsetConfigSchema = z.object({
 
 export type PartialToolsetConfig = z.infer<typeof partialToolsetConfigSchema>;
 
-const toolsetConfigSchema = z.object({
+const fullToolsetConfigSchema = z.object({
   stracciatellaHome: z.string(),
   vanillaGameDir: z.string(),
   stracciatellaInstallDir: z.string(),
   lastSelectedMod: z.union([z.string(), z.null()]),
 });
 
-export type ToolsetConfig = z.infer<typeof toolsetConfigSchema>;
+export type FullToolsetConfig = z.infer<typeof fullToolsetConfigSchema>;
 
 const SerializedSchema = z.object({
   partial: z.boolean(),
   config: partialToolsetConfigSchema,
 });
 
-interface LoadingState {
-  loading: true;
-  error: null;
-  partial: null;
-  config: null;
-}
-
-interface ErrorState {
-  loading: false;
-  error: Error;
-  partial: boolean | null;
-  config: PartialToolsetConfig | null;
-}
-
-interface NotConfiguredState {
-  loading: false;
-  error: null;
+interface PartialToolsetConfigState {
   partial: true;
-  config: PartialToolsetConfig;
+  value: PartialToolsetConfig;
 }
 
-interface ConfiguredState {
-  loading: false;
-  error: null;
+interface FullToolsetConfigState {
   partial: false;
-  config: ToolsetConfig;
+  value: FullToolsetConfig;
 }
 
-type ToolsetState =
-  | LoadingState
-  | ErrorState
-  | NotConfiguredState
-  | ConfiguredState;
+type ToolsetConfigState = PartialToolsetConfigState | FullToolsetConfigState;
 
-function useToolsetState(
-  initialState: ToolsetState = {
-    loading: true,
-    error: null,
-    config: null,
-    partial: null,
-  }
-) {
-  const [state, setState] = useState<ToolsetState>(initialState);
-  const toolsetLoading = useCallback(
-    () =>
-      setState({
-        loading: true,
-        error: null,
-        partial: null,
-        config: null,
-      }),
-    []
-  );
-  const toolsetError = useCallback(
-    (error: Error) =>
-      setState({
-        loading: false,
-        error,
-        partial: state.partial,
-        config: state.config,
-      }),
-    [state.config, state.partial]
-  );
-  const toolsetPartialSuccess = useCallback(
-    (config: PartialToolsetConfig) =>
-      setState({
-        loading: false,
-        error: null,
-        partial: true,
-        config,
-      }),
-    []
-  );
-  const toolsetSuccess = useCallback(
-    (config: ToolsetConfig) =>
-      setState({
-        loading: false,
-        error: null,
-        partial: false,
-        config,
-      }),
-    []
-  );
-  const setToolsetConfig = useCallback(
-    async (config: PartialToolsetConfig) => {
-      const partial = [
-        config.stracciatellaHome,
-        config.stracciatellaInstallDir,
-        config.vanillaGameDir,
-      ].some((v) => v === null);
-      try {
-        const res = await invokeWithSchema(
-          SerializedSchema,
-          'set_toolset_config',
-          {
-            config: {
-              partial,
-              config,
-            },
-          }
-        );
+interface ToolsetState {
+  loading: boolean;
+  error: SerializedError | null;
+  config: ToolsetConfigState;
+}
 
-        if (res.partial) {
-          toolsetPartialSuccess(res.config);
-        } else {
-          toolsetSuccess(res.config as ToolsetConfig);
-        }
-      } catch (e: any) {
-        toolsetError(new Error(`${e}`));
-      }
+const initialState: ToolsetState = {
+  loading: true,
+  error: null,
+  config: {
+    partial: true,
+    value: {
+      stracciatellaHome: null,
+      vanillaGameDir: null,
+      stracciatellaInstallDir: null,
+      lastSelectedMod: null,
     },
-    [toolsetError, toolsetPartialSuccess, toolsetSuccess]
-  );
-  return {
-    ...state,
-    toolsetLoading,
-    toolsetError,
-    toolsetPartialSuccess,
-    toolsetSuccess,
-    setToolsetConfig,
-  };
-}
+  },
+};
 
-const toolsetState = createContainer(useToolsetState);
+export const getToolsetConfig = createAsyncThunk(
+  'toolset-config/get',
+  async () => {
+    return invokeWithSchema(SerializedSchema, 'get_toolset_config');
+  },
+);
 
-export const ToolsetConfigProvider = toolsetState.Provider;
-export const useToolsetConfig = toolsetState.useContainer;
+export const setToolsetConfig = createAsyncThunk(
+  'toolset-config/set',
+  async (config: PartialToolsetConfig) => {
+    const partial = [
+      config.stracciatellaHome,
+      config.stracciatellaInstallDir,
+      config.vanillaGameDir,
+    ].some((v) => v === null);
 
-export function useFetchToolsetConfig() {
-  const {
-    toolsetLoading,
-    toolsetError,
-    toolsetPartialSuccess,
-    toolsetSuccess,
-  } = useToolsetConfig();
-  const fetchToolsetConfig = useCallback(async () => {
-    toolsetLoading();
-    try {
-      const { partial, config } = await invokeWithSchema(
-        SerializedSchema,
-        'get_toolset_config'
-      );
-      if (partial) {
-        toolsetPartialSuccess(config);
+    return invokeWithSchema(SerializedSchema, 'set_toolset_config', {
+      config: {
+        partial,
+        config,
+      },
+    });
+  },
+);
+
+const toolsetSlice = createSlice({
+  name: 'toolset-config',
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    const pending = (state: ToolsetState) => {
+      state.loading = true;
+      state.error = null;
+    };
+
+    builder.addCase(getToolsetConfig.pending, pending);
+    // TODO: Find a way to extract (same as setToolsetConfig)
+    builder.addCase(getToolsetConfig.rejected, (state, action) => {
+      state.loading = true;
+      state.error = action.error;
+    });
+    // TODO: Find a way to extract (same as setToolsetConfig)
+    builder.addCase(getToolsetConfig.fulfilled, (state, action) => {
+      state.loading = false;
+      state.error = null;
+      if (action.payload.partial) {
+        state.config = {
+          partial: true,
+          value: action.payload.config,
+        };
       } else {
-        const fullConfig = toolsetConfigSchema.parse(config);
-        toolsetSuccess(fullConfig);
+        state.config = {
+          partial: false,
+          value: fullToolsetConfigSchema.parse(action.payload.config),
+        };
       }
-    } catch (e) {
-      toolsetError(new Error(`error loading toolset config: ${e}`));
-    }
-  }, [toolsetLoading, toolsetError, toolsetPartialSuccess, toolsetSuccess]);
+    });
 
-  return fetchToolsetConfig;
-}
+    builder.addCase(setToolsetConfig.pending, pending);
+    builder.addCase(setToolsetConfig.rejected, (state, action) => {
+      state.loading = true;
+      state.error = action.error;
+    });
+    builder.addCase(setToolsetConfig.fulfilled, (state, action) => {
+      state.loading = false;
+      state.error = null;
+      if (action.payload.partial) {
+        state.config = {
+          partial: true,
+          value: action.payload.config,
+        };
+      } else {
+        state.config = {
+          partial: false,
+          value: fullToolsetConfigSchema.parse(action.payload.config),
+        };
+      }
+    });
+  },
+});
+
+export const toolset = toolsetSlice.reducer;
