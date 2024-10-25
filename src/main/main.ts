@@ -20,6 +20,7 @@ import * as z from 'zod';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import rustInterface from './rust';
+import debug from 'electron-debug';
 
 rustInterface.initLogger();
 
@@ -50,7 +51,7 @@ const isDebug =
   process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
 
 if (isDebug) {
-  require('electron-debug')();
+  debug();
 }
 
 const installExtensions = async () => {
