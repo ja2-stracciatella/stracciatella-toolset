@@ -1,16 +1,21 @@
-const { defineConfig, globalIgnores } = require('eslint/config');
+import { defineConfig, globalIgnores } from 'eslint/config';
+import { fixupPluginRules } from '@eslint/compat';
+import typescriptEslint from '@typescript-eslint/eslint-plugin';
+import typescriptParser from '@typescript-eslint/parser';
+import importPlugin from 'eslint-plugin-import';
+import promisePlugin from 'eslint-plugin-promise';
+import reactPlugin from 'eslint-plugin-react';
+import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
+import prettierPlugin from 'eslint-plugin-prettier';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import webpackEslintConfig from './.erb/configs/webpack.config.eslint.mjs';
 
-const { fixupPluginRules } = require('@eslint/compat');
-const typescriptEslint = require('@typescript-eslint/eslint-plugin');
-const typescriptParser = require('@typescript-eslint/parser');
-const importPlugin = require('eslint-plugin-import');
-const promisePlugin = require('eslint-plugin-promise');
-const reactPlugin = require('eslint-plugin-react');
-const reactHooksPlugin = require('eslint-plugin-react-hooks');
-const jsxA11yPlugin = require('eslint-plugin-jsx-a11y');
-const prettierPlugin = require('eslint-plugin-prettier');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-module.exports = defineConfig([
+export default defineConfig([
   // Base JavaScript configuration
   {
     files: ['**/*.{js,jsx}'],
@@ -60,7 +65,7 @@ module.exports = defineConfig([
       'import/resolver': {
         node: {},
         webpack: {
-          config: require.resolve('./.erb/configs/webpack.config.eslint.ts'),
+          config: webpackEslintConfig,
         },
       },
     },
@@ -139,7 +144,7 @@ module.exports = defineConfig([
       'import/resolver': {
         node: {},
         webpack: {
-          config: require.resolve('./.erb/configs/webpack.config.eslint.ts'),
+          config: webpackEslintConfig,
         },
         typescript: {},
       },
