@@ -1,6 +1,6 @@
 import { IChangeEvent, withTheme } from '@rjsf/core';
 import { UiSchema, FieldTemplateProps, FieldProps } from '@rjsf/utils';
-// eslint-disable-next-line
+
 // @ts-ignore
 import { Theme as AntdTheme } from '@rjsf/antd';
 import { Form } from 'antd';

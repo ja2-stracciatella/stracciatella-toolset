@@ -69,7 +69,7 @@ const configuration: webpack.Configuration = {
 
     new webpack.NormalModuleReplacementPlugin(
       /^stracciatella-toolset$/,
-      '../../src-rust/target/stracciatella-toolset.node'
+      '../../src-rust/target/stracciatella-toolset.node',
     ),
   ],
 

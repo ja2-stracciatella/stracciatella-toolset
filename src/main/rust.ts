@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-unresolved, @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import rustInterface from '../../src-rust/target/stracciatella-toolset.node';
 
