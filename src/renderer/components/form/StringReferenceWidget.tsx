@@ -1,7 +1,8 @@
 import { WidgetProps } from '@rjsf/utils';
 import { Input, AutoComplete } from 'antd';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useJson } from '../../hooks/files';
+import { BaseOptionType } from 'antd/lib/select';
 
 interface StringReferenceWidgetProps extends WidgetProps {
   referenceFile: string;
@@ -22,6 +23,12 @@ export function StringReferenceWidget({
     }
     return content.value.map((d: any) => ({ value: d[referenceProperty] }));
   }, [content, referenceProperty]);
+  const onChangeMemo = useCallback(
+    (value: BaseOptionType) => {
+      onChange(value);
+    },
+    [onChange],
+  );
 
   if (error) {
     return <Input value={value} onChange={onChange} required={required} />;
@@ -31,7 +38,7 @@ export function StringReferenceWidget({
     <AutoComplete
       options={options}
       value={value}
-      onChange={onChange}
+      onChange={onChangeMemo}
       placeholder="Please select..."
     />
   );
