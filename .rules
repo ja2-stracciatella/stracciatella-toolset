@@ -1,0 +1,27 @@
+# Project Configuration
+
+## Project Type
+
+- Runtime Environment: Electron
+- Language: TypeScript, Rust
+- UI Framework: React
+- UI Library: Ant Design
+
+## Build Commands
+- `npm install`: Install dependencies
+- `npm run tsc:check`: Typecheck TypeScript files
+- `npm run lint`: Lint TypeScript files
+- `npm run rebuild:rust`: Rebuild Rust files
+- `npm run build`: Build whole project
+
+## Important Files
+- `src/**/*`: TypeScript source code
+- `src-rust/**/*`: Rust source code
+
+## General Rules
+- Dont add new dependencies unless asked to
+- Keep code clean and organized
+- Follow coding conventions and style guides
+- Run typechecking, linting, building and tests before committing changes
+- Keep commit messages concise and descriptive
+- Only commit to the current branch
