@@ -1,5 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import 'antd/dist/antd.compact.less';
+import 'antd/dist/reset.css';
 import { useMemo } from 'react';
 import { ROUTES } from './EditorRoutes';
 import './App.css';

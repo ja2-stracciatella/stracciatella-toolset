@@ -1,4 +1,4 @@
-import { waitFor } from '@testing-library/react';
+import { waitFor } from '@testing-library/dom';
 import { AppWithoutProviders } from '../../renderer/App';
 import { renderWithTestProviders } from './test-utils/render';
 import { it, describe, expect } from 'vitest';
