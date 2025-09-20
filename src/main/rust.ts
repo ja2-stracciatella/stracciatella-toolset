@@ -1,4 +1,5 @@
 // @ts-ignore
+// eslint-disable-next-line import/no-unresolved
 import rustInterface from '../../src-rust/target/stracciatella-toolset.node';
 
 interface RustInterface {
