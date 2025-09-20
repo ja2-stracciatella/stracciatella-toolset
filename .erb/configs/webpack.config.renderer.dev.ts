@@ -83,23 +83,7 @@ const configuration: webpack.Configuration = {
         use: ['style-loader', 'css-loader', 'sass-loader'],
         exclude: /\.module\.s?(c|a)ss$/,
       },
-      {
-        test: /\.less$/i,
-        use: [
-          // compiles Less to CSS
-          'style-loader',
-          'css-loader',
-          {
-            loader: 'less-loader',
-            options: {
-              lessOptions: {
-                modifyVars: { '@primary-color': '#9d1e1c' },
-                javascriptEnabled: true,
-              },
-            },
-          },
-        ],
-      },
+
       // Fonts
       {
         test: /\.(woff|woff2|eot|ttf|otf)$/i,

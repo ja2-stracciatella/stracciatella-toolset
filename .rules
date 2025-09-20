@@ -25,6 +25,7 @@
 - Run typechecking, linting, building and tests before committing changes
 - Keep commit messages concise and descriptive
 - Only commit to the current branch
+- Run `npm install` after updating dependencies or dev dependencies in `package.json`
 
 # React Rules
 - Use performance enhancing techniques such as `useMemo` and `useCallback`
