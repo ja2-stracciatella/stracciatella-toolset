@@ -1,5 +1,4 @@
 const { defineConfig, globalIgnores } = require('eslint/config');
-const js = require('@eslint/js');
 
 const { fixupPluginRules } = require('@eslint/compat');
 const typescriptEslint = require('@typescript-eslint/eslint-plugin');
