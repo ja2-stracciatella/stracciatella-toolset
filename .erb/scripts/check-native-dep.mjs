@@ -1,8 +1,8 @@
-import fs from 'fs';
+import fs from 'node:fs';
 import chalk from 'chalk';
-import { execSync } from 'child_process';
-import { dependencies } from '../../package.json';
-
+import { execSync } from 'node:child_process';
+import packageJson from '../../package.json' with { type: 'json' };
+const { dependencies } = packageJson;
 if (dependencies) {
   const dependenciesKeys = Object.keys(dependencies);
   const nativeDeps = fs
@@ -48,8 +48,7 @@ ${chalk.bold(
  `);
       process.exit(1);
     }
-    // eslint-disable-next-line no-unused-vars
-  } catch (_e) {
-    console.log('Native dependencies could not be checked');
+  } catch (e) {
+    console.log('Native dependencies could not be checked', e);
   }
 }

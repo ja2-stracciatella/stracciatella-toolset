@@ -1,8 +1,8 @@
 // Check if the renderer and main bundles are built
-import path from 'path';
+import path from 'node:path';
 import chalk from 'chalk';
-import fs from 'fs';
-import webpackPaths from '../configs/webpack.paths';
+import fs from 'node:fs';
+import webpackPaths from '../configs/webpack.paths.mts';
 
 const mainPath = path.join(webpackPaths.distMainPath, 'main.js');
 const rendererPath = path.join(webpackPaths.distRendererPath, 'renderer.js');

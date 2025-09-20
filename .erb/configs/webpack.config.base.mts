@@ -3,8 +3,10 @@
  */
 
 import webpack from 'webpack';
-import webpackPaths from './webpack.paths';
-import { dependencies as externals } from '../../release/app/package.json';
+import webpackPaths from './webpack.paths.mts';
+import packageJson from '../../release/app/package.json' with { type: 'json' };
+
+const { dependencies: externals } = packageJson;
 
 const configuration: webpack.Configuration = {
   externals: [...Object.keys(externals || {})],

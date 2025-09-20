@@ -1,5 +1,5 @@
-import { execSync } from 'child_process';
-import webpackPaths from '../configs/webpack.paths';
+import { execSync } from 'node:child_process';
+import webpackPaths from '../configs/webpack.paths.mts';
 
 const cargoRebuildCmd =
   'cargo build --release --manifest-path=./src-rust/Cargo.toml --message-format=json-render-diagnostics';

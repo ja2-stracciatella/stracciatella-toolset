@@ -10,7 +10,7 @@ import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
 import prettierPlugin from 'eslint-plugin-prettier';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import webpackEslintConfig from './.erb/configs/webpack.config.eslint.mjs';
+import webpackEslintConfig from './.erb/configs/webpack.config.eslint.mts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -18,7 +18,7 @@ const __dirname = dirname(__filename);
 export default defineConfig([
   // Base JavaScript configuration
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['src/**/*.{js,jsx}'],
     plugins: {
       import: fixupPluginRules(importPlugin),
       promise: fixupPluginRules(promisePlugin),
@@ -73,7 +73,7 @@ export default defineConfig([
 
   // React JSX configuration
   {
-    files: ['**/*.{jsx,tsx}'],
+    files: ['src/**/*.{jsx,tsx}'],
     plugins: {
       react: fixupPluginRules(reactPlugin),
       'react-hooks': fixupPluginRules(reactHooksPlugin),
@@ -156,7 +156,7 @@ export default defineConfig([
 
   // Configuration for build/config TypeScript files
   {
-    files: ['.erb/**/*.{ts,tsx}', 'vitest.config.ts', 'eslint.config.js'],
+    files: ['.erb/**/*.{ts,mts,tsx}', 'vitest.config.ts', 'eslint.config.mjs'],
     plugins: {
       '@typescript-eslint': fixupPluginRules(typescriptEslint),
       import: fixupPluginRules(importPlugin),
@@ -166,7 +166,7 @@ export default defineConfig([
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
-        ecmaVersion: 2020,
+        ecmaVersion: 2025,
         sourceType: 'module',
       },
       globals: {
@@ -192,7 +192,8 @@ export default defineConfig([
       'no-unused-vars': 'off',
 
       // Prettier
-      'prettier/prettier': 'error',
+      // Disabled because no support for import with
+      'prettier/prettier': 'off',
     },
     settings: {
       'import/resolver': {

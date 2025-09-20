@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 
-export default function checkNodeEnv(expectedEnv) {
+export default function checkNodeEnv(expectedEnv: string): void {
   if (!expectedEnv) {
     throw new Error('"expectedEnv" not set');
   }

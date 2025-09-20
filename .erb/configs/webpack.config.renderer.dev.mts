@@ -1,15 +1,16 @@
 import 'webpack-dev-server';
-import path from 'path';
-import fs from 'fs';
+import path from 'node:path';
+import fs from 'node:fs';
 import webpack from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import chalk from 'chalk';
 import { merge } from 'webpack-merge';
-import { execSync, spawn } from 'child_process';
+import { execSync, spawn } from 'node:child_process';
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
-import baseConfig from './webpack.config.base';
-import webpackPaths from './webpack.paths';
-import checkNodeEnv from '../scripts/check-node-env';
+import baseConfig from './webpack.config.base.mts';
+import webpackPaths from './webpack.paths.mts';
+import checkNodeEnv from '../scripts/check-node-env.mts';
+import rendererModuleConfig from './webpack.module.renderer.mts';
 
 // When an ESLint server is running, we can't set the NODE_ENV so we'll check if it's
 // at the dev webpack config is not accidentally run in a production environment
@@ -19,17 +20,11 @@ if (process.env.NODE_ENV === 'production') {
 
 const port = process.env.PORT || 1212;
 const manifest = path.resolve(webpackPaths.dllPath, 'renderer.json');
-const skipDLLs =
-  module.parent?.filename.includes('webpack.config.renderer.dev.dll') ||
-  module.parent?.filename.includes('webpack.config.eslint');
 
 /**
  * Warn if the DLL is not built
  */
-if (
-  !skipDLLs &&
-  !(fs.existsSync(webpackPaths.dllPath) && fs.existsSync(manifest))
-) {
+if (!(fs.existsSync(webpackPaths.dllPath) && fs.existsSync(manifest))) {
   console.log(
     chalk.black.bgYellow.bold(
       'The DLL files are missing. Sit back while we build them for you with "npm run build-dll"',
@@ -60,70 +55,13 @@ const configuration: webpack.Configuration = {
     },
   },
 
-  module: {
-    rules: [
-      {
-        test: /\.s?css$/,
-        use: [
-          'style-loader',
-          {
-            loader: 'css-loader',
-            options: {
-              modules: true,
-              sourceMap: true,
-              importLoaders: 1,
-            },
-          },
-          'sass-loader',
-        ],
-        include: /\.module\.s?(c|a)ss$/,
-      },
-      {
-        test: /\.s?css$/,
-        use: ['style-loader', 'css-loader', 'sass-loader'],
-        exclude: /\.module\.s?(c|a)ss$/,
-      },
-
-      // Fonts
-      {
-        test: /\.(woff|woff2|eot|ttf|otf)$/i,
-        type: 'asset/resource',
-      },
-      // Images
-      {
-        test: /\.(png|jpg|jpeg|gif)$/i,
-        type: 'asset/resource',
-      },
-      // SVG
-      {
-        test: /\.svg$/,
-        use: [
-          {
-            loader: '@svgr/webpack',
-            options: {
-              prettier: false,
-              svgo: false,
-              svgoConfig: {
-                plugins: [{ removeViewBox: false }],
-              },
-              titleProp: true,
-              ref: true,
-            },
-          },
-        ],
-      },
-    ],
-  },
+  module: rendererModuleConfig,
   plugins: [
-    ...(skipDLLs
-      ? []
-      : [
-          new webpack.DllReferencePlugin({
-            context: webpackPaths.dllPath,
-            manifest: require(manifest),
-            sourceType: 'var',
-          }),
-        ]),
+    new webpack.DllReferencePlugin({
+      context: webpackPaths.dllPath,
+      manifest: JSON.parse(fs.readFileSync(manifest, 'utf8')),
+      sourceType: 'var',
+    }),
 
     new webpack.NoEmitOnErrorsPlugin(),
 

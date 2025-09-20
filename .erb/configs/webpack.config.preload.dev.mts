@@ -1,10 +1,10 @@
-import path from 'path';
+import path from 'node:path';
 import webpack from 'webpack';
 import { merge } from 'webpack-merge';
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
-import baseConfig from './webpack.config.base';
-import webpackPaths from './webpack.paths';
-import checkNodeEnv from '../scripts/check-node-env';
+import baseConfig from './webpack.config.base.mts';
+import webpackPaths from './webpack.paths.mts';
+import checkNodeEnv from '../scripts/check-node-env.mts';
 
 // When an ESLint server is running, we can't set the NODE_ENV so we'll check if it's
 // at the dev webpack config is not accidentally run in a production environment
