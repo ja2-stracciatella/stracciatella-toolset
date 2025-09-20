@@ -16,7 +16,7 @@ import checkNodeEnv from '../scripts/check-node-env.mts';
 import deleteSourceMaps from '../scripts/delete-source-maps.mts';
 
 checkNodeEnv('production');
-deleteSourceMaps();
+await deleteSourceMaps();
 
 const configuration: webpack.Configuration = {
   devtool: 'source-map',

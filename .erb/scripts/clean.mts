@@ -1,4 +1,4 @@
-import rimraf from 'rimraf';
+import { rimraf } from 'rimraf';
 import webpackPaths from '../configs/webpack.paths.mts';
 
 const foldersToRemove = [
@@ -7,6 +7,8 @@ const foldersToRemove = [
   webpackPaths.dllPath,
 ];
 
-foldersToRemove.forEach((folder) => {
-  rimraf.sync(folder);
-});
+await Promise.all(
+  foldersToRemove.map(async (folder) => {
+    await rimraf(folder);
+  }),
+);
