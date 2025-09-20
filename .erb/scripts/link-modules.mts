@@ -1,5 +1,5 @@
-import fs from 'fs';
-import webpackPaths from '../configs/webpack.paths';
+import fs from 'node:fs';
+import webpackPaths from '../configs/webpack.paths.mts';
 
 const { srcNodeModulesPath, appNodeModulesPath, erbNodeModulesPath } =
   webpackPaths;

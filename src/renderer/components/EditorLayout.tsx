@@ -1,11 +1,12 @@
 import { ReactNode, useMemo } from 'react';
 import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
-import { Layout, Menu, Typography } from 'antd';
+import { Layout, Menu, MenuProps, Typography } from 'antd';
 
 import './EditorLayout.css';
 import { MENU, MenuItem } from '../EditorRoutes';
-import { ItemType } from 'antd/lib/menu/hooks/useItems';
 import { useAppSelector } from '../hooks/state';
+
+type ItemType = NonNullable<MenuProps['items']>[number];
 
 const { Header, Sider } = Layout;
 

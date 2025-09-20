@@ -2,15 +2,15 @@
  * Webpack config for production electron main process
  */
 
-import path from 'path';
+import path from 'node:path';
 import webpack from 'webpack';
 import { merge } from 'webpack-merge';
 import TerserPlugin from 'terser-webpack-plugin';
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
-import baseConfig from './webpack.config.base';
-import webpackPaths from './webpack.paths';
-import checkNodeEnv from '../scripts/check-node-env';
-import deleteSourceMaps from '../scripts/delete-source-maps';
+import baseConfig from './webpack.config.base.mts';
+import webpackPaths from './webpack.paths.mts';
+import checkNodeEnv from '../scripts/check-node-env.mts';
+import deleteSourceMaps from '../scripts/delete-source-maps.mts';
 
 checkNodeEnv('production');
 deleteSourceMaps();
@@ -69,7 +69,7 @@ const configuration: webpack.Configuration = {
 
     new webpack.NormalModuleReplacementPlugin(
       /^stracciatella-toolset$/,
-      '../../src-rust/target/stracciatella-toolset.node'
+      '../../src-rust/target/stracciatella-toolset.node',
     ),
   ],
 

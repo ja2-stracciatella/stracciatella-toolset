@@ -3,15 +3,17 @@
  */
 
 import webpack from 'webpack';
-import path from 'path';
+import path from 'node:path';
 import { merge } from 'webpack-merge';
-import baseConfig from './webpack.config.base';
-import webpackPaths from './webpack.paths';
-import { dependencies } from '../../package.json';
-import checkNodeEnv from '../scripts/check-node-env';
+import baseConfig from './webpack.config.base.mts';
+import webpackPaths from './webpack.paths.mts';
+import packageJson from '../../package.json' with { type: 'json' };
+import checkNodeEnv from '../scripts/check-node-env.mts';
+import rendererModuleConfig from './webpack.module.renderer.mts';
 
 checkNodeEnv('development');
 
+const { dependencies } = packageJson;
 const dist = webpackPaths.dllPath;
 
 const configuration: webpack.Configuration = {
@@ -26,9 +28,9 @@ const configuration: webpack.Configuration = {
   externals: ['fsevents', 'crypto-browserify'],
 
   /**
-   * Use `module` from `webpack.config.renderer.dev.js`
+   * Use shared module configuration for renderer
    */
-  module: require('./webpack.config.renderer.dev').default.module,
+  module: rendererModuleConfig,
 
   entry: {
     renderer: Object.keys(dependencies || {}),

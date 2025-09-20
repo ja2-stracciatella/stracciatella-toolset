@@ -1,7 +1,9 @@
-const { notarize } = require('@electron/notarize');
-const { build } = require('../../package.json');
+import { notarize } from '@electron/notarize';
+import packageJson from '../../package.json' with { type: 'json' };
 
-exports.default = async function notarizeMacos(context) {
+const { build } = packageJson;
+
+export default async function notarizeMacos(context) {
   const { electronPlatformName, appOutDir } = context;
   if (electronPlatformName !== 'darwin') {
     return;
@@ -14,7 +16,7 @@ exports.default = async function notarizeMacos(context) {
 
   if (!('APPLE_ID' in process.env && 'APPLE_ID_PASS' in process.env)) {
     console.warn(
-      'Skipping notarizing step. APPLE_ID and APPLE_ID_PASS env variables must be set'
+      'Skipping notarizing step. APPLE_ID and APPLE_ID_PASS env variables must be set',
     );
     return;
   }
@@ -22,9 +24,10 @@ exports.default = async function notarizeMacos(context) {
   const appName = context.packager.appInfo.productFilename;
 
   await notarize({
-    appBundleId: build.appId,
+    // appBundleId: build.appId,
     appPath: `${appOutDir}/${appName}.app`,
+    teamId: process.env.TEAM_ID,
     appleId: process.env.APPLE_ID,
     appleIdPassword: process.env.APPLE_ID_PASS,
   });
-};
+}

@@ -2,7 +2,7 @@
  * Build config for electron renderer process
  */
 
-import path from 'path';
+import path from 'node:path';
 import webpack from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
@@ -10,13 +10,13 @@ import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 import CssMinimizerPlugin from 'css-minimizer-webpack-plugin';
 import { merge } from 'webpack-merge';
 import TerserPlugin from 'terser-webpack-plugin';
-import baseConfig from './webpack.config.base';
-import webpackPaths from './webpack.paths';
-import checkNodeEnv from '../scripts/check-node-env';
-import deleteSourceMaps from '../scripts/delete-source-maps';
+import baseConfig from './webpack.config.base.mts';
+import webpackPaths from './webpack.paths.mts';
+import checkNodeEnv from '../scripts/check-node-env.mts';
+import deleteSourceMaps from '../scripts/delete-source-maps.mts';
 
 checkNodeEnv('production');
-deleteSourceMaps();
+await deleteSourceMaps();
 
 const configuration: webpack.Configuration = {
   devtool: 'source-map',
@@ -59,23 +59,7 @@ const configuration: webpack.Configuration = {
         use: [MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader'],
         exclude: /\.module\.s?(c|a)ss$/,
       },
-      {
-        test: /\.less$/i,
-        use: [
-          // compiles Less to CSS
-          MiniCssExtractPlugin.loader,
-          'css-loader',
-          {
-            loader: 'less-loader',
-            options: {
-              lessOptions: {
-                modifyVars: { '@primary-color': '#9d1e1c' },
-                javascriptEnabled: true,
-              },
-            },
-          },
-        ],
-      },
+
       // Fonts
       {
         test: /\.(woff|woff2|eot|ttf|otf)$/i,
@@ -102,7 +86,6 @@ const configuration: webpack.Configuration = {
               ref: true,
             },
           },
-          'file-loader',
         ],
       },
     ],
