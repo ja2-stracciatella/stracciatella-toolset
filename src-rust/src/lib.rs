@@ -1,6 +1,13 @@
 use std::ops::Deref;
 
-use invokables::{toolset_config::SerializableToolsetConfig, mods::SelectedMod, json::{OpenFileOptions, PersistFileOptions}, images::ReadImageFileParams, resources::ListResourcesParams, sounds::ReadSoundParams};
+use invokables::{
+    images::ReadImageFileParams,
+    json::{OpenFileOptions, PersistFileOptions},
+    mods::SelectedMod,
+    resources::ListResourcesParams,
+    sounds::ReadSoundParams,
+    toolset_config::SerializableToolsetConfig,
+};
 use neon::prelude::*;
 use serde::{Deserialize, Serialize};
 use simplelog::*;
@@ -51,59 +58,68 @@ struct Payload {
 }
 
 fn invoke_inner(state: &state::AppState, payload: &str) -> Result<String> {
-    let payload: Payload = serde_json::from_str(payload)?;
-    let result = match payload.func.as_str() {
-        "get_toolset_config" => {
-            let config = invokables::toolset_config::get_toolset_config(&state)?;
-            Ok(serde_json::to_value(config)?)
-        }
-        "set_toolset_config" => {
-            let config: SerializableToolsetConfig = serde_json::from_value(payload.params)?;
-            let config = invokables::toolset_config::set_toolset_config(&state, config)?;
-            Ok(serde_json::to_value(config)?)
-        }
-        "get_available_mods" => {
-          let config = invokables::mods::get_available_mods(&state)?;
-          Ok(serde_json::to_value(config)?)
-        },
-        "get_editable_mods" => {
-          let config = invokables::mods::get_editable_mods(&state)?;
-          Ok(serde_json::to_value(config)?)
-        },
-        "set_selected_mod" => {
-          let selected_mod: SelectedMod = serde_json::from_value(payload.params)?;
-          invokables::mods::set_selected_mod(&state, selected_mod)?;
-          Ok(serde_json::to_value("success")?)
-        },
-        "open_json_file_with_schema" => {
-          let file: OpenFileOptions = serde_json::from_value(payload.params)?;
-          let json = invokables::json::open_json_file_with_schema(&state, file)?;
-          Ok(serde_json::to_value(json)?)
-        },
-        "persist_json_file" => {
-          let file: PersistFileOptions = serde_json::from_value(payload.params)?;
-          invokables::json::persist_json_file(&state, file)?;
-          Ok(serde_json::to_value("success")?)
-        },
-        "read_image_file" => {
-          let params: ReadImageFileParams = serde_json::from_value(payload.params)?;
-          let image = invokables::images::read_image_file(state, params)?;
-          Ok(serde_json::to_value(image)?)
+    fn invoke_payload(state: &state::AppState, payload: &Payload) -> Result<String> {
+        let result = match payload.func.as_str() {
+            "get_toolset_config" => {
+                let config = invokables::toolset_config::get_toolset_config(&state)?;
+                Ok(serde_json::to_value(config)?)
+            }
+            "set_toolset_config" => {
+                let config: SerializableToolsetConfig =
+                    serde_json::from_value(payload.params.clone())?;
+                let config = invokables::toolset_config::set_toolset_config(&state, config)?;
+                Ok(serde_json::to_value(config)?)
+            }
+            "get_available_mods" => {
+                let config = invokables::mods::get_available_mods(&state)?;
+                Ok(serde_json::to_value(config)?)
+            }
+            "get_editable_mods" => {
+                let config = invokables::mods::get_editable_mods(&state)?;
+                Ok(serde_json::to_value(config)?)
+            }
+            "set_selected_mod" => {
+                let selected_mod: SelectedMod = serde_json::from_value(payload.params.clone())?;
+                invokables::mods::set_selected_mod(&state, selected_mod)?;
+                Ok(serde_json::to_value("success")?)
+            }
+            "open_json_file_with_schema" => {
+                let file: OpenFileOptions = serde_json::from_value(payload.params.clone())?;
+                let json = invokables::json::open_json_file_with_schema(&state, file)?;
+                Ok(serde_json::to_value(json)?)
+            }
+            "persist_json_file" => {
+                let file: PersistFileOptions = serde_json::from_value(payload.params.clone())?;
+                invokables::json::persist_json_file(&state, file)?;
+                Ok(serde_json::to_value("success")?)
+            }
+            "read_image_file" => {
+                let params: ReadImageFileParams = serde_json::from_value(payload.params.clone())?;
+                let image = invokables::images::read_image_file(state, params)?;
+                Ok(serde_json::to_value(image)?)
+            }
+            "list_resources" => {
+                let params: ListResourcesParams = serde_json::from_value(payload.params.clone())?;
+                let dir_entries = invokables::resources::list_resources(state, params)?;
+                Ok(serde_json::to_value(dir_entries)?)
+            }
+            "read_sound" => {
+                let params: ReadSoundParams = serde_json::from_value(payload.params.clone())?;
+                let dir_entries = invokables::sounds::read_sound(state, params)?;
+                Ok(serde_json::to_value(dir_entries)?)
+            }
+            _ => Err(Error::new("unknown function to invoke")),
+        }?;
+        Ok(serde_json::to_string(&result)?)
+    }
 
-        },
-        "list_resources" => {
-          let params: ListResourcesParams = serde_json::from_value(payload.params)?;
-          let dir_entries = invokables::resources::list_resources(state, params)?;
-          Ok(serde_json::to_value(dir_entries)?)
-        },
-        "read_sound" => {
-          let params: ReadSoundParams = serde_json::from_value(payload.params)?;
-          let dir_entries = invokables::sounds::read_sound(state, params)?;
-          Ok(serde_json::to_value(dir_entries)?)
-        },
-        _ => Err(Error::new("unknown function to invoke")),
-    }?;
-    Ok(serde_json::to_string(&result)?)
+    let payload: Payload = serde_json::from_str(payload)?;
+    invoke_payload(state, &payload).map_err(|e| {
+        Error::new(format!(
+            "failed to invoke {} with params {}: {}",
+            payload.func, payload.params, e
+        ))
+    })
 }
 
 fn invoke(mut ctx: FunctionContext) -> JsResult<JsPromise> {

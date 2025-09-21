@@ -166,6 +166,29 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     },
   },
   {
+    type: 'Submenu',
+    id: 'explosions',
+    label: 'Explosions',
+    children: [
+      {
+        type: 'Item',
+        id: 'explosion-animations',
+        label: 'Explosion Animations',
+        component: function ExplosionAnimations() {
+          return <JsonItemsForm file="explosion-animations.json" name="name" />;
+        },
+      },
+      {
+        type: 'Item',
+        id: 'smoke-effects',
+        label: 'Smoke Effects',
+        component: function SmokeEffects() {
+          return <JsonItemsForm file="smoke-effects.json" name="name" />;
+        },
+      },
+    ],
+  },
+  {
     type: 'Item',
     id: 'game',
     label: 'Game',
@@ -196,6 +219,26 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
       },
       {
         type: 'Item',
+        id: 'armours',
+        label: 'Armours',
+        component: function Armours() {
+          const preview = useCallback(
+            (item: any) => (
+              <ItemPreview inventoryGraphics={item.inventoryGraphics} />
+            ),
+            [],
+          );
+          return (
+            <JsonItemsForm
+              file="armours.json"
+              name="internalName"
+              preview={preview}
+            />
+          );
+        },
+      },
+      {
+        type: 'Item',
         id: 'calibres',
         label: 'Calibres',
         component: function Calibres() {
@@ -216,6 +259,36 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               file="calibres.json"
               name="internalName"
               uiSchema={uiSchema}
+            />
+          );
+        },
+      },
+      {
+        type: 'Item',
+        id: 'explosive-calibres',
+        label: 'Explosive Calibres',
+        component: function ExplosiveCalibres() {
+          return (
+            <JsonItemsForm file="explosive-calibres.json" name="internalName" />
+          );
+        },
+      },
+      {
+        type: 'Item',
+        id: 'explosives',
+        label: 'Explosives',
+        component: function Explosives() {
+          const preview = useCallback(
+            (item: any) => (
+              <ItemPreview inventoryGraphics={item.inventoryGraphics} />
+            ),
+            [],
+          );
+          return (
+            <JsonItemsForm
+              file="explosives.json"
+              name="internalName"
+              preview={preview}
             />
           );
         },
@@ -352,6 +425,16 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
       },
       {
         type: 'Item',
+        id: 'relations',
+        label: 'Opinions',
+        component: function MercsRelations() {
+          return (
+            <JsonItemsForm file="mercs-relations.json" name="internalName" />
+          );
+        },
+      },
+      {
+        type: 'Item',
         id: 'profiles',
         label: 'Profiles',
         component: function MercsProfileInfo() {
@@ -421,6 +504,31 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
 
       return <JsonForm file="music.json" uiSchema={uiSchema} />;
     },
+  },
+  {
+    type: 'Submenu',
+    id: 'scripts',
+    label: 'Scripts',
+    children: [
+      {
+        type: 'Item',
+        id: 'records',
+        label: 'NPC Records',
+        component: function Records() {
+          return (
+            <JsonItemsForm file="script-records-NPCs.json" name="profile" />
+          );
+        },
+      },
+      {
+        type: 'Item',
+        id: 'records-control',
+        label: 'Records Control',
+        component: function RecordsControl() {
+          return <JsonForm file="script-records-control.json" />;
+        },
+      },
+    ],
   },
   {
     type: 'Item',

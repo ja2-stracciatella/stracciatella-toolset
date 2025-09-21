@@ -1,5 +1,5 @@
-use std::{path::Path, str::FromStr};
 use std::fs::{read_to_string, write};
+use std::{path::Path, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -12,7 +12,7 @@ use crate::{
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OpenFileOptions {
-  file: String,
+    file: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -55,14 +55,11 @@ pub fn open_json_file_with_schema(
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PersistFileOptions {
-  file: String,
-  content: Value
+    file: String,
+    content: Value,
 }
 
-pub fn persist_json_file(
-    state: &state::AppState,
-    file: PersistFileOptions
-) -> Result<()> {
+pub fn persist_json_file(state: &state::AppState, file: PersistFileOptions) -> Result<()> {
     if file.file.contains("..") {
         return Err(Error::new("file path cannot contain `..`"));
     }

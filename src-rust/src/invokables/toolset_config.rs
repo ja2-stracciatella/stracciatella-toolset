@@ -13,9 +13,7 @@ pub struct SerializableToolsetConfig {
     config: config::PartialToolsetConfig,
 }
 
-pub fn get_toolset_config(
-    state: &state::AppState,
-) -> Result<SerializableToolsetConfig> {
+pub fn get_toolset_config(state: &state::AppState) -> Result<SerializableToolsetConfig> {
     let state = state.read();
     match *state {
         state::ToolsetState::Configured { ref config, .. } => Ok(SerializableToolsetConfig {

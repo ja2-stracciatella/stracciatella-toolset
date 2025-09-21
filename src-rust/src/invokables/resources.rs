@@ -18,7 +18,7 @@ pub enum DirEntry {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListResourcesParams {
-  dir: String,
+    dir: String,
 }
 
 pub fn list_resources(

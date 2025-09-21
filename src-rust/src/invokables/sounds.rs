@@ -1,7 +1,7 @@
 use std::fs::OpenOptions;
 use std::io::Read;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use stracciatella::{unicode::Nfc, vfs::VfsLayer};
 
 use crate::{
@@ -35,13 +35,10 @@ impl Serialize for Base64Sound {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReadSoundParams {
-  file: String
+    file: String,
 }
 
-pub fn read_sound(
-    state: &state::AppState,
-    params: ReadSoundParams,
-) -> Result<Base64Sound> {
+pub fn read_sound(state: &state::AppState, params: ReadSoundParams) -> Result<Base64Sound> {
     if params.file.contains("..") {
         return Err(Error::new("file path cannot contain `..`"));
     }

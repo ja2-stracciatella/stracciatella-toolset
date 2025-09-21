@@ -1,5 +1,5 @@
-use std::path::{Path, PathBuf};
 use std::fs::read_to_string;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 use stracciatella::{fs::resolve_existing_components, mods::ModPath};
@@ -54,9 +54,7 @@ pub fn get_available_mods(state: &state::AppState) -> Result<Vec<Mod>> {
         .collect())
 }
 
-pub fn get_editable_mods(
-    state: &state::AppState,
-) -> Result<Vec<EditableMod>> {
+pub fn get_editable_mods(state: &state::AppState) -> Result<Vec<EditableMod>> {
     let available_mods = get_available_mods(state)?;
     let state = state.read();
     let config = state.try_config()?;
@@ -82,13 +80,10 @@ pub fn get_editable_mods(
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SelectedMod {
-  mod_id: String,
+    mod_id: String,
 }
 
-pub fn set_selected_mod(
-    state: &state::AppState,
-    selected_mod: SelectedMod,
-) -> Result<()> {
+pub fn set_selected_mod(state: &state::AppState, selected_mod: SelectedMod) -> Result<()> {
     let mut state = state.write();
 
     match *state {

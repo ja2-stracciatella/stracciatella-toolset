@@ -2,7 +2,7 @@ use std::fs::OpenOptions;
 use std::io::Read;
 
 use image::RgbaImage;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use stracciatella::{
     file_formats::stci::{Stci, StciRgb888},
     unicode::Nfc,
@@ -51,13 +51,10 @@ impl Serialize for Base64Image {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReadImageFileParams {
-  file: String
+    file: String,
 }
 
-pub fn read_image_file(
-    state: &AppState,
-    params: ReadImageFileParams,
-) -> Result<Base64Image> {
+pub fn read_image_file(state: &AppState, params: ReadImageFileParams) -> Result<Base64Image> {
     if params.file.contains("..") {
         return Err(Error::new("file path cannot contain `..`"));
     }
