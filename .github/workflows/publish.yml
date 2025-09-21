@@ -42,7 +42,7 @@ jobs:
           npm exec electron-builder -- --publish never
 
       - name: Upload AppImage artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: contains(matrix.os, 'ubuntu')
         with:
           name: stracciatella-toolset-linux-appimage
@@ -50,7 +50,7 @@ jobs:
           path: |
             release/build/*.AppImage
       - name: Upload Windows installer artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: contains(matrix.os, 'windows')
         with:
           name: stracciatella-toolset-windows-exe
@@ -58,7 +58,7 @@ jobs:
           path: |
             release/build/*.exe
       - name: Upload macOS dmg artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: contains(matrix.os, 'macos')
         with:
           name: stracciatella-toolset-macos-dmg
