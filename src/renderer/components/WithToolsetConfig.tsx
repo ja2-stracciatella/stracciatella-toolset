@@ -1,5 +1,5 @@
 import { PropsWithChildren, useCallback, useEffect, useState } from 'react';
-import { Alert } from 'antd';
+import { Alert, Button, Space, Typography } from 'antd';
 import { IChangeEvent } from '@rjsf/core';
 import {
   PartialToolsetConfig,
@@ -13,9 +13,6 @@ import { useAppDispatch, useAppSelector } from '../hooks/state';
 
 const CONFIG_JSON_SCHEMA = {
   type: 'object',
-  title: 'Configure the Stracciatella Toolset',
-  description:
-    'You need to configure the Stracciatella Toolset first, before you can use it.',
   properties: {
     stracciatellaHome: {
       title: 'JA2 Stracciatella Home Directory',
@@ -43,6 +40,7 @@ const CONFIG_JSON_SCHEMA = {
 };
 
 function Configure() {
+  const dispatch = useAppDispatch();
   const config = useAppSelector((s) => s.toolset.config.value);
   const error = useAppSelector((s) => s.toolset.error);
 
@@ -56,25 +54,36 @@ function Configure() {
   }, []);
   const submit = useCallback(() => {
     if (valid) {
-      setToolsetConfig(state as FullToolsetConfig);
+      dispatch(setToolsetConfig(state as FullToolsetConfig));
     }
-  }, [state, valid]);
+  }, [dispatch, state, valid]);
   const errbox = error ? (
     <div className="with-toolset-config">
-      <Alert type="error" message={error.toString()} />
+      <Alert type="error" message={error.message} />
     </div>
   ) : null;
 
   return (
     <div>
-      {errbox}
-      <JsonSchemaForm
-        schema={CONFIG_JSON_SCHEMA}
-        content={state}
-        renderButton
-        onChange={change}
-        onSubmit={submit}
-      />
+      <Typography.Title level={2}>
+        Configure the Stracciatella Toolset
+      </Typography.Title>
+      <Typography.Paragraph>
+        You need to configure the Stracciatella Toolset first, before you can
+        use it.
+      </Typography.Paragraph>
+      <div>
+        {errbox}
+        <JsonSchemaForm
+          schema={CONFIG_JSON_SCHEMA}
+          content={state}
+          onChange={change}
+          onSubmit={submit}
+        />
+        <Button type="primary" onClick={submit}>
+          Submit
+        </Button>
+      </div>
     </div>
   );
 }

@@ -75,10 +75,8 @@ export const setToolsetConfig = createAsyncThunk(
     ].some((v) => v === null);
 
     return invokeWithSchema(SerializedSchema, 'set_toolset_config', {
-      config: {
-        partial,
-        config,
-      },
+      partial,
+      config,
     });
   },
 );
@@ -118,7 +116,7 @@ const toolsetSlice = createSlice({
 
     builder.addCase(setToolsetConfig.pending, pending);
     builder.addCase(setToolsetConfig.rejected, (state, action) => {
-      state.loading = true;
+      state.loading = false;
       state.error = action.error;
     });
     builder.addCase(setToolsetConfig.fulfilled, (state, action) => {
