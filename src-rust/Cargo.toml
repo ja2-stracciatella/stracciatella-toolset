@@ -16,7 +16,7 @@ log = "0.4"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 simplelog = "0.11"
-stracciatella = { git = "https://github.com/ja2-stracciatella/ja2-stracciatella.git", rev = "667d2336722b07e4eeb60ba1a04454c4c3e76852" }
+stracciatella = { git = "https://github.com/ja2-stracciatella/ja2-stracciatella.git", rev = "11e9430b67d788b73f7a57d22166e8b500c23dab" }
 
 [dependencies.neon]
 version = "0.10.1"
