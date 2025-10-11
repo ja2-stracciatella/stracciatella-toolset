@@ -1,5 +1,19 @@
 import { ReactElement, useCallback, useMemo } from 'react';
-import { stringReferenceTo } from './components/form/StringReferenceWidget';
+import {
+  stringReferenceTo,
+  stringReferenceToAmmoTypes,
+  stringReferenceToArmours,
+  stringReferenceToArmyCompositions,
+  stringReferenceToCalibres,
+  stringReferenceToExplosionAnimations,
+  stringReferenceToExplosiveCalibres,
+  stringReferenceToItems,
+  stringReferenceToLoadingScreens,
+  stringReferenceToMagazines,
+  stringReferenceToMercProfiles,
+  stringReferenceToTowns,
+  stringReferenceToWeapons,
+} from './components/form/StringReferenceWidget';
 import { JsonForm } from './components/JsonForm';
 import { JsonItemsForm } from './components/JsonItemsForm';
 import { JsonStrategicMapForm } from './components/StrategicMapForm';
@@ -110,23 +124,16 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: 'garrison-groups',
         label: 'Garrison Groups',
         component: function ArmyGarrisonGroups() {
-          const uiSchema = useMemo(
-            () => ({
-              'ui:order': ['sector', 'composition'],
-              sector: { 'ui:disabled': true },
-              composition: {
-                'ui:widget': stringReferenceTo(
-                  'army-compositions.json',
-                  'name',
-                ),
-              },
-            }),
-            [],
-          );
           return (
             <JsonStrategicMapForm
               file="army-garrison-groups.json"
-              uiSchema={uiSchema}
+              uiSchema={{
+                'ui:order': ['sector', 'composition'],
+                sector: { 'ui:disabled': true },
+                composition: {
+                  'ui:widget': stringReferenceToArmyCompositions,
+                },
+              }}
             />
           );
         },
@@ -162,21 +169,17 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: 'gun-choice-normal',
         label: 'Gun Choice Normal',
         component: function ArmyGunChoiceNormal() {
-          const uiSchema = useMemo(
-            () => ({
-              items: {
-                items: {
-                  'ui:widget': stringReferenceTo(
-                    'weapons.json',
-                    'internalName',
-                  ),
-                },
-              },
-            }),
-            [],
-          );
           return (
-            <JsonForm file="army-gun-choice-normal.json" uiSchema={uiSchema} />
+            <JsonForm
+              file="army-gun-choice-normal.json"
+              uiSchema={{
+                items: {
+                  items: {
+                    'ui:widget': stringReferenceToWeapons,
+                  },
+                },
+              }}
+            />
           );
         },
       },
@@ -215,33 +218,26 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         (item: any) => <MercPreview profile={item.profile} />,
         [],
       );
-      const uiSchema = useMemo(
-        () => ({
-          'ui:order': [
-            'profile',
-            'type',
-            'initialCash',
-            'buyingPrice',
-            'sellingPrice',
-            'repairCost',
-            'repairSpeed',
-            'flags',
-          ],
-          profile: {
-            'ui:widget': stringReferenceTo(
-              'mercs-profile-info.json',
-              'internalName',
-            ),
-          },
-        }),
-        [],
-      );
       return (
         <JsonItemsForm
           file="dealers.json"
           name="profile"
           preview={preview}
-          uiSchema={uiSchema}
+          uiSchema={{
+            'ui:order': [
+              'profile',
+              'type',
+              'initialCash',
+              'buyingPrice',
+              'sellingPrice',
+              'repairCost',
+              'repairSpeed',
+              'flags',
+            ],
+            profile: {
+              'ui:widget': stringReferenceToMercProfiles,
+            },
+          }}
         />
       );
     },
@@ -271,6 +267,9 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                   'sounds',
                   'waterAnimation',
                 ],
+                waterAnimation: {
+                  'ui:widget': stringReferenceToExplosionAnimations,
+                },
               }}
             />
           );
@@ -320,7 +319,35 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     id: 'imp',
     label: 'IMP',
     component: function Imp() {
-      return <JsonForm file="imp.json" />;
+      return (
+        <JsonForm
+          file="imp.json"
+          uiSchema={{
+            'ui:order': [
+              'activation_codes',
+              'starting_level',
+              'inventory',
+              'if_normal_shooter',
+              'if_good_shooter',
+            ],
+            inventory: {
+              items: {
+                'ui:widget': stringReferenceToItems,
+              },
+            },
+            if_normal_shooter: {
+              items: {
+                'ui:widget': stringReferenceToItems,
+              },
+            },
+            if_good_shooter: {
+              items: {
+                'ui:widget': stringReferenceToItems,
+              },
+            },
+          }}
+        />
+      );
     },
   },
   {
@@ -454,6 +481,12 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                   'isPressureTriggered',
                   ...baseItemFlags,
                 ],
+                calibre: {
+                  'ui:widget': stringReferenceToExplosiveCalibres,
+                },
+                animation: {
+                  'ui:widget': stringReferenceToExplosionAnimations,
+                },
               }}
             />
           );
@@ -514,6 +547,15 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                   'dontUseAsDefaultMagazine',
                   ...baseItemFlags,
                 ],
+                ammoType: {
+                  'ui:widget': stringReferenceToAmmoTypes,
+                },
+                calibre: {
+                  'ui:widget': stringReferenceToCalibres,
+                },
+                standardReplacement: {
+                  'ui:widget': stringReferenceToMagazines,
+                },
               }}
             />
           );
@@ -531,6 +573,16 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             <JsonItemsForm
               file="tactical-map-item-replacements.json"
               name={getItemReplacementName}
+              uiSchema={{
+                from: {
+                  oneOf: [
+                    {
+                      'ui:widget': stringReferenceToItems,
+                    },
+                    {},
+                  ],
+                },
+              }}
             />
           );
         },
@@ -584,6 +636,12 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                 'attachment_UnderGLauncher',
                 ...baseItemFlags,
               ],
+              calibre: {
+                'ui:widget': stringReferenceToCalibres,
+              },
+              standardReplacement: {
+                'ui:widget': stringReferenceToWeapons,
+              },
               sound: {
                 'ui:widget': resourceReference(ResourceType.Sound),
               },
@@ -632,6 +690,8 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             'ui:order': ['sector', 'sectorLevel', 'day', 'night'],
             sector: { 'ui:disabled': true },
             sectorLevel: { 'ui:disabled': true },
+            day: { 'ui:widget': stringReferenceToLoadingScreens },
+            night: { 'ui:widget': stringReferenceToLoadingScreens },
           }}
         />
       );
@@ -664,8 +724,16 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                   'minTotalSpending',
                   'quotes',
                 ],
+                profile: {
+                  'ui:widget': stringReferenceToMercProfiles,
+                },
                 quotes: {
-                  items: { 'ui:order': ['type', 'quoteID', 'profile'] },
+                  items: {
+                    'ui:order': ['type', 'quoteID', 'profile'],
+                    profile: {
+                      'ui:widget': stringReferenceToMercProfiles,
+                    },
+                  },
                 },
               }}
             />
@@ -732,6 +800,20 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                   'isGoodGuy',
                   'isTownIndifferentIfDead',
                 ],
+                inventory: {
+                  items: {
+                    'ui:order': [
+                      'item',
+                      'quantity',
+                      'status',
+                      'slot',
+                      'isUndroppable',
+                    ],
+                    item: {
+                      'ui:widget': stringReferenceToItems,
+                    },
+                  },
+                },
               }}
             />
           );
@@ -751,7 +833,12 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               file="mercs-rpc-small-faces.json"
               name="profile"
               preview={preview}
-              uiSchema={{ 'ui:order': ['profile', 'eyesXY', 'mouthXY'] }}
+              uiSchema={{
+                'ui:order': ['profile', 'eyesXY', 'mouthXY'],
+                profile: {
+                  'ui:widget': stringReferenceToMercProfiles,
+                },
+              }}
             />
           );
         },
@@ -814,6 +901,9 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               preview={preview}
               uiSchema={{
                 'ui:order': ['profile', 'meanwhileIndex', 'records'],
+                profile: {
+                  'ui:widget': stringReferenceToMercProfiles,
+                },
                 records: {
                   items: {
                     'ui:order': [
@@ -846,6 +936,15 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                       'goToGridno',
                       'actionData',
                     ],
+                    requiredItem: {
+                      'ui:widget': stringReferenceToItems,
+                    },
+                    triggerNPC: {
+                      'ui:widget': stringReferenceToMercProfiles,
+                    },
+                    giftItem: {
+                      'ui:widget': stringReferenceToItems,
+                    },
                   },
                 },
               }}
@@ -867,7 +966,12 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                   items: {
                     'ui:order': ['id', 'internalName', 'chars'],
                     chars: {
-                      items: { 'ui:order': ['id', 'name', 'fileName'] },
+                      items: {
+                        'ui:order': ['id', 'name', 'fileName'],
+                        name: {
+                          'ui:widget': stringReferenceToMercProfiles,
+                        },
+                      },
                     },
                   },
                 },
@@ -1026,6 +1130,9 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                   'useAlternateMap',
                   'sciFiOnly',
                 ],
+                profile: {
+                  'ui:widget': stringReferenceToMercProfiles,
+                },
               }}
             />
           );
@@ -1174,6 +1281,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                   'mineSectors',
                 ],
                 entranceSector: { 'ui:disabled': true },
+                associatedTown: { 'ui:widget': stringReferenceToTowns },
               }}
             />
           );
@@ -1217,6 +1325,8 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               'enterSound',
               'moveSound',
             ],
+            profile: { 'ui:widget': stringReferenceToMercProfiles },
+            armourType: { 'ui:widget': stringReferenceToArmours },
           }}
         />
       );
