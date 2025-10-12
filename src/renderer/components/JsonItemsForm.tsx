@@ -62,20 +62,19 @@ function ItemForm({ file, name, preview, uiSchema, index }: ItemFormProps) {
   );
 
   return (
-    <Collapse onChange={onPanelChange}>
-      <Collapse.Panel
-        key={index}
-        header={
-          <ItemFormHeader
-            file={file}
-            index={index}
-            name={name}
-            preview={preview}
-          />
-        }
-      >
-        <div className="json-items-form-form">
-          {isCollapsed ? null : (
+    <Collapse
+      onChange={onPanelChange}
+      items={[
+        {
+          label: (
+            <ItemFormHeader
+              file={file}
+              index={index}
+              name={name}
+              preview={preview}
+            />
+          ),
+          children: isCollapsed ? null : (
             <JsonSchemaForm
               idPrefix={index.toString()}
               schema={schema}
@@ -83,10 +82,10 @@ function ItemForm({ file, name, preview, uiSchema, index }: ItemFormProps) {
               uiSchema={uiSchema}
               onChange={onItemChange}
             />
-          )}
-        </div>
-      </Collapse.Panel>
-    </Collapse>
+          ),
+        },
+      ]}
+    />
   );
 }
 
