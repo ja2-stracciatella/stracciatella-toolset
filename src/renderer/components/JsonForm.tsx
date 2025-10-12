@@ -31,7 +31,7 @@ export function JsonForm({ file, uiSchema }: JsonFormProps) {
   );
 
   if (error) {
-    return <Alert type="error" message={error.toString()} />;
+    return <Alert type="error" message={error.message} />;
   }
   if (!schema || !content) {
     return <FullSizeLoader />;

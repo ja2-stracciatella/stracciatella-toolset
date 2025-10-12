@@ -145,7 +145,7 @@ export function JsonItemsForm({
   const numItems = (content?.value?.length as number) ?? null;
 
   if (error) {
-    return <Alert type="error" message={error.toString()} />;
+    return <Alert type="error" message={error.message} />;
   }
 
   if (numItems == null) {

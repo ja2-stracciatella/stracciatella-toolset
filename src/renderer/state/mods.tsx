@@ -6,7 +6,7 @@ import { invokeWithSchema } from '../lib/invoke';
 const modSchema = z.object({
   id: z.string(),
   name: z.string(),
-  description: z.string(),
+  description: z.optional(z.string()),
   version: z.string(),
 });
 
@@ -61,11 +61,21 @@ export const setSelectedMod = createAsyncThunk(
       throw new Error(`cannot select unknown mod "${mod.id}"`);
     }
 
-    await invokeWithSchema(z.any(), 'set_selected_mod', {
+    return await invokeWithSchema(editableModSchema, 'set_selected_mod', {
       mod_id: mod.id,
     });
+  },
+);
 
-    return mod;
+export const createNewMod = createAsyncThunk(
+  'mods/create_new',
+  async (newMod: Mod, { getState }) => {
+    const { mods } = getState() as { mods: ModsState };
+    if (mods.mods == null) {
+      throw new Error('cannot create mod while mods are loading');
+    }
+
+    return await invokeWithSchema(editableModSchema, 'create_new_mod', newMod);
   },
 );
 
@@ -78,13 +88,14 @@ const modsSlice = createSlice({
       state.loading = true;
       state.error = null;
     };
+    const rejected = (state: ModsState, action: { error: SerializedError }) => {
+      state.loading = false;
+      state.error = action.error;
+    };
 
     builder.addCase(getMods.pending, pending);
     // TODO: Find a way to extract (same as setSelectedMod)
-    builder.addCase(getMods.rejected, (state, action) => {
-      state.loading = true;
-      state.error = action.error;
-    });
+    builder.addCase(getMods.rejected, rejected);
     // TODO: Find a way to extract (same as setSelectedMod)
     builder.addCase(getMods.fulfilled, (state, action) => {
       state.loading = false;
@@ -93,14 +104,22 @@ const modsSlice = createSlice({
     });
 
     builder.addCase(setSelectedMod.pending, pending);
-    builder.addCase(setSelectedMod.rejected, (state, action) => {
-      state.loading = true;
-      state.error = action.error;
-    });
+    builder.addCase(setSelectedMod.rejected, rejected);
     builder.addCase(setSelectedMod.fulfilled, (state, action) => {
       state.loading = false;
       state.error = null;
       state.selected = action.payload;
+    });
+
+    builder.addCase(createNewMod.pending, pending);
+    builder.addCase(createNewMod.rejected, rejected);
+    builder.addCase(createNewMod.fulfilled, (state, action) => {
+      state.loading = false;
+      state.error = null;
+      if (state.mods) {
+        state.mods.editable = [...state.mods.editable, action.payload];
+        state.selected = action.payload;
+      }
     });
   },
 });

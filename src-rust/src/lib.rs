@@ -20,6 +20,8 @@ mod state;
 pub(crate) use error::{Error, Result};
 use state::AppState;
 
+use crate::invokables::mods::NewMod;
+
 fn init_logger(mut ctx: FunctionContext) -> JsResult<JsUndefined> {
     if let Err(e) = TermLogger::init(
         LevelFilter::Info,
@@ -80,8 +82,13 @@ fn invoke_inner(state: &state::AppState, payload: &str) -> Result<String> {
             }
             "set_selected_mod" => {
                 let selected_mod: SelectedMod = serde_json::from_value(payload.params.clone())?;
-                invokables::mods::set_selected_mod(&state, selected_mod)?;
-                Ok(serde_json::to_value("success")?)
+                let s = invokables::mods::set_selected_mod(&state, selected_mod)?;
+                Ok(serde_json::to_value(s)?)
+            }
+            "create_new_mod" => {
+                let new_mod: NewMod = serde_json::from_value(payload.params.clone())?;
+                let s = invokables::mods::create_new_mod(&state, new_mod)?;
+                Ok(serde_json::to_value(s)?)
             }
             "open_json_file_with_schema" => {
                 let file: OpenFileOptions = serde_json::from_value(payload.params.clone())?;

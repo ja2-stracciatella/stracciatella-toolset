@@ -1,4 +1,14 @@
-import { Typography } from 'antd';
+import { useCallback, useMemo, useState } from 'react';
+import { Button, Typography } from 'antd';
+import { IChangeEvent } from '@rjsf/core';
+import { JsonSchemaForm } from './JsonSchemaForm';
+import { invokeWithSchema } from '../lib/invoke';
+import z from 'zod';
+import { useAppDispatch, useAppSelector } from '../hooks/state';
+import { createNewMod, Mod } from '../state/mods';
+import { FullSizeDialogLayout } from './FullSizeDialogLayout';
+import { Space } from 'antd/lib';
+import { ErrorAlert } from './ErrorAlert';
 
 const NEW_MOD_SCHEMA = {
   type: 'object',
@@ -23,14 +33,74 @@ const NEW_MOD_SCHEMA = {
       type: 'string',
       minLength: 1,
     },
+    version: {
+      title: 'Version',
+      description: 'A version for your mod. E.g. `0.1.0`',
+      type: 'string',
+      minLength: 1,
+    },
   },
-  required: ['id', 'name'],
+  required: ['id', 'name', 'version'],
 };
 
-export function NewMod() {
+interface NewModProps {
+  onCancel: () => void;
+}
+
+export function NewMod({ onCancel }: NewModProps) {
+  const dispatch = useAppDispatch();
+  const stracciatellaHome = useAppSelector(
+    (s) => s.toolset.config.value.stracciatellaHome,
+  );
+  const error = useAppSelector((s) => s.mods.error);
+  const [formData, setFormData] = useState<Mod>({
+    id: '',
+    name: '',
+    version: '',
+  });
+  const [valid, setValid] = useState(false);
+  const handleChange = useCallback((ev: IChangeEvent<any>) => {
+    if (ev.formData) {
+      setFormData(ev.formData);
+      setValid(ev.errors.length === 0);
+    }
+  }, []);
+  const createdModDir = useMemo(() => {
+    if (!formData.id) return '';
+    return `${stracciatellaHome ?? ''}/mods/${formData.id}`;
+  }, [stracciatellaHome, formData.id]);
+
+  const handleSubmit = useCallback(async () => {
+    if (valid) {
+      dispatch(createNewMod(formData));
+    }
+  }, [dispatch, formData, valid]);
+
   return (
-    <div className="new-mod-root">
+    <FullSizeDialogLayout>
       <Typography.Title>Create new mod</Typography.Title>
-    </div>
+      <Typography.Paragraph>
+        This allows you to create a new mod. New mods are automatically placed
+        in the mods folder.
+      </Typography.Paragraph>
+      <Typography.Paragraph>
+        Your new mod will be placed at {createdModDir}
+      </Typography.Paragraph>
+      <ErrorAlert error={error} />
+      <div>
+        <JsonSchemaForm
+          schema={NEW_MOD_SCHEMA}
+          content={formData}
+          onChange={handleChange}
+          onSubmit={handleSubmit}
+        />
+        <Space>
+          <Button onClick={onCancel}>Cancel</Button>
+          <Button type="primary" onClick={handleSubmit} disabled={!valid}>
+            Submit
+          </Button>
+        </Space>
+      </div>
+    </FullSizeDialogLayout>
   );
 }

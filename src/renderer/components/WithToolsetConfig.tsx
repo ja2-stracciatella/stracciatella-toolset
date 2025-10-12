@@ -80,7 +80,7 @@ function Configure() {
           onChange={change}
           onSubmit={submit}
         />
-        <Button type="primary" onClick={submit}>
+        <Button type="primary" onClick={submit} disabled={!valid}>
           Submit
         </Button>
       </div>

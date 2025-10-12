@@ -1,28 +1,33 @@
 import { PropsWithChildren, useEffect } from 'react';
-import './WithOpenMod.css';
 import { OpenMod } from './OpenMod';
 import { FullSizeLoader } from './FullSizeLoader';
 import { useAppDispatch, useAppSelector } from '../hooks/state';
 import { getMods } from '../state/mods';
+import { FullSizeDialogLayout } from './FullSizeDialogLayout';
+import { ErrorAlert } from './ErrorAlert';
 
 export function WithOpenMod({ children }: PropsWithChildren<{}>) {
   const dispatch = useAppDispatch();
-  const loading = useAppSelector((s) => s.mods.loading);
+  const allMods = useAppSelector((s) => s.mods.mods);
+  const error = useAppSelector((s) => s.mods.error);
   const selectedMod = useAppSelector((s) => s.mods.selected);
 
   useEffect(() => {
     dispatch(getMods());
   }, [dispatch]);
 
-  if (loading) {
+  if (!allMods && error) {
     return (
-      <div>
-        <FullSizeLoader />
-      </div>
+      <FullSizeDialogLayout>
+        <ErrorAlert error={error} />
+      </FullSizeDialogLayout>
     );
+  }
+  if (!allMods) {
+    return <FullSizeLoader />;
   }
   if (!selectedMod) {
     return <OpenMod />;
   }
-  return <div>{children}</div>;
+  return <>{children}</>;
 }

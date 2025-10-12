@@ -89,7 +89,7 @@ export function ResourceSelectorModal({
   }, [currentDir]);
   const content = useMemo(() => {
     if (error) {
-      return <Alert type="error" message={error.toString()} />;
+      return <Alert type="error" message={error.message} />;
     }
     const appliedEntries =
       entries !== null && entries.length > 0 ? entries : null;

@@ -24,10 +24,7 @@ const EditorContentHeader = memo(({ path }: { path: string }) => {
         <SaveOutlined onClick={saveFileToPath} />
       </Button>
       {error ? (
-        <ExclamationCircleOutlined
-          title={error.toString()}
-          style={errorStyle}
-        />
+        <ExclamationCircleOutlined title={error.message} style={errorStyle} />
       ) : null}
     </Space>
   );
