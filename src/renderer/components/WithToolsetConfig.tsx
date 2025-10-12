@@ -1,5 +1,5 @@
 import { PropsWithChildren, useCallback, useEffect, useState } from 'react';
-import { Alert, Button, Space, Typography } from 'antd';
+import { Alert, Button, Typography } from 'antd';
 import { IChangeEvent } from '@rjsf/core';
 import {
   PartialToolsetConfig,
@@ -10,6 +10,8 @@ import {
 import { FullSizeLoader } from './FullSizeLoader';
 import { JsonSchemaForm } from './JsonSchemaForm';
 import { useAppDispatch, useAppSelector } from '../hooks/state';
+import { FullSizeDialogLayout } from './FullSizeDialogLayout';
+import { ErrorAlert } from './ErrorAlert';
 
 const CONFIG_JSON_SCHEMA = {
   type: 'object',
@@ -57,14 +59,9 @@ function Configure() {
       dispatch(setToolsetConfig(state as FullToolsetConfig));
     }
   }, [dispatch, state, valid]);
-  const errbox = error ? (
-    <div className="with-toolset-config">
-      <Alert type="error" message={error.message} />
-    </div>
-  ) : null;
 
   return (
-    <div>
+    <FullSizeDialogLayout>
       <Typography.Title level={2}>
         Configure the Stracciatella Toolset
       </Typography.Title>
@@ -72,19 +69,17 @@ function Configure() {
         You need to configure the Stracciatella Toolset first, before you can
         use it.
       </Typography.Paragraph>
-      <div>
-        {errbox}
-        <JsonSchemaForm
-          schema={CONFIG_JSON_SCHEMA}
-          content={state}
-          onChange={change}
-          onSubmit={submit}
-        />
-        <Button type="primary" onClick={submit} disabled={!valid}>
-          Submit
-        </Button>
-      </div>
-    </div>
+      <ErrorAlert error={error} />
+      <JsonSchemaForm
+        schema={CONFIG_JSON_SCHEMA}
+        content={state}
+        onChange={change}
+        onSubmit={submit}
+      />
+      <Button type="primary" onClick={submit} disabled={!valid}>
+        Submit
+      </Button>
+    </FullSizeDialogLayout>
   );
 }
 
