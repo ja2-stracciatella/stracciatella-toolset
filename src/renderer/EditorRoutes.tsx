@@ -1,5 +1,19 @@
 import { ReactElement, useCallback, useMemo } from 'react';
-import { stringReferenceTo } from './components/form/StringReferenceWidget';
+import {
+  stringReferenceTo,
+  stringReferenceToAmmoTypes,
+  stringReferenceToArmours,
+  stringReferenceToArmyCompositions,
+  stringReferenceToCalibres,
+  stringReferenceToExplosionAnimations,
+  stringReferenceToExplosiveCalibres,
+  stringReferenceToItems,
+  stringReferenceToLoadingScreens,
+  stringReferenceToMagazines,
+  stringReferenceToMercProfiles,
+  stringReferenceToTowns,
+  stringReferenceToWeapons,
+} from './components/form/StringReferenceWidget';
 import { JsonForm } from './components/JsonForm';
 import { JsonItemsForm } from './components/JsonItemsForm';
 import { JsonStrategicMapForm } from './components/StrategicMapForm';
@@ -8,6 +22,42 @@ import { MercPreview } from './components/content/MercPreview';
 import { ItemPreview } from './components/content/ItemPreview';
 import { resourceReference } from './components/form/ResourceReferenceWidget';
 import { ResourceType } from './lib/listDir';
+
+const baseItemProps = [
+  'itemIndex',
+  'internalName',
+  'shortName',
+  'name',
+  'description',
+  'inventoryGraphics',
+  'tileGraphic',
+  'ubPerPocket',
+  'ubWeight',
+  'usPrice',
+  'ubCoolness',
+  'bReliability',
+  'bRepairable',
+  'bRepairEase',
+];
+const baseItemFlags = [
+  'bDamageable',
+  'bWaterDamages',
+
+  'bBigGunList',
+  'bAttachment',
+  'bInseparable',
+  'bDefaultUndroppable',
+  'bNotBuyable',
+  'bNotEditor',
+  'bShowStatus',
+  'bHiddenAddon',
+
+  'bTwoHanded',
+  'bElectronic',
+  'bMetal',
+  'bUnaerodynamic',
+  'bSinks',
+];
 
 export interface Route {
   id: string;
@@ -46,18 +96,27 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     children: [
       {
         type: 'Item',
-        id: 'ai-policy',
-        label: 'Strategic AI Policy',
-        component: function StrategicAIPolicy() {
-          return <JsonForm file="strategic-ai-policy.json" />;
-        },
-      },
-      {
-        type: 'Item',
         id: 'compositions',
         label: 'Compositions',
         component: function ArmyCompositions() {
-          return <JsonItemsForm file="army-compositions.json" name="name" />;
+          return (
+            <JsonItemsForm
+              file="army-compositions.json"
+              name="name"
+              uiSchema={{
+                'ui:order': [
+                  'id',
+                  'name',
+                  'priority',
+                  'startPopulation',
+                  'desiredPopulation',
+                  'adminPercentage',
+                  'troopPercentage',
+                  'elitePercentage',
+                ],
+              }}
+            />
+          );
         },
       },
       {
@@ -65,21 +124,16 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: 'garrison-groups',
         label: 'Garrison Groups',
         component: function ArmyGarrisonGroups() {
-          const uiSchema = useMemo(
-            () => ({
-              composition: {
-                'ui:widget': stringReferenceTo(
-                  'army-compositions.json',
-                  'name',
-                ),
-              },
-            }),
-            [],
-          );
           return (
             <JsonStrategicMapForm
               file="army-garrison-groups.json"
-              uiSchema={uiSchema}
+              uiSchema={{
+                'ui:order': ['sector', 'composition'],
+                sector: { 'ui:disabled': true },
+                composition: {
+                  'ui:widget': stringReferenceToArmyCompositions,
+                },
+              }}
             />
           );
         },
@@ -115,21 +169,17 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: 'gun-choice-normal',
         label: 'Gun Choice Normal',
         component: function ArmyGunChoiceNormal() {
-          const uiSchema = useMemo(
-            () => ({
-              items: {
-                items: {
-                  'ui:widget': stringReferenceTo(
-                    'weapons.json',
-                    'internalName',
-                  ),
-                },
-              },
-            }),
-            [],
-          );
           return (
-            <JsonForm file="army-gun-choice-normal.json" uiSchema={uiSchema} />
+            <JsonForm
+              file="army-gun-choice-normal.json"
+              uiSchema={{
+                items: {
+                  items: {
+                    'ui:widget': stringReferenceToWeapons,
+                  },
+                },
+              }}
+            />
           );
         },
       },
@@ -149,6 +199,14 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
           );
         },
       },
+      {
+        type: 'Item',
+        id: 'ai-policy',
+        label: 'Strategic AI Policy',
+        component: function StrategicAIPolicy() {
+          return <JsonForm file="strategic-ai-policy.json" />;
+        },
+      },
     ],
   },
   {
@@ -161,7 +219,26 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         [],
       );
       return (
-        <JsonItemsForm file="dealers.json" name="profile" preview={preview} />
+        <JsonItemsForm
+          file="dealers.json"
+          name="profile"
+          preview={preview}
+          uiSchema={{
+            'ui:order': [
+              'profile',
+              'type',
+              'initialCash',
+              'buyingPrice',
+              'sellingPrice',
+              'repairCost',
+              'repairSpeed',
+              'flags',
+            ],
+            profile: {
+              'ui:widget': stringReferenceToMercProfiles,
+            },
+          }}
+        />
       );
     },
   },
@@ -175,7 +252,27 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: 'explosion-animations',
         label: 'Explosion Animations',
         component: function ExplosionAnimations() {
-          return <JsonItemsForm file="explosion-animations.json" name="name" />;
+          return (
+            <JsonItemsForm
+              file="explosion-animations.json"
+              name="name"
+              uiSchema={{
+                'ui:order': [
+                  'id',
+                  'name',
+                  'blastSpeed',
+                  'damageKeyframe',
+                  'transparentKeyframe',
+                  'graphics',
+                  'sounds',
+                  'waterAnimation',
+                ],
+                waterAnimation: {
+                  'ui:widget': stringReferenceToExplosionAnimations,
+                },
+              }}
+            />
+          );
         },
       },
       {
@@ -183,7 +280,28 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: 'smoke-effects',
         label: 'Smoke Effects',
         component: function SmokeEffects() {
-          return <JsonItemsForm file="smoke-effects.json" name="name" />;
+          return (
+            <JsonItemsForm
+              file="smoke-effects.json"
+              name="name"
+              uiSchema={{
+                'ui:order': [
+                  'name',
+                  'damage',
+                  'breathDamage',
+                  'maxVisibility',
+                  'maxVisibilityWhenAffected',
+                  'lostVisibilityPerTile',
+                  'graphics',
+                  'staticGraphics',
+                  'dissipatingGraphics',
+                  'ignoresGasMask',
+                  'affectsMonsters',
+                  'affectsRobot',
+                ],
+              }}
+            />
+          );
         },
       },
     ],
@@ -201,7 +319,35 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     id: 'imp',
     label: 'IMP',
     component: function Imp() {
-      return <JsonForm file="imp.json" />;
+      return (
+        <JsonForm
+          file="imp.json"
+          uiSchema={{
+            'ui:order': [
+              'activation_codes',
+              'starting_level',
+              'inventory',
+              'if_normal_shooter',
+              'if_good_shooter',
+            ],
+            inventory: {
+              items: {
+                'ui:widget': stringReferenceToItems,
+              },
+            },
+            if_normal_shooter: {
+              items: {
+                'ui:widget': stringReferenceToItems,
+              },
+            },
+            if_good_shooter: {
+              items: {
+                'ui:widget': stringReferenceToItems,
+              },
+            },
+          }}
+        />
+      );
     },
   },
   {
@@ -214,7 +360,13 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: 'ammo-types',
         label: 'Ammo Types',
         component: function AmmoTypes() {
-          return <JsonItemsForm file="ammo-types.json" name="internalName" />;
+          return (
+            <JsonItemsForm
+              file="ammo-types.json"
+              name="internalName"
+              uiSchema={{ 'ui:order': ['index', 'internalName'] }}
+            />
+          );
         },
       },
       {
@@ -233,6 +385,20 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               file="armours.json"
               name="internalName"
               preview={preview}
+              uiSchema={{
+                'ui:order': [
+                  ...baseItemProps,
+
+                  'armourClass',
+                  'protection',
+                  'explosivesProtection',
+                  'degradePercentage',
+
+                  'ignoreForMaxProtection',
+
+                  ...baseItemFlags,
+                ],
+              }}
             />
           );
         },
@@ -244,6 +410,16 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         component: function Calibres() {
           const uiSchema = useMemo(
             () => ({
+              'ui:order': [
+                'index',
+                'internalName',
+                'sound',
+                'silencedSound',
+                'burstSound',
+                'silencedBurstSound',
+                'monsterWeapon',
+                'showInHelpText',
+              ],
               sound: {
                 'ui:widget': resourceReference(ResourceType.Sound),
               },
@@ -289,6 +465,29 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               file="explosives.json"
               name="internalName"
               preview={preview}
+              uiSchema={{
+                'ui:order': [
+                  ...baseItemProps,
+                  'itemClass',
+                  'noise',
+                  'volatility',
+                  'calibre',
+                  'cursor',
+                  'animation',
+                  'blastEffect',
+                  'stunEffect',
+                  'smokeEffect',
+                  'lightEffect',
+                  'isPressureTriggered',
+                  ...baseItemFlags,
+                ],
+                calibre: {
+                  'ui:widget': stringReferenceToExplosiveCalibres,
+                },
+                animation: {
+                  'ui:widget': stringReferenceToExplosionAnimations,
+                },
+              }}
             />
           );
         },
@@ -309,6 +508,15 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               file="items.json"
               name="internalName"
               preview={preview}
+              uiSchema={{
+                'ui:order': [
+                  'usItemClass',
+                  ...baseItemProps,
+                  'ubCursor',
+                  'ubClassIndex',
+                  ...baseItemFlags,
+                ],
+              }}
             />
           );
         },
@@ -329,6 +537,26 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               file="magazines.json"
               name="internalName"
               preview={preview}
+              uiSchema={{
+                'ui:order': [
+                  ...baseItemProps,
+                  'ammoType',
+                  'calibre',
+                  'capacity',
+                  'standardReplacement',
+                  'dontUseAsDefaultMagazine',
+                  ...baseItemFlags,
+                ],
+                ammoType: {
+                  'ui:widget': stringReferenceToAmmoTypes,
+                },
+                calibre: {
+                  'ui:widget': stringReferenceToCalibres,
+                },
+                standardReplacement: {
+                  'ui:widget': stringReferenceToMagazines,
+                },
+              }}
             />
           );
         },
@@ -345,6 +573,16 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             <JsonItemsForm
               file="tactical-map-item-replacements.json"
               name={getItemReplacementName}
+              uiSchema={{
+                from: {
+                  oneOf: [
+                    {
+                      'ui:widget': stringReferenceToItems,
+                    },
+                    {},
+                  ],
+                },
+              }}
             />
           );
         },
@@ -362,6 +600,48 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
           );
           const uiSchema = useMemo(
             () => ({
+              'ui:order': [
+                ...baseItemProps,
+
+                'internalType',
+                'calibre',
+                'rateOfFire',
+                'ubAttackVolume',
+                'ubBulletSpeed',
+                'ubBurstPenalty',
+                'ubDeadliness',
+                'ubHitVolume',
+                'ubMagSize',
+                'ubReadyTime',
+                'ubShotsPer4Turns',
+                'ubShotsPerBurst',
+                'usRange',
+                'ubImpact',
+                'usSmokeEffect',
+
+                'sound',
+                'silencedSound',
+                'burstSound',
+                'silencedBurstSound',
+
+                'standardReplacement',
+
+                'attachment_Bipod',
+                'attachment_Duckbill',
+                'attachment_GunBarrelExtender',
+                'attachment_LaserScope',
+                'attachment_Silencer',
+                'attachment_SniperScope',
+                'attachment_SpringAndBoltUpgrade',
+                'attachment_UnderGLauncher',
+                ...baseItemFlags,
+              ],
+              calibre: {
+                'ui:widget': stringReferenceToCalibres,
+              },
+              standardReplacement: {
+                'ui:widget': stringReferenceToWeapons,
+              },
               sound: {
                 'ui:widget': resourceReference(ResourceType.Sound),
               },
@@ -386,18 +666,35 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
   },
   {
     type: 'Item',
-    id: 'loading-screens-mapping',
-    label: 'Loading Screens Mapping',
-    component: function LoadingScreensMapping() {
-      return <JsonStrategicMapForm file="loading-screens-mapping.json" />;
+    id: 'loading-screens',
+    label: 'Loading Screens',
+    component: function LoadingScreens() {
+      return (
+        <JsonItemsForm
+          file="loading-screens.json"
+          name="internalName"
+          uiSchema={{ 'ui:order': ['internalName', 'filename'] }}
+        />
+      );
     },
   },
   {
     type: 'Item',
-    id: 'loading-screens',
-    label: 'Loading Screens',
-    component: function LoadingScreens() {
-      return <JsonItemsForm file="loading-screens.json" name="internalName" />;
+    id: 'loading-screens-mapping',
+    label: 'Loading Screens Mapping',
+    component: function LoadingScreensMapping() {
+      return (
+        <JsonStrategicMapForm
+          file="loading-screens-mapping.json"
+          uiSchema={{
+            'ui:order': ['sector', 'sectorLevel', 'day', 'night'],
+            sector: { 'ui:disabled': true },
+            sectorLevel: { 'ui:disabled': true },
+            day: { 'ui:widget': stringReferenceToLoadingScreens },
+            night: { 'ui:widget': stringReferenceToLoadingScreens },
+          }}
+        />
+      );
     },
   },
   {
@@ -419,6 +716,26 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               file="mercs-MERC-listings.json"
               name="profile"
               preview={preview}
+              uiSchema={{
+                'ui:order': [
+                  'profile',
+                  'bioIndex',
+                  'minDays',
+                  'minTotalSpending',
+                  'quotes',
+                ],
+                profile: {
+                  'ui:widget': stringReferenceToMercProfiles,
+                },
+                quotes: {
+                  items: {
+                    'ui:order': ['type', 'quoteID', 'profile'],
+                    profile: {
+                      'ui:widget': stringReferenceToMercProfiles,
+                    },
+                  },
+                },
+              }}
             />
           );
         },
@@ -447,6 +764,57 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               file="mercs-profile-info.json"
               name="internalName"
               preview={preview}
+              uiSchema={{
+                'ui:order': [
+                  'profileID',
+                  'internalName',
+                  'type',
+                  'nickname',
+                  'fullName',
+                  'sex',
+                  'bodyType',
+                  'bodyTypeSubstitution',
+                  'face',
+                  'skinColor',
+                  'hairColor',
+                  'vestColor',
+                  'pantsColor',
+                  'personalityTrait',
+                  'skillTrait',
+                  'skillTrait2',
+                  'stats',
+                  'attitude',
+                  'toleranceForPlayersDeathRate',
+                  'toleranceForPlayersReputation',
+                  'sexismMode',
+                  'contract',
+                  'inventory',
+                  'dialogue',
+                  'money',
+                  'weaponSaleModifier',
+                  'civilianGroup',
+                  'sector',
+                  'town',
+                  'townAttachment',
+                  'ownedRooms',
+                  'isGoodGuy',
+                  'isTownIndifferentIfDead',
+                ],
+                inventory: {
+                  items: {
+                    'ui:order': [
+                      'item',
+                      'quantity',
+                      'status',
+                      'slot',
+                      'isUndroppable',
+                    ],
+                    item: {
+                      'ui:widget': stringReferenceToItems,
+                    },
+                  },
+                },
+              }}
             />
           );
         },
@@ -465,6 +833,12 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               file="mercs-rpc-small-faces.json"
               name="profile"
               preview={preview}
+              uiSchema={{
+                'ui:order': ['profile', 'eyesXY', 'mouthXY'],
+                profile: {
+                  'ui:widget': stringReferenceToMercProfiles,
+                },
+              }}
             />
           );
         },
@@ -515,8 +889,66 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: 'records',
         label: 'NPC Records',
         component: function Records() {
+          const preview = useCallback(
+            (item: any) => <MercPreview profile={item.profile} />,
+            [],
+          );
+
           return (
-            <JsonItemsForm file="script-records-NPCs.json" name="profile" />
+            <JsonItemsForm
+              file="script-records-NPCs.json"
+              name="profile"
+              preview={preview}
+              uiSchema={{
+                'ui:order': ['profile', 'meanwhileIndex', 'records'],
+                profile: {
+                  'ui:widget': stringReferenceToMercProfiles,
+                },
+                records: {
+                  items: {
+                    'ui:order': [
+                      'index',
+                      'quoteNum',
+                      'numQuotes',
+                      'firstDay',
+                      'lastDay',
+                      'factMustBeTrue',
+                      'factMustBeFalse',
+                      'requiredAnyItem',
+                      'requiredItem',
+                      'requiredAnyRifle',
+                      'requiredApproach',
+                      'requiredGridNo',
+                      'requiredOpinion',
+                      'sayOncePerConvo',
+                      'userInterface',
+                      'startQuest',
+                      'endQuest',
+                      'quest',
+                      'setFactTrue',
+                      'triggerClosestMerc',
+                      'triggerNPC',
+                      'triggerRecord',
+                      'triggerSelf',
+                      'eraseOnceSaid',
+                      'alreadySaid',
+                      'giftItem',
+                      'goToGridno',
+                      'actionData',
+                    ],
+                    requiredItem: {
+                      'ui:widget': stringReferenceToItems,
+                    },
+                    triggerNPC: {
+                      'ui:widget': stringReferenceToMercProfiles,
+                    },
+                    giftItem: {
+                      'ui:widget': stringReferenceToItems,
+                    },
+                  },
+                },
+              }}
+            />
           );
         },
       },
@@ -525,7 +957,27 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: 'records-control',
         label: 'Records Control',
         component: function RecordsControl() {
-          return <JsonForm file="script-records-control.json" />;
+          return (
+            <JsonForm
+              file="script-records-control.json"
+              uiSchema={{
+                'ui:order': ['fileNameForScriptControlledPCs', 'meanwhiles'],
+                meanwhiles: {
+                  items: {
+                    'ui:order': ['id', 'internalName', 'chars'],
+                    chars: {
+                      items: {
+                        'ui:order': ['id', 'name', 'fileName'],
+                        name: {
+                          'ui:widget': stringReferenceToMercProfiles,
+                        },
+                      },
+                    },
+                  },
+                },
+              }}
+            />
+          );
         },
       },
     ],
@@ -536,7 +988,27 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     label: 'Shipping Destinations',
     component: function ShippingDestinations() {
       return (
-        <JsonItemsForm file="shipping-destinations.json" name="locationId" />
+        <JsonItemsForm
+          file="shipping-destinations.json"
+          name="locationId"
+          uiSchema={{
+            'ui:order': [
+              'locationId',
+              'deliverySector',
+              'deliverySectorZ',
+              'deliverySectorGridNo',
+              'chargeRateStandard',
+              'chargeRate2Days',
+              'chargeRateOverNight',
+              'flowersNextDayDeliveryCost',
+              'flowersWhenItGetsThereCost',
+              'emailOffset',
+              'emailLength',
+              'canDeliver',
+              'isPrimary',
+            ],
+          }}
+        />
       );
     },
   },
@@ -551,7 +1023,13 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         label: 'Bloodcat Placements',
         component: function StrategicBloodcatPlacements() {
           return (
-            <JsonStrategicMapForm file="strategic-bloodcat-placements.json" />
+            <JsonStrategicMapForm
+              file="strategic-bloodcat-placements.json"
+              uiSchema={{
+                'ui:order': ['sector', 'bloodCatPlacements'],
+                sector: { 'ui:disabled': true },
+              }}
+            />
           );
         },
       },
@@ -560,7 +1038,22 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: 'bloodcat-spawns',
         label: 'Bloodcat Spawns',
         component: function StrategicBloodcatSpawns() {
-          return <JsonStrategicMapForm file="strategic-bloodcat-spawns.json" />;
+          return (
+            <JsonStrategicMapForm
+              file="strategic-bloodcat-spawns.json"
+              uiSchema={{
+                'ui:order': [
+                  'sector',
+                  'bloodCatsSpawnsEasy',
+                  'bloodCatsSpawnsMedium',
+                  'bloodCatsSpawnsHard',
+                  'isArena',
+                  'isLair',
+                ],
+                sector: { 'ui:disabled': true },
+              }}
+            />
+          );
         },
       },
       {
@@ -593,6 +1086,16 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             <JsonItemsForm
               file="strategic-map-creature-lairs.json"
               name={getCreatureLairName}
+              uiSchema={{
+                'ui:order': [
+                  'lairId',
+                  'associatedMineId',
+                  'entranceSector',
+                  'warpExit',
+                  'sectors',
+                  'attackSectors',
+                ],
+              }}
             />
           );
         },
@@ -617,8 +1120,20 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
           return (
             <JsonItemsForm
               file="strategic-map-npc-placements.json"
-              name="profileId"
+              name="profile"
               preview={preview}
+              uiSchema={{
+                'ui:order': [
+                  'profile',
+                  'sectors',
+                  'placedAtStart',
+                  'useAlternateMap',
+                  'sciFiOnly',
+                ],
+                profile: {
+                  'ui:widget': stringReferenceToMercProfiles,
+                },
+              }}
             />
           );
         },
@@ -636,7 +1151,15 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: 'sam-sites',
         label: 'Sam Sites',
         component: function StrategicMapSamSites() {
-          return <JsonStrategicMapForm file="strategic-map-sam-sites.json" />;
+          return (
+            <JsonStrategicMapForm
+              file="strategic-map-sam-sites.json"
+              uiSchema={{
+                'ui:order': ['sector', 'gridNos'],
+                sector: { 'ui:disabled': true },
+              }}
+            />
+          );
         },
       },
       {
@@ -644,7 +1167,21 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: 'secrets',
         label: 'Secrets',
         component: function StrategicMapSecrets() {
-          return <JsonStrategicMapForm file="strategic-map-secrets.json" />;
+          return (
+            <JsonStrategicMapForm
+              file="strategic-map-secrets.json"
+              uiSchema={{
+                'ui:order': [
+                  'sector',
+                  'secretLandType',
+                  'foundLandType',
+                  'secretMapIcon',
+                  'isSAMSite',
+                ],
+                sector: { 'ui:disabled': true },
+              }}
+            />
+          );
         },
       },
       {
@@ -653,7 +1190,14 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         label: 'Sector Descriptions',
         component: function StrategicMapSectorsDescriptions() {
           return (
-            <JsonStrategicMapForm file="strategic-map-sectors-descriptions.json" />
+            <JsonStrategicMapForm
+              file="strategic-map-sectors-descriptions.json"
+              uiSchema={{
+                'ui:order': ['sector', 'sectorLevel', 'landType'],
+                sector: { 'ui:disabled': true },
+                sectorLevel: { 'ui:disabled': true },
+              }}
+            />
           );
         },
       },
@@ -663,7 +1207,19 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         label: 'Towns',
         component: function StrategicMapTowns() {
           return (
-            <JsonItemsForm file="strategic-map-towns.json" name="townId" />
+            <JsonItemsForm
+              file="strategic-map-towns.json"
+              name="townId"
+              uiSchema={{
+                'ui:order': [
+                  'townId',
+                  'internalName',
+                  'sectors',
+                  'townPoint',
+                  'isMilitiaTrainingAllowed',
+                ],
+              }}
+            />
           );
         },
       },
@@ -681,7 +1237,24 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         label: 'Underground Sectors',
         component: function StrategicMapUndergroundSectors() {
           return (
-            <JsonStrategicMapForm file="strategic-map-underground-sectors.json" />
+            <JsonStrategicMapForm
+              file="strategic-map-underground-sectors.json"
+              uiSchema={{
+                'ui:order': [
+                  'sector',
+                  'sectorLevel',
+                  'adjacentSectors',
+                  'numTroops',
+                  'numTroopsVariance',
+                  'numElites',
+                  'numElitesVariance',
+                  'numCreatures',
+                  'numCreaturesVariance',
+                ],
+                sector: { 'ui:disabled': true },
+                sectorLevel: { 'ui:disabled': true },
+              }}
+            />
           );
         },
       },
@@ -694,6 +1267,22 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             <JsonStrategicMapForm
               file="strategic-mines.json"
               property="entranceSector"
+              uiSchema={{
+                'ui:order': [
+                  'entranceSector',
+                  'associatedTownId',
+                  'associatedTown',
+                  'mineType',
+                  'minimumMineProduction',
+                  'noDepletion',
+                  'delayDepletion',
+                  'headMinerAssigned',
+                  'faceDisplayYOffset',
+                  'mineSectors',
+                ],
+                entranceSector: { 'ui:disabled': true },
+                associatedTown: { 'ui:widget': stringReferenceToTowns },
+              }}
             />
           );
         },
@@ -723,7 +1312,23 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         [],
       );
       return (
-        <JsonItemsForm file="vehicles.json" name="profile" preview={preview} />
+        <JsonItemsForm
+          file="vehicles.json"
+          name="profile"
+          preview={preview}
+          uiSchema={{
+            'ui:order': [
+              'profile',
+              'movementType',
+              'seats',
+              'armourType',
+              'enterSound',
+              'moveSound',
+            ],
+            profile: { 'ui:widget': stringReferenceToMercProfiles },
+            armourType: { 'ui:widget': stringReferenceToArmours },
+          }}
+        />
       );
     },
   },
