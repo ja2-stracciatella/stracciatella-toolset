@@ -52,6 +52,7 @@ impl Serialize for Base64Image {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReadImageFileParams {
     file: String,
+    subimage: Option<usize>,
 }
 
 pub fn read_image_file(state: &AppState, params: ReadImageFileParams) -> Result<Base64Image> {
@@ -79,12 +80,19 @@ pub fn read_image_file(state: &AppState, params: ReadImageFileParams) -> Result<
         result
     };
     let stci = Stci::from_input(&mut content.as_slice())?;
+    let sub_image = params.subimage.unwrap_or(0);
     let size = match &stci {
         Stci::Indexed { sub_images, .. } => sub_images
-            .get(0)
-            .ok_or_else(|| Error::new("indexed stci does not have at least one subimage"))
+            .get(sub_image)
+            .ok_or_else(|| Error::new("indexed stci does not the specified subimage"))
             .map(|s| (u32::from(s.dimensions.0), u32::from(s.dimensions.1))),
-        Stci::Rgb { width, height, .. } => Ok((u32::from(*width), u32::from(*height))),
+        Stci::Rgb { width, height, .. } => {
+            if sub_image != 0 {
+                Err(Error::new("rgb stci does not support subimages"))
+            } else {
+                Ok((u32::from(*width), u32::from(*height)))
+            }
+        }
     }?;
     let mut image = RgbaImage::new(size.0, size.1);
 
@@ -93,7 +101,7 @@ pub fn read_image_file(state: &AppState, params: ReadImageFileParams) -> Result<
             sub_images,
             palette,
         } => {
-            let sub_image = &sub_images[0];
+            let sub_image = &sub_images[sub_image];
             let width = usize::from(sub_image.dimensions.0);
             let height = usize::from(sub_image.dimensions.1);
             for y in 0..height {

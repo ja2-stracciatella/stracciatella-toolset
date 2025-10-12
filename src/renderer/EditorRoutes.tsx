@@ -22,6 +22,7 @@ import { MercPreview } from './components/content/MercPreview';
 import { ItemPreview } from './components/content/ItemPreview';
 import { resourceReference } from './components/form/ResourceReferenceWidget';
 import { ResourceType } from './lib/listDir';
+import { StiPreview } from './components/content/StiPreview';
 
 const baseItemProps = [
   'itemIndex',
@@ -252,10 +253,17 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: 'explosion-animations',
         label: 'Explosion Animations',
         component: function ExplosionAnimations() {
+          const preview = useCallback(
+            (item: any) => (
+              <StiPreview file={item.graphics} subimage={item.damageKeyframe} />
+            ),
+            [],
+          );
           return (
             <JsonItemsForm
               file="explosion-animations.json"
               name="name"
+              preview={preview}
               uiSchema={{
                 'ui:order': [
                   'id',
@@ -270,6 +278,11 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                 waterAnimation: {
                   'ui:widget': stringReferenceToExplosionAnimations,
                 },
+                sounds: {
+                  items: {
+                    'ui:widget': resourceReference(ResourceType.Sound),
+                  },
+                },
               }}
             />
           );
@@ -280,10 +293,15 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         id: 'smoke-effects',
         label: 'Smoke Effects',
         component: function SmokeEffects() {
+          const preview = useCallback(
+            (item: any) => <StiPreview file={item.staticGraphics} />,
+            [],
+          );
           return (
             <JsonItemsForm
               file="smoke-effects.json"
               name="name"
+              preview={preview}
               uiSchema={{
                 'ui:order': [
                   'name',
