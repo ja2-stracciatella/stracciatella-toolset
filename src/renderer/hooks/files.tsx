@@ -1,34 +1,104 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from './state';
 import { changeJson, changeJsonItem, loadJSON } from '../state/files';
+import { SerializedError } from '@reduxjs/toolkit';
+import { shallowEqual } from 'react-redux';
 
-export function useJson(file: string) {
+type UseJsonResult = {
+  loading: boolean;
+  error: SerializedError | null;
+  content: {
+    modified: boolean;
+    value: any;
+    schema: any;
+  } | null;
+};
+
+type UseJsonsResult<T extends { [key: PropertyKey]: string }> = {
+  loading: boolean;
+  error: SerializedError | null;
+  results: { [key in keyof T]: UseJsonResult };
+  update: (key: keyof T, value: any) => void;
+};
+
+export function useJsons<T extends { [key: string]: string }>(
+  files: T,
+): UseJsonsResult<T> {
   const dispatch = useAppDispatch();
-  const loading = useAppSelector((s) => s.files.json[file]?.loading) ?? false;
-  const error = useAppSelector((s) => s.files.json[file]?.error) ?? null;
-  const content = useAppSelector((s) => s.files.json[file]?.content);
+  const results = useAppSelector(
+    (s) => {
+      const results: { [key in keyof T]: UseJsonResult } = {} as any;
+      for (const key in files) {
+        results[key] = {
+          loading: s.files.json[files[key]]?.loading ?? false,
+          error: s.files.json[files[key]]?.error ?? null,
+          content: s.files.json[files[key]]?.content ?? null,
+        };
+      }
+      return results;
+    },
+    (a, b) => {
+      if (shallowEqual(a, b)) return true;
+      if (!shallowEqual(Object.keys(a), Object.keys(b))) return false;
+      for (const key in a) {
+        if (!shallowEqual(a[key], b[key])) return false;
+      }
+      return true;
+    },
+  );
+  const loading = useMemo(() => {
+    for (const r in results) {
+      if (results[r].loading) return true;
+    }
+    return false;
+  }, [results]);
+  const error = useMemo(() => {
+    for (const r in results) {
+      if (results[r].error) return results[r].error;
+    }
+    return null;
+  }, [results]);
   const update = useCallback(
-    (value: any) => {
+    (file: keyof T, value: any) => {
       dispatch(
         changeJson({
-          file,
+          file: files[file],
           value,
         }),
       );
     },
-    [dispatch, file],
+    [files, dispatch],
   );
 
   useEffect(() => {
-    if (!loading && !content) {
-      dispatch(loadJSON(file));
+    for (const f in files) {
+      if (!results[f].loading && !results[f].error && !results[f].content) {
+        dispatch(loadJSON(files[f]));
+      }
     }
-  }, [content, dispatch, file, loading]);
+  }, [dispatch, files, loading, results]);
 
   return {
     loading,
     error,
-    content,
+    results,
+    update,
+  };
+}
+
+export function useJson(
+  file: string,
+): UseJsonResult & { update: (value: any) => void } {
+  const { results, update: updateMany } = useJsons({ f: file });
+  const update = useCallback(
+    (value: any) => {
+      updateMany('f', value);
+    },
+    [updateMany],
+  );
+
+  return {
+    ...results.f,
     update,
   };
 }

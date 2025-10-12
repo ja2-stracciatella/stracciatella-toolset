@@ -1,28 +1,46 @@
 import { WidgetProps } from '@rjsf/utils';
 import { Input, AutoComplete } from 'antd';
 import { useCallback, useMemo } from 'react';
-import { useJson } from '../../hooks/files';
+import { useJsons } from '../../hooks/files';
 import { BaseOptionType } from 'antd/lib/select';
 
-interface StringReferenceWidgetProps extends WidgetProps {
-  referenceFile: string;
-  referenceProperty: string;
+interface StringReferenceWidgetProps<T extends { [key: string]: string }>
+  extends WidgetProps {
+  references: { [key in keyof T]: { file: string; property: string } };
 }
 
-export function StringReferenceWidget({
+export function StringReferenceWidget<T extends { [key: string]: string }>({
   value,
   onChange,
   required,
-  referenceFile,
-  referenceProperty,
-}: StringReferenceWidgetProps) {
-  const { content, error } = useJson(referenceFile);
+  references,
+}: StringReferenceWidgetProps<T>) {
+  const files = useMemo(() => {
+    const f: { [key in keyof T]: string } = {} as any;
+    for (const key in references) {
+      f[key] = references[key].file;
+    }
+    return f;
+  }, [references]);
+  const { loading, error, results } = useJsons(files);
   const options = useMemo(() => {
-    if (!content) {
+    if (loading || error) {
       return [];
     }
-    return content.value.map((d: any) => ({ value: d[referenceProperty] }));
-  }, [content, referenceProperty]);
+    const options: string[] = [];
+    for (const key in results) {
+      const fileResults = results[key]?.content ?? null;
+      if (!fileResults) continue;
+      for (const item of fileResults.value) {
+        const value: string = item[references[key].property];
+        if (!options.includes(value)) {
+          options.push(value);
+        }
+      }
+    }
+    options.sort();
+    return options.map((option) => ({ value: option }));
+  }, [references, loading, error, results]);
   const onChangeMemo = useCallback(
     (value: BaseOptionType) => {
       onChange(value);
@@ -48,11 +66,23 @@ export function stringReferenceTo(file: string, property: string) {
   return function StringReference(props: WidgetProps) {
     return (
       <StringReferenceWidget
-        referenceFile={file}
-        referenceProperty={property}
+        references={{
+          f: {
+            property,
+            file,
+          },
+        }}
         {...props}
       />
     );
+  };
+}
+
+export function stringReferenceToMultiple(references: {
+  [k: string]: { file: string; property: string };
+}) {
+  return function StringReference(props: WidgetProps) {
+    return <StringReferenceWidget references={references} {...props} />;
   };
 }
 
@@ -72,10 +102,28 @@ export const stringReferenceToCalibres = stringReferenceTo(
 );
 
 // FIXME also needs to include weapons etc.
-export const stringReferenceToItems = stringReferenceTo(
-  'items.json',
-  'internalName',
-);
+export const stringReferenceToItems = stringReferenceToMultiple({
+  armours: {
+    file: 'armours.json',
+    property: 'internalName',
+  },
+  explosives: {
+    file: 'explosives.json',
+    property: 'internalName',
+  },
+  items: {
+    file: 'items.json',
+    property: 'internalName',
+  },
+  magazines: {
+    file: 'magazines.json',
+    property: 'internalName',
+  },
+  weapons: {
+    file: 'weapons.json',
+    property: 'internalName',
+  },
+});
 
 export const stringReferenceToWeapons = stringReferenceTo(
   'weapons.json',
