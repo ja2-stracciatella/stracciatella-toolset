@@ -21,6 +21,7 @@ import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import rustInterface from './rust';
 import debug from 'electron-debug';
+import { invokables } from './invokables';
 
 rustInterface.initLogger();
 
@@ -31,6 +32,11 @@ const invokeSchema = z.object({
 });
 const handleInvoke = async (event: IpcMainInvokeEvent, payload: unknown) => {
   const { func, params } = await invokeSchema.parseAsync(payload);
+  if (invokables[func]) {
+    const p = await invokables[func].params.parseAsync(params);
+    const result = await invokables[func].fn(p);
+    return result;
+  }
   const result = await rustInterface.invoke(
     state,
     JSON.stringify({ func, params }),

@@ -12,6 +12,7 @@ import { JsonSchemaForm } from './JsonSchemaForm';
 import { useAppDispatch, useAppSelector } from '../hooks/state';
 import { FullSizeDialogLayout } from './FullSizeDialogLayout';
 import { ErrorAlert } from './ErrorAlert';
+import { HostPathWidget } from './form/HostPathWidget';
 
 const CONFIG_JSON_SCHEMA = {
   type: 'object',
@@ -39,6 +40,17 @@ const CONFIG_JSON_SCHEMA = {
     },
   },
   required: ['stracciatellaHome', 'vanillaGameDir', 'stracciatellaInstallDir'],
+};
+const CONFIG_UI_SCHEMA = {
+  stracciatellaHome: {
+    'ui:widget': HostPathWidget,
+  },
+  vanillaGameDir: {
+    'ui:widget': HostPathWidget,
+  },
+  stracciatellaInstallDir: {
+    'ui:widget': HostPathWidget,
+  },
 };
 
 function Configure() {
@@ -75,6 +87,7 @@ function Configure() {
         content={state}
         onChange={change}
         onSubmit={submit}
+        uiSchema={CONFIG_UI_SCHEMA}
       />
       <Button type="primary" onClick={submit} disabled={!valid}>
         Submit

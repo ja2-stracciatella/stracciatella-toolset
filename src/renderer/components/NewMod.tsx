@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from 'react';
 import { Button, Typography } from 'antd';
 import { IChangeEvent } from '@rjsf/core';
 import { JsonSchemaForm } from './JsonSchemaForm';
-import { invokeWithSchema } from '../lib/invoke';
 import z from 'zod';
 import { useAppDispatch, useAppSelector } from '../hooks/state';
 import { createNewMod, Mod } from '../state/mods';
