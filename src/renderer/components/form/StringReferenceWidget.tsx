@@ -1,12 +1,19 @@
 import { WidgetProps } from '@rjsf/utils';
-import { Input, AutoComplete } from 'antd';
-import { useCallback, useMemo } from 'react';
+import { Input, AutoComplete, AutoCompleteProps } from 'antd';
+import { JSX, useCallback, useMemo } from 'react';
 import { useJsons } from '../../hooks/files';
 import { BaseOptionType } from 'antd/lib/select';
+import { Space } from 'antd/lib';
+import { MercPreview } from '../content/MercPreview';
+import { ItemPreview } from '../content/ItemPreview';
+
+type PreviewFn = (item: any) => JSX.Element | string | null;
 
 interface StringReferenceWidgetProps<T extends { [key: string]: string }>
   extends WidgetProps {
-  references: { [key in keyof T]: { file: string; property: string } };
+  references: {
+    [key in keyof T]: { file: string; property: string; preview?: PreviewFn };
+  };
 }
 
 export function StringReferenceWidget<T extends { [key: string]: string }>({
@@ -27,19 +34,33 @@ export function StringReferenceWidget<T extends { [key: string]: string }>({
     if (loading || error) {
       return [];
     }
-    const options: string[] = [];
+    const options: Array<
+      NonNullable<AutoCompleteProps['options']>[0] & { value: string }
+    > = [];
     for (const key in results) {
       const fileResults = results[key]?.content ?? null;
       if (!fileResults) continue;
       for (const item of fileResults.value) {
         const value: string = item[references[key].property];
-        if (!options.includes(value)) {
-          options.push(value);
+        let label: JSX.Element | string | null = value;
+        if (references[key].preview) {
+          label = (
+            <Space>
+              {references[key].preview(item)}
+              <span>{value}</span>
+            </Space>
+          );
+        }
+        if (!options.some((option) => option.value === value)) {
+          options.push({
+            value,
+            label,
+          });
         }
       }
     }
-    options.sort();
-    return options.map((option) => ({ value: option }));
+    options.sort((a, b) => a.value.localeCompare(b.value));
+    return options;
   }, [references, loading, error, results]);
   const onChangeMemo = useCallback(
     (value: BaseOptionType) => {
@@ -58,11 +79,18 @@ export function StringReferenceWidget<T extends { [key: string]: string }>({
       value={value}
       onChange={onChangeMemo}
       placeholder="Please select..."
+      filterOption={(inputValue, option) =>
+        option!.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+      }
     />
   );
 }
 
-export function stringReferenceTo(file: string, property: string) {
+export function stringReferenceTo(
+  file: string,
+  property: string,
+  preview?: PreviewFn,
+) {
   return function StringReference(props: WidgetProps) {
     return (
       <StringReferenceWidget
@@ -70,6 +98,7 @@ export function stringReferenceTo(file: string, property: string) {
           f: {
             property,
             file,
+            preview,
           },
         }}
         {...props}
@@ -79,7 +108,7 @@ export function stringReferenceTo(file: string, property: string) {
 }
 
 export function stringReferenceToMultiple(references: {
-  [k: string]: { file: string; property: string };
+  [k: string]: { file: string; property: string; preview?: PreviewFn };
 }) {
   return function StringReference(props: WidgetProps) {
     return <StringReferenceWidget references={references} {...props} />;
@@ -106,43 +135,52 @@ export const stringReferenceToItems = stringReferenceToMultiple({
   armours: {
     file: 'armours.json',
     property: 'internalName',
+    preview: (i) => <ItemPreview inventoryGraphics={i.inventoryGraphics} />,
   },
   explosives: {
     file: 'explosives.json',
     property: 'internalName',
+    preview: (i) => <ItemPreview inventoryGraphics={i.inventoryGraphics} />,
   },
   items: {
     file: 'items.json',
     property: 'internalName',
+    preview: (i) => <ItemPreview inventoryGraphics={i.inventoryGraphics} />,
   },
   magazines: {
     file: 'magazines.json',
     property: 'internalName',
+    preview: (i) => <ItemPreview inventoryGraphics={i.inventoryGraphics} />,
   },
   weapons: {
     file: 'weapons.json',
     property: 'internalName',
+    preview: (i) => <ItemPreview inventoryGraphics={i.inventoryGraphics} />,
   },
 });
 
 export const stringReferenceToWeapons = stringReferenceTo(
   'weapons.json',
   'internalName',
+  (i) => <ItemPreview inventoryGraphics={i.inventoryGraphics} />,
 );
 
 export const stringReferenceToArmours = stringReferenceTo(
   'armours.json',
   'internalName',
+  (i) => <ItemPreview inventoryGraphics={i.inventoryGraphics} />,
 );
 
 export const stringReferenceToMagazines = stringReferenceTo(
   'magazines.json',
   'internalName',
+  (i) => <ItemPreview inventoryGraphics={i.inventoryGraphics} />,
 );
 
 export const stringReferenceToMercProfiles = stringReferenceTo(
   'mercs-profile-info.json',
   'internalName',
+  (i) => <MercPreview profile={i.internalName} />,
 );
 
 export const stringReferenceToExplosiveCalibres = stringReferenceTo(
