@@ -24,7 +24,7 @@ function ItemForm({ file, index, uiSchema }: ItemFormProps) {
   );
 
   if (error) {
-    return <Alert type="error" message={error.toString()} />;
+    return <Alert type="error" message={error.message} />;
   }
   if (index === -1 || !value) {
     return <div>Select a sector to the left to edit.</div>;

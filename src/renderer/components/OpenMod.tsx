@@ -1,15 +1,18 @@
-import { useCallback } from 'react';
-import { List, Button, Alert } from 'antd';
-import './OpenMod.css';
+import { useCallback, useMemo, useState } from 'react';
+import { List, Button, Alert, Typography, Space } from 'antd';
 import { useAppDispatch, useAppSelector } from '../hooks/state';
 import { EditableMod, setSelectedMod } from '../state/mods';
-
-const { Item } = List;
+import { NewMod } from './NewMod';
+import { FullSizeDialogLayout } from './FullSizeDialogLayout';
+import { ErrorAlert } from './ErrorAlert';
 
 export function OpenMod() {
   const dispatch = useAppDispatch();
   const error = useAppSelector((s) => s.mods.error);
   const editableMods = useAppSelector((s) => s.mods.mods?.editable) ?? [];
+  const [newMod, setNewMod] = useState(false);
+  const onNewModClick = useCallback(() => setNewMod(true), [setNewMod]);
+  const onNewModCancel = useCallback(() => setNewMod(false), [setNewMod]);
   const onModClick = useCallback(
     async (mod: EditableMod) => {
       dispatch(setSelectedMod(mod));
@@ -17,22 +20,36 @@ export function OpenMod() {
     [dispatch],
   );
 
-  if (error) {
-    return <Alert type="error" message={error.toString()} />;
+  if (newMod) {
+    return <NewMod onCancel={onNewModCancel} />;
   }
   return (
-    <div className="open-root">
-      <h2>
-        Select mod to edit
-        <Button>Add new mod</Button>
-      </h2>
-      <List>
-        {editableMods.map((mod) => (
-          <Item key={mod.id} onClick={() => onModClick(mod)}>
-            {mod.name} ({mod.version})
-          </Item>
-        ))}
-      </List>
-    </div>
+    <FullSizeDialogLayout>
+      <Typography.Title>Select mod to edit</Typography.Title>
+      <Typography.Paragraph>
+        Select the mod you want to edit or create a new mod.
+      </Typography.Paragraph>
+      <Typography.Paragraph>
+        <Button onClick={onNewModClick}>Create new mod</Button>
+      </Typography.Paragraph>
+      <Typography.Title>Editable Mods</Typography.Title>
+      <ErrorAlert error={error} />
+      <List
+        dataSource={editableMods}
+        renderItem={(mod) => (
+          <List.Item
+            onClick={() => onModClick(mod)}
+            extra={<Typography.Text>{mod.version}</Typography.Text>}
+          >
+            <List.Item.Meta
+              title={
+                <Typography.Link>{`${mod.name} (${mod.id})`}</Typography.Link>
+              }
+              description={mod.description}
+            />
+          </List.Item>
+        )}
+      />
+    </FullSizeDialogLayout>
   );
 }

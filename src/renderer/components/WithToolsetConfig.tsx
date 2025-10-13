@@ -1,5 +1,5 @@
 import { PropsWithChildren, useCallback, useEffect, useState } from 'react';
-import { Alert } from 'antd';
+import { Alert, Button, Typography } from 'antd';
 import { IChangeEvent } from '@rjsf/core';
 import {
   PartialToolsetConfig,
@@ -10,12 +10,12 @@ import {
 import { FullSizeLoader } from './FullSizeLoader';
 import { JsonSchemaForm } from './JsonSchemaForm';
 import { useAppDispatch, useAppSelector } from '../hooks/state';
+import { FullSizeDialogLayout } from './FullSizeDialogLayout';
+import { ErrorAlert } from './ErrorAlert';
+import { HostPathWidget } from './form/HostPathWidget';
 
 const CONFIG_JSON_SCHEMA = {
   type: 'object',
-  title: 'Configure the Stracciatella Toolset',
-  description:
-    'You need to configure the Stracciatella Toolset first, before you can use it.',
   properties: {
     stracciatellaHome: {
       title: 'JA2 Stracciatella Home Directory',
@@ -41,8 +41,20 @@ const CONFIG_JSON_SCHEMA = {
   },
   required: ['stracciatellaHome', 'vanillaGameDir', 'stracciatellaInstallDir'],
 };
+const CONFIG_UI_SCHEMA = {
+  stracciatellaHome: {
+    'ui:widget': HostPathWidget,
+  },
+  vanillaGameDir: {
+    'ui:widget': HostPathWidget,
+  },
+  stracciatellaInstallDir: {
+    'ui:widget': HostPathWidget,
+  },
+};
 
 function Configure() {
+  const dispatch = useAppDispatch();
   const config = useAppSelector((s) => s.toolset.config.value);
   const error = useAppSelector((s) => s.toolset.error);
 
@@ -56,26 +68,31 @@ function Configure() {
   }, []);
   const submit = useCallback(() => {
     if (valid) {
-      setToolsetConfig(state as FullToolsetConfig);
+      dispatch(setToolsetConfig(state as FullToolsetConfig));
     }
-  }, [state, valid]);
-  const errbox = error ? (
-    <div className="with-toolset-config">
-      <Alert type="error" message={error.toString()} />
-    </div>
-  ) : null;
+  }, [dispatch, state, valid]);
 
   return (
-    <div>
-      {errbox}
+    <FullSizeDialogLayout>
+      <Typography.Title level={2}>
+        Configure the Stracciatella Toolset
+      </Typography.Title>
+      <Typography.Paragraph>
+        You need to configure the Stracciatella Toolset first, before you can
+        use it.
+      </Typography.Paragraph>
+      <ErrorAlert error={error} />
       <JsonSchemaForm
         schema={CONFIG_JSON_SCHEMA}
         content={state}
-        renderButton
         onChange={change}
         onSubmit={submit}
+        uiSchema={CONFIG_UI_SCHEMA}
       />
-    </div>
+      <Button type="primary" onClick={submit} disabled={!valid}>
+        Submit
+      </Button>
+    </FullSizeDialogLayout>
   );
 }
 

@@ -2,6 +2,7 @@ import { ExclamationOutlined } from '@ant-design/icons';
 import { Avatar } from 'antd';
 import { useMemo } from 'react';
 import { useImageFile } from '../../hooks/useImage';
+import { StiPreview } from './StiPreview';
 
 interface SubImage {
   path: string;
@@ -18,22 +19,5 @@ interface ItemPreviewProps {
 const crispEdgesStyle = { imageRendering: 'crisp-edges' as const };
 
 export function ItemPreview({ inventoryGraphics: { big } }: ItemPreviewProps) {
-  const { data: image, error } = useImageFile(big.path);
-  const additionalAvatarProps = useMemo(() => {
-    if (error) {
-      return { icon: <ExclamationOutlined />, title: error.toString() };
-    }
-    if (!image) {
-      return {};
-    }
-    return { src: image };
-  }, [error, image]);
-
-  if (error) {
-    return <span>Error loading image: {error.toString()}</span>;
-  }
-
-  return (
-    <Avatar shape="square" {...additionalAvatarProps} style={crispEdgesStyle} />
-  );
+  return <StiPreview file={big.path} />;
 }

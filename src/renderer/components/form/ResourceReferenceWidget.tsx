@@ -41,31 +41,22 @@ export function ResourceReferenceWidget({
   }, [resourceType, value]);
 
   return (
-    <>
-      <Row>
-        {preview}
-        <Col flex="auto">
-          <Input
-            style={{ flexGrow: 1 }}
-            value={value}
-            onChange={onChange}
-            placeholder="Please select a resource..."
-          />
-        </Col>
-        <Col flex="none">
-          <Space>
-            {' '}
-            <Button onClick={openModal}>…</Button>
-          </Space>
-        </Col>
-      </Row>
+    <Space.Compact>
+      {preview}
+      <Input
+        style={{ flexGrow: 1 }}
+        value={value}
+        onChange={onChange}
+        placeholder="Please select a resource..."
+      />
+      <Button onClick={openModal}>…</Button>
       <ResourceSelectorModal
         isOpen={modalIsOpen}
         onSelect={onSelect}
         onCancel={closeModal}
         resourceType={resourceType}
       />
-    </>
+    </Space.Compact>
   );
 }
 
