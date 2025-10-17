@@ -8,7 +8,15 @@ import { IChangeEvent } from '@rjsf/core';
 import { UiSchema } from '@rjsf/utils';
 import { EditorContent } from './EditorContent';
 import { JsonFormHeader } from './form/JsonFormHeader';
-import { useJson, useJsonItem } from '../hooks/files';
+import {
+  useFileLoading,
+  useFileError,
+  useFileJsonItem,
+  useFileJsonItemSchema,
+  useFileJson,
+} from '../hooks/files';
+import { ErrorAlert } from './ErrorAlert';
+import { miniSerializeError } from '@reduxjs/toolkit';
 
 type PreviewFn = (item: any) => JSX.Element | string | null;
 
@@ -21,26 +29,32 @@ interface ItemFormHeaderProps {
   preview?: PreviewFn;
 }
 
-const ItemFormHeader = memo(
-  ({ file, index, name, preview }: ItemFormHeaderProps) => {
-    const { value } = useJsonItem(file, index);
-    const label = useMemo(
-      () => (typeof name === 'string' ? value[name] : name(value)),
-      [name, value],
-    );
-    const p = useMemo(
-      () => (preview ? preview(value) : null),
-      [preview, value],
-    );
+const ItemFormHeader = memo(function ItemFormHeader({
+  file,
+  index,
+  name,
+  preview,
+}: ItemFormHeaderProps) {
+  const [value] = useFileJsonItem(file, index);
+  const label = useMemo(() => {
+    if (typeof name === 'string') {
+      const label = value ? value[name] : null;
+      if (typeof label == 'string') {
+        return label;
+      }
+      return '';
+    }
+    return name(value);
+  }, [name, value]);
+  const p = useMemo(() => (preview ? preview(value) : null), [preview, value]);
 
-    return (
-      <Space direction="horizontal">
-        {p}
-        {label}
-      </Space>
-    );
-  },
-);
+  return (
+    <Space direction="horizontal">
+      {p}
+      {label}
+    </Space>
+  );
+});
 
 interface ItemFormProps {
   file: string;
@@ -51,11 +65,8 @@ interface ItemFormProps {
 }
 
 function ItemForm({ file, name, preview, uiSchema, index }: ItemFormProps) {
-  const { schema, value, update } = useJsonItem(file, index);
-  const [isCollapsed, setCollapsed] = useState(true);
-  const onPanelChange = useCallback((v: any) => {
-    setCollapsed(v.length === 0);
-  }, []);
+  const schema = useFileJsonItemSchema(file);
+  const [value, update] = useFileJsonItem(file, index);
   const onItemChange = useCallback(
     (ev: IChangeEvent<any>) => update(ev.formData),
     [update],
@@ -63,7 +74,6 @@ function ItemForm({ file, name, preview, uiSchema, index }: ItemFormProps) {
 
   return (
     <Collapse
-      onChange={onPanelChange}
       items={[
         {
           label: (
@@ -74,7 +84,7 @@ function ItemForm({ file, name, preview, uiSchema, index }: ItemFormProps) {
               preview={preview}
             />
           ),
-          children: isCollapsed ? null : (
+          children: (
             <JsonSchemaForm
               idPrefix={index.toString()}
               schema={schema}
@@ -97,35 +107,39 @@ export interface FormItemsProps {
   uiSchema?: UiSchema;
 }
 
-const FormItems = memo(
-  ({ file, name, preview, numItems, uiSchema }: FormItemsProps) => {
-    const items = useMemo(() => {
-      if (numItems == null) {
-        return null;
-      }
-      const i = [];
-      for (let it = 0; it < numItems; it++) {
-        i.push(
-          <ItemForm
-            file={file}
-            key={it}
-            name={name}
-            index={it}
-            preview={preview}
-            uiSchema={uiSchema}
-          />,
-        );
-      }
-      return i;
-    }, [file, name, numItems, preview, uiSchema]);
+const FormItems = memo(function FormItems({
+  file,
+  name,
+  preview,
+  numItems,
+  uiSchema,
+}: FormItemsProps) {
+  const items = useMemo(() => {
+    if (numItems == null) {
+      return null;
+    }
+    const i = [];
+    for (let it = 0; it < numItems; it++) {
+      i.push(
+        <ItemForm
+          file={file}
+          key={it}
+          name={name}
+          index={it}
+          preview={preview}
+          uiSchema={uiSchema}
+        />,
+      );
+    }
+    return i;
+  }, [file, name, numItems, preview, uiSchema]);
 
-    return (
-      <Space direction="vertical" style={{ width: '100%' }}>
-        {items}
-      </Space>
-    );
-  },
-);
+  return (
+    <Space direction="vertical" style={{ width: '100%' }}>
+      {items}
+    </Space>
+  );
+});
 
 export interface JsonItemsFormProps {
   file: string;
@@ -134,21 +148,25 @@ export interface JsonItemsFormProps {
   uiSchema?: UiSchema;
 }
 
-export function JsonItemsForm({
+export const JsonItemsForm = memo(function JsonItemsForm({
   file,
   name,
   preview,
   uiSchema,
 }: JsonItemsFormProps) {
-  const { content, error } = useJson(file);
-  const numItems = (content?.value?.length as number) ?? null;
+  const loading = useFileLoading(file);
+  const error = useFileError(file);
+  const [content] = useFileJson(file);
+  const numItems = useMemo(() => content?.length ?? null, [content]);
 
   if (error) {
-    return <Alert type="error" message={error.message} />;
+    return <ErrorAlert error={error} />;
   }
-
-  if (numItems == null) {
+  if (loading) {
     return <FullSizeLoader />;
+  }
+  if (numItems == null) {
+    return <ErrorAlert error={{ message: 'No items after loading' }} />;
   }
 
   return (
@@ -163,4 +181,4 @@ export function JsonItemsForm({
       />
     </EditorContent>
   );
-}
+});

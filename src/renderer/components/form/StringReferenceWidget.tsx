@@ -1,7 +1,11 @@
 import { WidgetProps } from '@rjsf/utils';
 import { Input, AutoComplete, AutoCompleteProps } from 'antd';
 import { JSX, useCallback, useMemo } from 'react';
-import { useJsons } from '../../hooks/files';
+import {
+  useFilesError,
+  useFilesJson,
+  useFilesLoading,
+} from '../../hooks/files';
 import { BaseOptionType } from 'antd/lib/select';
 import { Space } from 'antd/lib';
 import { MercPreview } from '../content/MercPreview';
@@ -29,18 +33,26 @@ export function StringReferenceWidget<T extends { [key: string]: string }>({
     }
     return f;
   }, [references]);
-  const { loading, error, results } = useJsons(files);
+  const loadings = useFilesLoading(files);
+  const errors = useFilesError(files);
+  const loadingDidNotComplete = useMemo(() => {
+    return (
+      Object.values(loadings).some((l) => l) ||
+      Object.values(errors).some((e) => e)
+    );
+  }, [loadings, errors]);
+  const { values } = useFilesJson(files);
   const options = useMemo(() => {
-    if (loading || error) {
+    if (!Object.values(values).every((v) => v)) {
       return [];
     }
     const options: Array<
       NonNullable<AutoCompleteProps['options']>[0] & { value: string }
     > = [];
-    for (const key in results) {
-      const fileResults = results[key]?.content ?? null;
+    for (const key in values) {
+      const fileResults = values[key] as Array<any>;
       if (!fileResults) continue;
-      for (const item of fileResults.value) {
+      for (const item of fileResults) {
         const value: string = item[references[key].property];
         let label: JSX.Element | string | null = value;
         if (references[key].preview) {
@@ -61,7 +73,7 @@ export function StringReferenceWidget<T extends { [key: string]: string }>({
     }
     options.sort((a, b) => a.value.localeCompare(b.value));
     return options;
-  }, [references, loading, error, results]);
+  }, [values, references]);
   const onChangeMemo = useCallback(
     (value: BaseOptionType) => {
       onChange(value);
@@ -69,7 +81,7 @@ export function StringReferenceWidget<T extends { [key: string]: string }>({
     [onChange],
   );
 
-  if (error) {
+  if (loadingDidNotComplete) {
     return <Input value={value} onChange={onChange} required={required} />;
   }
 

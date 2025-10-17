@@ -2,7 +2,7 @@ import { QuestionOutlined } from '@ant-design/icons';
 import { Avatar } from 'antd';
 import { useMemo } from 'react';
 import { useImageFile } from '../../hooks/useImage';
-import { useJson } from '../../hooks/files';
+import { useFileJson } from '../../hooks/files';
 
 interface MercPreviewProps {
   profile: string;
@@ -11,13 +11,16 @@ interface MercPreviewProps {
 const crispEdgesStyle = { imageRendering: 'crisp-edges' as const };
 
 export function MercPreview({ profile }: MercPreviewProps) {
-  const { content } = useJson('mercs-profile-info.json');
+  const [content] = useFileJson('mercs-profile-info.json');
   const profileId = useMemo(() => {
     if (!content) {
       return null;
     }
-    const p = content.value.find((it: any) => it.internalName === profile);
-    if (!p) {
+    if (!Array.isArray(content)) {
+      return null;
+    }
+    const p = content.find((it: any) => it.internalName === profile);
+    if (!p || !p.profileID) {
       return null;
     }
     return p.profileID as number;

@@ -5,14 +5,17 @@ import { UiSchema, FieldTemplateProps, FieldProps } from '@rjsf/utils';
 import { Theme as AntdTheme } from '@rjsf/antd';
 import { Form } from 'antd';
 import ReactMarkdown from 'react-markdown';
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import validator from '@rjsf/validator-ajv8';
 
 export interface DescriptionFieldProps extends Partial<FieldProps> {
   description?: string;
 }
 
-function MarkdownDescriptionField({ id, description }: DescriptionFieldProps) {
+const MarkdownDescriptionField = memo(function MarkdownDescriptionField({
+  id,
+  description,
+}: DescriptionFieldProps) {
   if (!description) {
     return null;
   }
@@ -21,13 +24,13 @@ function MarkdownDescriptionField({ id, description }: DescriptionFieldProps) {
       <ReactMarkdown>{description}</ReactMarkdown>
     </div>
   );
-}
+});
 
 const HORIZONTAL_LABEL_COL = { span: 6 };
 const HORIZONTAL_WRAPPER_COL = { span: 18 };
 
 // Cloned from Antd theme with some changes
-function MarkdownFieldTemplate({
+const MarkdownFieldTemplate = memo(function MarkdownFieldTemplate({
   children,
   classNames,
   description,
@@ -94,7 +97,7 @@ FieldTemplateProps) {
       {children}
     </Form.Item>
   );
-}
+});
 
 const RjsfForm = withTheme({
   ...AntdTheme,

@@ -7,8 +7,15 @@ import { StrategicMap } from './content/StrategicMap';
 import { JsonSchemaForm } from './JsonSchemaForm';
 import { EditorContent } from './EditorContent';
 import { JsonFormHeader } from './form/JsonFormHeader';
-import { useJson, useJsonItem } from '../hooks/files';
+import {
+  useFileError,
+  useFileJson,
+  useFileJsonItem,
+  useFileJsonItemSchema,
+  useFileLoading,
+} from '../hooks/files';
 import { IChangeEvent } from '@rjsf/core';
+import { ErrorAlert } from './ErrorAlert';
 
 interface ItemFormProps {
   file: string;
@@ -17,15 +24,13 @@ interface ItemFormProps {
 }
 
 function ItemForm({ file, index, uiSchema }: ItemFormProps) {
-  const { schema, value, error, update } = useJsonItem(file, index);
+  const schema = useFileJsonItemSchema(file);
+  const [value, update] = useFileJsonItem(file, index);
   const onItemChange = useCallback(
     (ev: IChangeEvent<any>) => update(ev.formData),
     [update],
   );
 
-  if (error) {
-    return <Alert type="error" message={error.message} />;
-  }
   if (index === -1 || !value) {
     return <div>Select a sector to the left to edit.</div>;
   }
@@ -51,26 +56,33 @@ export function JsonStrategicMapForm({
   property = 'sector',
   uiSchema,
 }: StrategicMapFormProps) {
+  const loading = useFileLoading(file);
+  const error = useFileError(file);
   const [selectedItem, setSelectedItem] = useState(-1);
-  const { content } = useJson(file);
+  const [value] = useFileJson(file);
   const sectorsWithContent = useMemo(
-    () =>
-      content ? content.value.map((d: any) => d[property].toLowerCase()) : [],
-    [content, property],
+    () => (value ? value.map((d: any) => d[property].toLowerCase()) : []),
+    [value, property],
   );
   const onSectorClick = useCallback(
     (sectorId: string) => {
-      if (!content) {
+      if (!value) {
         return;
       }
       const idx = sectorsWithContent.indexOf(sectorId.toLowerCase());
       setSelectedItem(idx);
     },
-    [content, sectorsWithContent],
+    [sectorsWithContent, value],
   );
 
-  if (!content) {
+  if (loading) {
     return <FullSizeLoader />;
+  }
+  if (error) {
+    return <ErrorAlert error={error} />;
+  }
+  if (!value) {
+    return <ErrorAlert error={{ message: 'No items after loading' }} />;
   }
 
   return (

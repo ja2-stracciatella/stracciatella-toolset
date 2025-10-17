@@ -82,13 +82,21 @@ pub fn read_image_file(state: &AppState, params: ReadImageFileParams) -> Result<
     let stci = Stci::from_input(&mut content.as_slice())?;
     let sub_image = params.subimage.unwrap_or(0);
     let size = match &stci {
-        Stci::Indexed { sub_images, .. } => sub_images
-            .get(sub_image)
-            .ok_or_else(|| Error::new("indexed stci does not the specified subimage"))
-            .map(|s| (u32::from(s.dimensions.0), u32::from(s.dimensions.1))),
+        Stci::Indexed { sub_images, .. } => {
+            let num_subimages = sub_images.len();
+            sub_images
+                .get(sub_image)
+                .ok_or_else(move || {
+                    Error::new(format!(
+                        "indexed stci only contains {} subimages",
+                        num_subimages
+                    ))
+                })
+                .map(|s| (u32::from(s.dimensions.0), u32::from(s.dimensions.1)))
+        }
         Stci::Rgb { width, height, .. } => {
             if sub_image != 0 {
-                Err(Error::new("rgb stci does not support subimages"))
+                Err(Error::new("rgb stci only contains 1 subimage"))
             } else {
                 Ok((u32::from(*width), u32::from(*height)))
             }
