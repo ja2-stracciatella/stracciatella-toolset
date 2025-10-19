@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use invokables::{
     images::ReadImageFileParams,
-    json::{OpenFileOptions, PersistFileOptions},
+    json::{OpenFileParams, PersistFileParams},
     mods::SelectedMod,
     resources::ListResourcesParams,
     sounds::ReadSoundParams,
@@ -90,15 +90,15 @@ fn invoke_inner(state: &state::AppState, payload: &str) -> Result<String> {
                 let s = invokables::mods::create_new_mod(&state, new_mod)?;
                 Ok(serde_json::to_value(s)?)
             }
-            "open_json_file_with_schema" => {
-                let file: OpenFileOptions = serde_json::from_value(payload.params.clone())?;
-                let json = invokables::json::open_json_file_with_schema(&state, file)?;
+            "open_json_with_schema" => {
+                let file: OpenFileParams = serde_json::from_value(payload.params.clone())?;
+                let json = invokables::json::open_json_with_schema(&state, file)?;
                 Ok(serde_json::to_value(json)?)
             }
-            "persist_json_file" => {
-                let file: PersistFileOptions = serde_json::from_value(payload.params.clone())?;
-                invokables::json::persist_json_file(&state, file)?;
-                Ok(serde_json::to_value("success")?)
+            "persist_json" => {
+                let file: PersistFileParams = serde_json::from_value(payload.params.clone())?;
+                let json = invokables::json::persist_json(&state, file)?;
+                Ok(serde_json::to_value(json)?)
             }
             "read_image_file" => {
                 let params: ReadImageFileParams = serde_json::from_value(payload.params.clone())?;

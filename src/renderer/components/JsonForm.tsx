@@ -1,12 +1,15 @@
 import { useCallback, useMemo } from 'react';
-import { Alert } from 'antd';
 import { IChangeEvent } from '@rjsf/core';
 import { UiSchema } from '@rjsf/utils';
 import { JsonSchemaForm } from './JsonSchemaForm';
 import { FullSizeLoader } from './FullSizeLoader';
 import { EditorContent } from './EditorContent';
 import { JsonFormHeader } from './form/JsonFormHeader';
-import { useJson } from '../hooks/files';
+import { useFileLoading, useFileSchema } from '../hooks/files';
+import { useFileError } from '../hooks/files';
+import { useFileJson } from '../hooks/files';
+import { ErrorAlert } from './ErrorAlert';
+import { miniSerializeError } from '@reduxjs/toolkit';
 
 export interface JsonFormProps {
   file: string;
@@ -14,27 +17,35 @@ export interface JsonFormProps {
 }
 
 export function JsonForm({ file, uiSchema }: JsonFormProps) {
-  const { content, update, error } = useJson(file);
+  const loading = useFileLoading(file);
+  const error = useFileError(file);
+  const [value, update] = useFileJson(file);
+  const baseSchema = useFileSchema(file);
   const schema = useMemo(() => {
-    if (!content?.schema) {
+    if (!baseSchema) {
       return null;
     }
     return {
-      ...content.schema,
+      ...baseSchema,
       title: undefined,
       description: undefined,
     };
-  }, [content?.schema]);
+  }, [baseSchema]);
   const onFormChange = useCallback(
     (value: IChangeEvent<any>) => update(value.formData),
     [update],
   );
 
   if (error) {
-    return <Alert type="error" message={error.message} />;
+    return <ErrorAlert error={error} />;
   }
-  if (!schema || !content) {
+  if (loading == null || loading) {
     return <FullSizeLoader />;
+  }
+  if (!schema || !value) {
+    return (
+      <ErrorAlert error={miniSerializeError(new Error('No schema or value'))} />
+    );
   }
 
   return (
@@ -42,7 +53,7 @@ export function JsonForm({ file, uiSchema }: JsonFormProps) {
       <JsonFormHeader file={file} />
       <JsonSchemaForm
         schema={schema}
-        content={content.value}
+        content={value}
         uiSchema={uiSchema}
         onChange={onFormChange}
       />

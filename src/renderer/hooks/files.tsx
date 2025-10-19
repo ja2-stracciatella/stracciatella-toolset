@@ -1,68 +1,123 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from './state';
-import { changeJson, changeJsonItem, loadJSON } from '../state/files';
+import {
+  changeJson,
+  changeJsonItem,
+  JsonRoot,
+  JsonSchema,
+  loadJSON,
+  SaveMode,
+} from '../state/files';
 import { SerializedError } from '@reduxjs/toolkit';
-import { shallowEqual } from 'react-redux';
+import { AppState } from '../state/store';
+import { memoize } from 'proxy-memoize';
 
-type UseJsonResult = {
-  loading: boolean;
-  error: SerializedError | null;
-  content: {
-    modified: boolean;
-    value: any;
-    schema: any;
-  } | null;
+type UseFilesRequest = { [key: PropertyKey]: string };
+
+type UseFilesResult<R extends UseFilesRequest, V> = {
+  [key in keyof R]: V;
 };
 
-type UseJsonsResult<T extends { [key: PropertyKey]: string }> = {
-  loading: boolean;
-  error: SerializedError | null;
-  results: { [key in keyof T]: UseJsonResult };
-  update: (key: keyof T, value: any) => void;
+const useAppFilesProxySelector = <R extends any>(
+  fn: (state: AppState) => R,
+  deps: any[],
+): R => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useAppSelector(useCallback(memoize(fn), deps));
 };
 
-export function useJsons<T extends { [key: string]: string }>(
-  files: T,
-): UseJsonsResult<T> {
-  const dispatch = useAppDispatch();
-  const results = useAppSelector(
-    (s) => {
-      const results: { [key in keyof T]: UseJsonResult } = {} as any;
+export function useFilesLoading<R extends UseFilesRequest>(
+  files: R,
+): UseFilesResult<R, boolean | null> {
+  const loading = useAppFilesProxySelector(
+    (s: AppState) => {
+      const loading: { [key in keyof R]: boolean | null } = {} as any;
       for (const key in files) {
-        results[key] = {
-          loading: s.files.json[files[key]]?.loading ?? false,
-          error: s.files.json[files[key]]?.error ?? null,
-          content: s.files.json[files[key]]?.content ?? null,
-        };
+        loading[key] = s.files.disk[files[key]]?.loading ?? null;
       }
-      return results;
+      return loading;
     },
-    (a, b) => {
-      if (shallowEqual(a, b)) return true;
-      if (!shallowEqual(Object.keys(a), Object.keys(b))) return false;
-      for (const key in a) {
-        if (!shallowEqual(a[key], b[key])) return false;
-      }
-      return true;
-    },
+    [files],
   );
-  const loading = useMemo(() => {
-    for (const r in results) {
-      if (results[r].loading) return true;
-    }
-    return false;
-  }, [results]);
-  const error = useMemo(() => {
-    for (const r in results) {
-      if (results[r].error) return results[r].error;
-    }
-    return null;
-  }, [results]);
+
+  return loading;
+}
+
+export function useFilesError<R extends UseFilesRequest>(
+  files: R,
+): UseFilesResult<R, SerializedError | null> {
+  const errors = useAppFilesProxySelector(
+    function selectFilesError(s) {
+      const errors: { [key in keyof R]: SerializedError | null } = {} as any;
+      for (const key in files) {
+        errors[key] = s.files.disk[files[key]]?.error ?? null;
+      }
+      return errors;
+    },
+    [files],
+  );
+
+  return errors;
+}
+
+export function useFilesSchema<R extends UseFilesRequest>(
+  files: R,
+): UseFilesResult<R, Record<string, any> | null> {
+  const schemas = useAppFilesProxySelector(
+    function selectFilesSchema(s) {
+      const schemas: { [key in keyof R]: Record<string, any> | null } =
+        {} as any;
+      for (const key in files) {
+        schemas[key] = s.files.disk[files[key]]?.content?.schema ?? null;
+      }
+      return schemas;
+    },
+    [files],
+  );
+
+  return schemas;
+}
+
+export function useFilesModified<R extends UseFilesRequest>(
+  files: R,
+): UseFilesResult<R, boolean | null> {
+  const modified = useAppFilesProxySelector(
+    function selectFilesModified(s) {
+      const modified: { [key in keyof R]: boolean | null } = {} as any;
+      for (const key in files) {
+        modified[key] = s.files.modified[files[key]] ?? null;
+      }
+      return modified;
+    },
+    [files],
+  );
+
+  return modified;
+}
+
+export function useFilesJson<R extends UseFilesRequest>(
+  files: R,
+): {
+  values: UseFilesResult<R, JsonRoot | null>;
+  update: (file: keyof R, value: JsonRoot) => void;
+} {
+  const dispatch = useAppDispatch();
+  const loading = useFilesLoading(files);
+  const values = useAppFilesProxySelector(
+    function selectFilesJson(s) {
+      const values: { [key in keyof R]: JsonRoot | null } = {} as any;
+      for (const key in files) {
+        values[key] = s.files.open[files[key]] ?? null;
+      }
+      return values;
+    },
+    [files],
+  );
   const update = useCallback(
-    (file: keyof T, value: any) => {
+    (file: keyof R, value: JsonRoot) => {
       dispatch(
         changeJson({
-          file: files[file],
+          filename: files[file],
           value,
         }),
       );
@@ -71,77 +126,114 @@ export function useJsons<T extends { [key: string]: string }>(
   );
 
   useEffect(() => {
-    for (const f in files) {
-      if (!results[f].loading && !results[f].error && !results[f].content) {
-        dispatch(loadJSON(files[f]));
+    for (const key in files) {
+      if (loading[key] === null) {
+        dispatch(loadJSON(files[key]));
       }
     }
-  }, [dispatch, files, loading, results]);
+  }, [dispatch, files, loading]);
 
   return {
-    loading,
-    error,
-    results,
+    values,
     update,
   };
 }
 
-export function useJson(
-  file: string,
-): UseJsonResult & { update: (value: any) => void } {
-  const { results, update: updateMany } = useJsons({ f: file });
-  const update = useCallback(
-    (value: any) => {
-      updateMany('f', value);
-    },
-    [updateMany],
-  );
-
-  return {
-    ...results.f,
-    update,
-  };
+export function useFileLoading(filename: string): boolean | null {
+  return useAppSelector(function selectFileLoading(s) {
+    return s.files.disk[filename]?.loading ?? null;
+  });
 }
 
-export function useJsonItem(file: string, index: number) {
+export function useFileSaving(filename: string): boolean | null {
+  return useAppSelector(function selectFileSaving(s) {
+    return s.files.disk[filename]?.saving ?? null;
+  });
+}
+
+export function useFileSaveMode(filename: string): SaveMode | null {
+  return useAppSelector(function selectFileSaveMode(s) {
+    return s.files.saveMode[filename] ?? null;
+  });
+}
+
+export function useFileError(filename: string): SerializedError | null {
+  return useAppSelector(function selectFileError(s) {
+    return s.files.disk[filename]?.error ?? null;
+  });
+}
+
+export function useFileSchema(filename: string): JsonSchema | null {
+  return useAppSelector(function selectFileSchema(s) {
+    return s.files.disk[filename]?.content?.schema ?? null;
+  });
+}
+
+export function useFileModified(filename: string): boolean | null {
+  return useAppSelector(function selectFileModified(s) {
+    return s.files.modified[filename] ?? null;
+  });
+}
+
+export function useFileJson(
+  filename: string,
+): [JsonRoot | null, (value: JsonRoot) => void] {
   const dispatch = useAppDispatch();
-  const loading = useAppSelector((s) => s.files.json[file]?.loading) ?? false;
-  const error = useAppSelector((s) => s.files.json[file]?.error) ?? null;
-  const schema = useAppSelector((s) => s.files.json[file]?.content?.schema);
-  const value = useAppSelector(
-    (s) => s.files.json[file]?.content?.value[index],
-  );
-  const itemSchema = useMemo(() => {
-    if (!schema) {
-      return null;
-    }
-    const { title: _t, description: _d, ...rest } = schema.items;
-    return rest;
-  }, [schema]);
+  const loading = useFileLoading(filename);
   const update = useCallback(
-    (v: any) => {
+    (value: JsonRoot) => {
       dispatch(
-        changeJsonItem({
-          file,
-          index,
-          value: v,
+        changeJson({
+          filename,
+          value,
         }),
       );
     },
-    [dispatch, file, index],
+    [filename, dispatch],
   );
 
   useEffect(() => {
-    if (!loading && !schema) {
-      dispatch(loadJSON(file));
+    if (loading === null) {
+      dispatch(loadJSON(filename));
     }
-  }, [schema, dispatch, file, loading]);
+  }, [dispatch, filename, loading]);
 
-  return {
-    loading,
-    error,
-    schema: itemSchema,
-    value,
+  return [
+    useAppSelector((s) => {
+      return s.files.open[filename] ?? null;
+    }),
     update,
-  };
+  ];
+}
+
+export function useFileJsonItemSchema(
+  filename: string,
+): Record<string, any> | null {
+  const schema = useFileSchema(filename);
+  if (!schema) return null;
+  return schema.items ?? null;
+}
+
+export function useFileJsonItem(
+  filename: string,
+  index: number,
+): [Record<string, any> | null, (value: Record<string, any>) => void] {
+  const dispatch = useAppDispatch();
+  const { values } = useFilesJson({ f: filename });
+  const update = useCallback(
+    (value: Record<string, any>) => {
+      dispatch(
+        changeJsonItem({
+          filename,
+          index,
+          value,
+        }),
+      );
+    },
+    [dispatch, filename, index],
+  );
+  if (!values.f) return [null, update];
+  if (!Array.isArray(values.f)) return [null, update];
+
+  return [values.f[index] ?? null, update];
 }
