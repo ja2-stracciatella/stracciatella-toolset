@@ -1,9 +1,7 @@
-use std::path::PathBuf;
-
+use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use stracciatella::config::{find_stracciatella_home, EngineOptions};
-
-use crate::{Error, Result};
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -58,7 +56,7 @@ impl ToolsetConfig {
     pub fn path() -> Result<PathBuf> {
         let project_dirs =
             directories::ProjectDirs::from("io", "ja2-stracciatella", "stracciatella-toolset")
-                .ok_or_else(|| Error::new("could not determine toolset config directory"))?;
+                .ok_or_else(|| anyhow!("could not determine toolset config directory"))?;
         let config_dir = project_dirs.config_dir();
 
         Ok(config_dir.join("toolset-config.json"))
@@ -75,12 +73,12 @@ impl ToolsetConfig {
 
     /// Tries to read toolset config from home
     /// Returns either a full toolset config or an error why the full config could not be read and a partial toolset config that is populated as much as possible
-    pub fn read() -> core::result::Result<ToolsetConfig, (Error, PartialToolsetConfig)> {
+    pub fn read() -> core::result::Result<ToolsetConfig, (anyhow::Error, PartialToolsetConfig)> {
         let path = ToolsetConfig::path().map_err(|e| (e, PartialToolsetConfig::guess()))?;
         let config = if path.exists() {
             std::fs::read_to_string(&path)
-                .map_err(Error::from)
-                .and_then(|v| serde_json::from_str(&v).map_err(Error::from))
+                .context("failed to read config")
+                .and_then(|v| serde_json::from_str(&v).context("failed to deserialize config"))
                 .map_err(|e| (e, PartialToolsetConfig::guess()))?
         } else {
             PartialToolsetConfig::guess()
@@ -90,7 +88,7 @@ impl ToolsetConfig {
             Ok(config)
         } else {
             Err((
-                Error::new("failed to load full configuration"),
+                anyhow!("failed to load full configuration"),
                 PartialToolsetConfig::guess(),
             ))
         }
@@ -98,7 +96,7 @@ impl ToolsetConfig {
 
     /// Tries to write toolset config to home
     pub fn write(&self) -> Result<()> {
-        let contents = serde_json::to_string(self).map_err(Error::from)?;
+        let contents = serde_json::to_string(self).context("failed to serialize config")?;
         let path = Self::path()?;
         let dir = path.parent();
         if let Some(dir) = dir {

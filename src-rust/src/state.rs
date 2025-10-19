@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::{
     path::{Path, PathBuf},
@@ -12,7 +13,6 @@ use stracciatella::{
 };
 
 use crate::config::{self, PartialToolsetConfig, ToolsetConfig};
-use crate::error::{Error, Result};
 
 #[derive(Debug, Clone)]
 pub struct OpenedMod {
@@ -28,12 +28,12 @@ impl OpenedMod {
     ) -> Result<OpenedMod> {
         let m = mod_manager
             .get_mod_by_id(mod_id)
-            .ok_or_else(|| Error::new(format!("failed to find mod `{}`", mod_id)))?
+            .ok_or_else(|| anyhow!("failed to find mod `{}`", mod_id))?
             .clone();
         let mut vfs = Vfs::new();
         let engine_options = config.to_engine_options();
         vfs.init(&engine_options, mod_manager)
-            .map_err(|e| Error::new(format!("failed to initialize vfs: {}", e)))?;
+            .map_err(|e| anyhow!("failed to initialize vfs: {}", e))?;
 
         Ok(OpenedMod {
             vfs: Arc::new(vfs),
@@ -85,28 +85,28 @@ impl ToolsetState {
                 opened_mod: Some(opened_mod),
                 ..
             } => Ok(opened_mod),
-            _ => Err(Error::new("no mod selected")),
+            _ => Err(anyhow!("no mod selected")),
         }
     }
 
     pub fn try_schema_manager(&self) -> Result<&SchemaManager> {
         match self {
             ToolsetState::Configured { schema_manager, .. } => Ok(schema_manager),
-            _ => Err(Error::new("schema manager not initialized")),
+            _ => Err(anyhow!("schema manager not initialized")),
         }
     }
 
     pub fn try_mod_manager(&self) -> Result<&ModManager> {
         match self {
             ToolsetState::Configured { mod_manager, .. } => Ok(mod_manager),
-            _ => Err(Error::new("mod manager not initialized")),
+            _ => Err(anyhow!("mod manager not initialized")),
         }
     }
 
     pub fn try_config(&self) -> Result<&ToolsetConfig> {
         match self {
             ToolsetState::Configured { config, .. } => Ok(config),
-            _ => Err(Error::new("config not initialized")),
+            _ => Err(anyhow!("config not initialized")),
         }
     }
 }

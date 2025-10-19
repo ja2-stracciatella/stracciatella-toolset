@@ -94,7 +94,7 @@ const toolsetSlice = createSlice({
     builder.addCase(getToolsetConfig.pending, pending);
     // TODO: Find a way to extract (same as setToolsetConfig)
     builder.addCase(getToolsetConfig.rejected, (state, action) => {
-      state.loading = true;
+      state.loading = false;
       state.error = action.error;
     });
     // TODO: Find a way to extract (same as setToolsetConfig)
