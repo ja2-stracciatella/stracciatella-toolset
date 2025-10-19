@@ -1,13 +1,9 @@
+use crate::{invokables::Invokable, state};
+use anyhow::{anyhow, Context, Result};
+use serde::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 use std::io::Read;
-
-use serde::{Deserialize, Serialize};
 use stracciatella::{unicode::Nfc, vfs::VfsLayer};
-
-use crate::{
-    error::{Error, Result},
-    state,
-};
 
 #[derive(Debug)]
 pub enum Base64Sound {
@@ -34,42 +30,61 @@ impl Serialize for Base64Sound {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ReadSoundParams {
+pub struct ReadSound {
     file: String,
 }
 
-pub fn read_sound(state: &state::AppState, params: ReadSoundParams) -> Result<Base64Sound> {
-    if params.file.contains("..") {
-        return Err(Error::new("file path cannot contain `..`"));
+impl Invokable for ReadSound {
+    type Output = Base64Sound;
+
+    fn name() -> &'static str {
+        "read_sound"
     }
 
-    let state = state.read();
-    let selected_mod = state.try_selected_mod()?;
-    let path = selected_mod.data_path(&params.file);
-
-    let content: Vec<u8> = if path.exists() {
-        let mut f = OpenOptions::new().open(&path)?;
-        let mut result = vec![];
-
-        f.read_to_end(&mut result)?;
-
-        result
-    } else {
-        let mut f = selected_mod.vfs.open(&Nfc::caseless(&params.file))?;
-        let mut result = vec![];
-
-        f.read_to_end(&mut result)?;
-
-        result
-    };
-
-    let lowercase = params.file.to_lowercase();
-    if lowercase.ends_with(".wav") {
-        return Ok(Base64Sound::Wav(content));
-    }
-    if lowercase.ends_with(".ogg") {
-        return Ok(Base64Sound::Ogg(content));
+    fn validate(&self) -> Result<()> {
+        if self.file.contains("..") {
+            return Err(anyhow!("must not contain `..`"));
+        }
+        Ok(())
     }
 
-    return Err(Error::new("file does not seem to be a sound file"));
+    fn invoke(&self, state: &state::AppState) -> Result<Self::Output> {
+        let state = state.read();
+        let selected_mod = state
+            .try_selected_mod()
+            .context("failed to get selected mod")?;
+        let path = selected_mod.data_path(&self.file);
+
+        let content: Vec<u8> = if path.exists() {
+            let mut f = OpenOptions::new()
+                .open(&path)
+                .context("failed to open file")?;
+            let mut result = vec![];
+
+            f.read_to_end(&mut result).context("failed to read file")?;
+
+            result
+        } else {
+            let mut f = selected_mod
+                .vfs
+                .open(&Nfc::caseless(&self.file))
+                .context("failed to open file from vfs")?;
+            let mut result = vec![];
+
+            f.read_to_end(&mut result)
+                .context("failed to read file from vfs")?;
+
+            result
+        };
+
+        let lowercase = self.file.to_lowercase();
+        if lowercase.ends_with(".wav") {
+            return Ok(Base64Sound::Wav(content));
+        }
+        if lowercase.ends_with(".ogg") {
+            return Ok(Base64Sound::Ogg(content));
+        }
+
+        return Err(anyhow!("file does not seem to be a sound file"));
+    }
 }

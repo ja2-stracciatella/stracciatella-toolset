@@ -28,7 +28,7 @@ rustInterface.initLogger();
 const state = rustInterface.newAppState();
 const invokeSchema = z.object({
   func: z.string(),
-  params: z.record(z.string(), z.any()),
+  params: z.union([z.record(z.string(), z.any()), z.null()]),
 });
 const handleInvoke = async (event: IpcMainInvokeEvent, payload: unknown) => {
   const { func, params } = await invokeSchema.parseAsync(payload);

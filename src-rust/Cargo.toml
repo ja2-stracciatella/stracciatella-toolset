@@ -9,6 +9,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
+anyhow = "1.0"
 base64 = "0.13"
 directories = "4.0"
 image = "0.23"

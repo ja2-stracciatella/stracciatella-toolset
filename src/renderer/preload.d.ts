@@ -3,7 +3,7 @@ declare global {
     electronAPI: {
       invoke: (payload: {
         func: string;
-        params: Record<string, unknown>;
+        params: Record<string, unknown> | null;
       }) => Promise<unknown>;
     };
   }
