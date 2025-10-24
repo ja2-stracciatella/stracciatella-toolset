@@ -5,10 +5,134 @@ import {
   FileOutlined,
   ArrowUpOutlined,
 } from '@ant-design/icons';
-import { Button, List, Alert, Breadcrumb, Space } from 'antd';
+import {
+  Button,
+  List,
+  Breadcrumb,
+  Flex,
+  Table,
+  TableProps,
+  Splitter,
+} from 'antd';
 import Modal from 'antd/lib/modal/Modal';
-import { useCallback, useState, useEffect, useMemo } from 'react';
-import { DirEntry, listDir, ResourceType } from '../../lib/listDir';
+import {
+  useCallback,
+  useState,
+  useEffect,
+  useMemo,
+  memo,
+  FunctionComponent,
+} from 'react';
+import { ErrorAlert } from '../ErrorAlert';
+import { SoundPreview } from './SoundPreview';
+import { useImageMetadata } from '../../hooks/useImageMetadata';
+import { StiPreview } from './StiPreview';
+import { DirEntry, useDirEntries } from '../../hooks/useDirEntries';
+import { ResourceType, resourceTypeFromFilename } from '../../lib/resourceType';
+
+const Breadcrumbs = memo(function Breadcrumbs({
+  currentDir,
+  switchDir,
+}: {
+  currentDir: string[];
+  switchDir: (currentDir: string[]) => void;
+}) {
+  const setToParentDir = useCallback(() => {
+    if (currentDir.length == 0) {
+      return;
+    }
+    switchDir(currentDir.slice(0, -1));
+  }, [currentDir, switchDir]);
+  const items = useMemo(() => {
+    return currentDir.reduce(
+      (prev, curr, currIndex, array) => {
+        const path = currentDir.slice(0, currIndex + 1);
+        return [
+          ...prev,
+          {
+            title: <a>{curr}</a>,
+            onClick: () => switchDir(path),
+          },
+        ];
+      },
+      [
+        {
+          title: (
+            <a>
+              <HomeOutlined />
+            </a>
+          ),
+          onClick: () => switchDir([]),
+        },
+      ],
+    );
+  }, [currentDir, switchDir]);
+
+  return (
+    <Flex gap="middle" align="center">
+      <Button
+        size="small"
+        onClick={setToParentDir}
+        disabled={currentDir.length === 0}
+      >
+        <ArrowUpOutlined />
+      </Button>
+      <Breadcrumb items={items} />
+    </Flex>
+  );
+});
+
+const GraphicsPreview = memo(function GraphicsPreview({
+  path,
+}: {
+  path: string;
+}) {
+  const { data, error } = useImageMetadata(path);
+  const previews = useMemo(() => {
+    if (!data) {
+      return null;
+    }
+    return data.images.map((_, i) => <StiPreview file={path} subimage={i} />);
+  }, [data, path]);
+
+  if (error) {
+    return <ErrorAlert error={error} />;
+  }
+
+  return (
+    <Flex gap="middle" wrap>
+      {previews}
+    </Flex>
+  );
+});
+
+const previewMapping: Record<
+  ResourceType,
+  FunctionComponent<{ path: string }>
+> = {
+  [ResourceType.Any]: () => <span>Cannot preview this file type.</span>,
+  [ResourceType.Graphics]: GraphicsPreview,
+  [ResourceType.Sound]: SoundPreview,
+};
+
+const Preview = memo(function Preview({
+  dir,
+  entry,
+}: {
+  dir: string;
+  entry: DirEntry | null;
+}) {
+  if (!entry || entry.type !== 'File') {
+    return <span>Select file for preview</span>;
+  }
+  const resourceType = resourceTypeFromFilename(entry.path);
+  const PreviewComponent = previewMapping[resourceType];
+  return (
+    <PreviewComponent
+      path={`${dir}${dir.length > 0 ? '/' : ''}${entry.path}`}
+    />
+  );
+});
 
 export function ResourceSelectorModal({
   resourceType,
@@ -18,15 +142,22 @@ export function ResourceSelectorModal({
   onCancel,
 }: {
   resourceType: ResourceType;
-  initialDir?: string;
+  initialDir?: string[];
   isOpen: boolean;
   onSelect: (value: string) => unknown;
   onCancel: () => unknown;
 }) {
-  const [currentDir, setCurrentDir] = useState(initialDir ?? '');
+  const [currentDir, setCurrentDir] = useState(initialDir ?? []);
   const [selectedEntry, setSelectedEntry] = useState<DirEntry | null>(null);
-  const [entries, setEntries] = useState<Array<DirEntry> | null>(null);
-  const [error, setError] = useState<Error | null>(null);
+  const switchDir = useCallback((dir: string[]) => {
+    setCurrentDir(dir);
+    setSelectedEntry(null);
+  }, []);
+  const {
+    data: entries,
+    loading,
+    error,
+  } = useDirEntries(currentDir.join('/'), resourceType);
   const modalOnOk = useCallback(() => {
     if (selectedEntry !== null && selectedEntry.type === 'File') {
       if (currentDir.length === 0) {
@@ -36,127 +167,105 @@ export function ResourceSelectorModal({
       }
     }
   }, [currentDir, onSelect, selectedEntry]);
+  const modalOnCancel = useCallback(() => {
+    setSelectedEntry(null);
+    onCancel();
+  }, [onCancel]);
   const onItemClick = useCallback(
     (entry: DirEntry) => {
-      const absolutePath =
-        currentDir.length === 0 ? entry.path : `${currentDir}/${entry.path}`;
+      const newDir = [...currentDir, entry.path];
 
       if (entry.type === 'Dir') {
-        setSelectedEntry(null);
-        setCurrentDir(absolutePath);
+        switchDir(newDir);
         return;
       }
       if (entry.path === selectedEntry?.path) {
-        onSelect(absolutePath);
+        onSelect(newDir.join('/'));
         return;
       }
 
       setSelectedEntry(entry);
     },
-    [currentDir, onSelect, selectedEntry],
+    [currentDir, onSelect, selectedEntry, switchDir],
   );
-  const setToParentDir = useCallback(() => {
-    if (currentDir === '') {
-      return;
-    }
-    setCurrentDir(currentDir.split('/').slice(0, -1).join('/'));
-  }, [currentDir]);
-  const breadcrumbs = useMemo(() => {
-    return currentDir.split('/').reduce(
-      (prev, curr, currIndex, array) => {
-        if (array.length === 1 && curr === '') {
-          return prev;
-        }
-        const path = array.slice(0, currIndex + 1).join('/');
-        return [
-          ...prev,
-          <Breadcrumb.Item key={path}>
-            <Button onClick={() => setCurrentDir(path)}>
-              <FolderOpenOutlined />
-              &nbsp;&nbsp;{curr}
-            </Button>
-          </Breadcrumb.Item>,
-        ];
-      },
-      [
-        <Breadcrumb.Item key="">
-          <Button onClick={() => setCurrentDir('')}>
-            <HomeOutlined />
+  const renderItem = useCallback(
+    (entry: DirEntry) => {
+      return (
+        <List.Item>
+          <Button
+            onClick={(ev) => {
+              ev.preventDefault();
+              onItemClick(entry);
+            }}
+            type={selectedEntry?.path === entry.path ? 'primary' : 'default'}
+            disabled={loading}
+            icon={
+              entry.type === 'Dir' ? (
+                <FolderOutlined size={32} />
+              ) : (
+                <FileOutlined size={32} />
+              )
+            }
+            block
+            style={{
+              textOverflow: 'ellipsis',
+              overflowX: 'hidden',
+              justifyContent: 'left',
+            }}
+          >
+            {entry.path}
           </Button>
-        </Breadcrumb.Item>,
-      ],
-    );
-  }, [currentDir]);
+        </List.Item>
+      );
+    },
+    [loading, onItemClick, selectedEntry],
+  );
   const content = useMemo(() => {
     if (error) {
-      return <Alert type="error" message={error.message} />;
+      return <ErrorAlert error={error} />;
     }
-    const appliedEntries =
-      entries !== null && entries.length > 0 ? entries : null;
-
     return (
-      <List loading={!entries}>
-        {appliedEntries?.map((entry, idx) => (
-          <List.Item key={idx}>
-            <Button
-              type="link"
-              onClick={(ev) => {
-                onItemClick(entry);
-                ev.preventDefault();
-              }}
-            >
-              <Space>
-                <span>
-                  {entry.type === 'File' ? (
-                    <FileOutlined style={{ fontSize: '150%' }} />
-                  ) : (
-                    <FolderOutlined style={{ fontSize: '150%' }} />
-                  )}
-                </span>
-                <span>{entry.path}</span>
-              </Space>
-            </Button>
-          </List.Item>
-        ))}
-      </List>
+      <List
+        dataSource={entries ?? []}
+        renderItem={renderItem}
+        grid={{ gutter: 16, column: 4 }}
+      />
     );
-  }, [entries, error, onItemClick]);
-
-  useEffect(() => {
-    setEntries(null);
-    listDir(resourceType, currentDir)
-      .then((e) => setEntries(e))
-      .catch((e: any) => setError(e));
-  }, [currentDir, resourceType]);
+  }, [entries, error, renderItem]);
 
   return (
     <Modal
       title="Select resource"
       open={isOpen}
       onOk={modalOnOk}
-      onCancel={onCancel}
-      width="calc(100vw - 400px)"
-      bodyStyle={{
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        height: 'calc(100vh - 480px)',
-      }}
+      onCancel={modalOnCancel}
+      confirmLoading={!entries}
+      width="80%"
+      styles={{ body: { overflow: 'hidden', height: '60vh' } }}
     >
-      <div
-        style={{ display: 'flex', flexDirection: 'column', maxHeight: '100%' }}
-      >
-        <div>
-          <Space direction="vertical">
-            <Space>
-              <Button onClick={setToParentDir} disabled={currentDir === ''}>
-                <ArrowUpOutlined />
-              </Button>
-              <Breadcrumb>{breadcrumbs}</Breadcrumb>
-            </Space>{' '}
-          </Space>
+      <Flex vertical gap="middle" style={{ height: '100%' }}>
+        <Breadcrumbs currentDir={currentDir} switchDir={switchDir} />
+        <div style={{ flexGrow: 1, overflowY: 'auto' }}>
+          <Splitter>
+            <Splitter.Panel
+              size="70%"
+              resizable={false}
+              style={{ overflowX: 'hidden' }}
+            >
+              {content}
+            </Splitter.Panel>
+            <Splitter.Panel size="30%" resizable={false}>
+              <Flex
+                justify="center"
+                align="center"
+                style={{ height: '100%', padding: '10px' }}
+              >
+                <Preview dir={currentDir.join('/')} entry={selectedEntry} />
+              </Flex>
+            </Splitter.Panel>
+          </Splitter>
         </div>
-        <div style={{ flexGrow: 1, overflowY: 'auto' }}>{content}</div>
-      </div>
+      </Flex>
     </Modal>
   );
 }

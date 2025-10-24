@@ -20,8 +20,10 @@ import { JsonStrategicMapForm } from './components/StrategicMapForm';
 import { Dashboard } from './components/Dashboard';
 import { MercPreview } from './components/content/MercPreview';
 import { ItemPreview } from './components/content/ItemPreview';
-import { resourceReference } from './components/form/ResourceReferenceWidget';
-import { ResourceType } from './lib/listDir';
+import {
+  resourceReferenceToGraphics,
+  resourceReferenceToSound,
+} from './components/form/ResourceReferenceWidget';
 import { StiPreview } from './components/content/StiPreview';
 
 const baseItemProps = [
@@ -278,9 +280,12 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                 waterAnimation: {
                   'ui:widget': stringReferenceToExplosionAnimations,
                 },
+                graphics: {
+                  'ui:widget': resourceReferenceToGraphics,
+                },
                 sounds: {
                   items: {
-                    'ui:widget': resourceReference(ResourceType.Sound),
+                    'ui:widget': resourceReferenceToSound,
                   },
                 },
               }}
@@ -439,10 +444,10 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                 'showInHelpText',
               ],
               sound: {
-                'ui:widget': resourceReference(ResourceType.Sound),
+                'ui:widget': resourceReferenceToSound,
               },
               silencedSound: {
-                'ui:widget': resourceReference(ResourceType.Sound),
+                'ui:widget': resourceReferenceToSound,
               },
             }),
             [],
@@ -661,10 +666,10 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
                 'ui:widget': stringReferenceToWeapons,
               },
               sound: {
-                'ui:widget': resourceReference(ResourceType.Sound),
+                'ui:widget': resourceReferenceToSound,
               },
               silencedSound: {
-                'ui:widget': resourceReference(ResourceType.Sound),
+                'ui:widget': resourceReferenceToSound,
               },
             }),
             [],
@@ -886,7 +891,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               k,
               {
                 items: {
-                  'ui:widget': resourceReference(ResourceType.Sound),
+                  'ui:widget': resourceReferenceToSound,
                 },
               },
             ]),

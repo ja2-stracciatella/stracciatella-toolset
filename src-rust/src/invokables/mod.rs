@@ -37,7 +37,8 @@ impl Invokables {
             executable: HashMap::new(),
         };
         // All invokables must be registered here
-        new.register::<images::ReadImageFile>();
+        new.register::<images::RenderImageFile>();
+        new.register::<images::ReadImageMetadata>();
         new.register::<json::OpenJsonWithSchema>();
         new.register::<json::PersistJson>();
         new.register::<mods::GetAvailableMods>();

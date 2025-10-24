@@ -2,13 +2,7 @@ use crate::{invokables::Invokable, state::AppState};
 use anyhow::{anyhow, Context, Result};
 use image::RgbaImage;
 use serde::{Deserialize, Serialize};
-use std::fs::OpenOptions;
-use std::io::Read;
-use stracciatella::{
-    file_formats::stci::{Stci, StciRgb888},
-    unicode::Nfc,
-    vfs::VfsLayer,
-};
+use stracciatella::file_formats::stci::{Stci, StciRgb888};
 
 #[derive(Debug)]
 pub struct Base64Image {
@@ -46,16 +40,16 @@ impl Serialize for Base64Image {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ReadImageFile {
+pub struct RenderImageFile {
     file: String,
     subimage: Option<usize>,
 }
 
-impl Invokable for ReadImageFile {
+impl Invokable for RenderImageFile {
     type Output = Base64Image;
 
     fn name() -> &'static str {
-        "read_image_file"
+        "render_image_file"
     }
 
     fn validate(&self) -> Result<()> {
@@ -67,33 +61,8 @@ impl Invokable for ReadImageFile {
 
     fn invoke(&self, state: &AppState) -> Result<Self::Output> {
         let state = state.read();
-        let selected_mod = state
-            .try_selected_mod()
-            .context("failed to get selected mod")?;
-        let path = selected_mod.data_path(&self.file);
-
-        let content: Vec<u8> = if path.exists() {
-            let mut f = OpenOptions::new()
-                .open(&path)
-                .context("failed to open file")?;
-            let mut result = vec![];
-
-            f.read_to_end(&mut result).context("failed to read file")?;
-
-            result
-        } else {
-            let mut f = selected_mod
-                .vfs
-                .open(&Nfc::caseless(&self.file))
-                .context("failed to open file from vfs")?;
-            let mut result = vec![];
-
-            f.read_to_end(&mut result)
-                .context("failed to read file from vfs")?;
-
-            result
-        };
-        let stci = Stci::from_input(&mut content.as_slice())?;
+        let mut f = state.open_file(&self.file).context("failed to read file")?;
+        let stci = Stci::from_input(&mut f)?;
         let sub_image = self.subimage.unwrap_or(0);
         let size = match &stci {
             Stci::Indexed { sub_images, .. } => {
@@ -163,5 +132,56 @@ impl Invokable for ReadImageFile {
         }
 
         Ok(Base64Image::new(image))
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReadImageMetadata {
+    file: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubImageMetadata {
+    width: u16,
+    height: u16,
+    offset_x: i16,
+    offset_y: i16,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ImageFileMetadata {
+    images: Vec<SubImageMetadata>,
+}
+
+impl Invokable for ReadImageMetadata {
+    type Output = ImageFileMetadata;
+
+    fn name() -> &'static str {
+        "read_image_metadata"
+    }
+
+    fn invoke(&self, state: &AppState) -> Result<Self::Output> {
+        let state = state.read();
+        let mut f = state.open_file(&self.file).context("failed to read file")?;
+        let stci = Stci::from_input(&mut f)?;
+        let images = match stci {
+            Stci::Indexed { sub_images, .. } => sub_images
+                .iter()
+                .map(|s| SubImageMetadata {
+                    width: s.dimensions.0,
+                    height: s.dimensions.1,
+                    offset_x: s.offset.0,
+                    offset_y: s.offset.1,
+                })
+                .collect(),
+            Stci::Rgb { width, height, .. } => vec![SubImageMetadata {
+                width,
+                height,
+                offset_x: 0,
+                offset_y: 0,
+            }],
+        };
+
+        Ok(ImageFileMetadata { images })
     }
 }

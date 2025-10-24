@@ -1,9 +1,7 @@
 import { ExclamationOutlined } from '@ant-design/icons';
-import { Avatar } from 'antd';
+import { Avatar, Flex, Image, Spin } from 'antd';
 import { useMemo } from 'react';
 import { useImageFile } from '../../hooks/useImage';
-
-const crispEdgesStyle = { imageRendering: 'crisp-edges' as const };
 
 export function StiPreview({
   file,
@@ -12,18 +10,27 @@ export function StiPreview({
   file: string;
   subimage?: number;
 }) {
-  const { data: image, error } = useImageFile(file, subimage);
-  const additionalAvatarProps = useMemo(() => {
+  const { loading, data, error } = useImageFile(file, subimage);
+  const image = useMemo(() => {
+    if (loading) {
+      return <Spin size="small" />;
+    }
     if (error) {
-      return { icon: <ExclamationOutlined />, title: error.message };
+      return <ExclamationOutlined title={error.message} />;
     }
-    if (!image) {
-      return {};
+    if (!data) {
+      return null;
     }
-    return { src: image };
-  }, [error, image]);
+    return <Image preview={false} src={data} />;
+  }, [loading, error, data]);
 
   return (
-    <Avatar shape="square" {...additionalAvatarProps} style={crispEdgesStyle} />
+    <Flex
+      style={{ width: '2em', height: '2em' }}
+      justify="center"
+      align="center"
+    >
+      {image}
+    </Flex>
   );
 }

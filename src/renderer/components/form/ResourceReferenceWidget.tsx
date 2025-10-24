@@ -1,9 +1,10 @@
 import { WidgetProps } from '@rjsf/utils';
-import { Input, Button, Space, Row, Col } from 'antd';
+import { Input, Button, Space, Row, Col, Flex } from 'antd';
 import { useCallback, useMemo, useState } from 'react';
-import { ResourceType } from '../../lib/listDir';
 import { ResourceSelectorModal } from '../content/ResourceSelectorModal';
 import { SoundPreview } from '../content/SoundPreview';
+import { StiPreview } from '../content/StiPreview';
+import { ResourceType } from '../../lib/resourceType';
 
 interface ResourceReferenceWidgetProps extends WidgetProps {
   resourceType: ResourceType;
@@ -25,23 +26,17 @@ export function ResourceReferenceWidget({
     [closeModal, onChange],
   );
   const preview = useMemo(() => {
-    let element = null;
     if (resourceType === ResourceType.Sound) {
-      element = <SoundPreview path={value} />;
+      return <SoundPreview path={value} />;
     }
-
-    if (element === null) {
-      return null;
+    if (resourceType === ResourceType.Graphics) {
+      return <StiPreview file={value} />;
     }
-    return (
-      <Col flex="none">
-        <Space>{element} </Space>
-      </Col>
-    );
+    return null;
   }, [resourceType, value]);
 
   return (
-    <Space.Compact>
+    <Flex dir="row" gap="small">
       {preview}
       <Input
         style={{ flexGrow: 1 }}
@@ -56,12 +51,18 @@ export function ResourceReferenceWidget({
         onCancel={closeModal}
         resourceType={resourceType}
       />
-    </Space.Compact>
+    </Flex>
   );
 }
 
-export function resourceReference(type: ResourceType = ResourceType.Any) {
+function resourceReference(type: ResourceType = ResourceType.Any) {
   return function ResourceReference(props: WidgetProps) {
     return <ResourceReferenceWidget resourceType={type} {...props} />;
   };
 }
+
+export const resourceReferenceToSound = resourceReference(ResourceType.Sound);
+
+export const resourceReferenceToGraphics = resourceReference(
+  ResourceType.Graphics,
+);
