@@ -1,9 +1,12 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
+use std::fs::OpenOptions;
 use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
+use stracciatella::unicode::Nfc;
+use stracciatella::vfs::VfsLayer;
 
 use stracciatella::{
     fs::resolve_existing_components,
@@ -108,6 +111,28 @@ impl ToolsetState {
             ToolsetState::Configured { config, .. } => Ok(config),
             _ => Err(anyhow!("config not initialized")),
         }
+    }
+
+    pub fn open_file(&self, file: &str) -> Result<Box<dyn std::io::Read>> {
+        let selected_mod = self
+            .try_selected_mod()
+            .context("failed to get selected mod")?;
+        let path = selected_mod.data_path(file);
+
+        Ok(if path.exists() {
+            Box::new(
+                OpenOptions::new()
+                    .open(&path)
+                    .context("failed to open file from mod")?,
+            )
+        } else {
+            Box::new(
+                selected_mod
+                    .vfs
+                    .open(&Nfc::caseless(file))
+                    .context("failed to open file from vfs")?,
+            )
+        })
     }
 }
 

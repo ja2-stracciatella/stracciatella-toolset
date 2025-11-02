@@ -1,9 +1,7 @@
 use crate::{invokables::Invokable, state};
 use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
-use std::fs::OpenOptions;
 use std::io::Read;
-use stracciatella::{unicode::Nfc, vfs::VfsLayer};
 
 #[derive(Debug)]
 pub enum Base64Sound {
@@ -50,32 +48,10 @@ impl Invokable for ReadSound {
 
     fn invoke(&self, state: &state::AppState) -> Result<Self::Output> {
         let state = state.read();
-        let selected_mod = state
-            .try_selected_mod()
-            .context("failed to get selected mod")?;
-        let path = selected_mod.data_path(&self.file);
+        let mut f = state.open_file(&self.file).context("failed to open file")?;
+        let mut content = vec![];
 
-        let content: Vec<u8> = if path.exists() {
-            let mut f = OpenOptions::new()
-                .open(&path)
-                .context("failed to open file")?;
-            let mut result = vec![];
-
-            f.read_to_end(&mut result).context("failed to read file")?;
-
-            result
-        } else {
-            let mut f = selected_mod
-                .vfs
-                .open(&Nfc::caseless(&self.file))
-                .context("failed to open file from vfs")?;
-            let mut result = vec![];
-
-            f.read_to_end(&mut result)
-                .context("failed to read file from vfs")?;
-
-            result
-        };
+        f.read_to_end(&mut content).context("failed to read file")?;
 
         let lowercase = self.file.to_lowercase();
         if lowercase.ends_with(".wav") {

@@ -7,24 +7,26 @@ const imageFileSchema = z.string();
 type ImageFile = z.infer<typeof imageFileSchema>;
 
 export function useImageFile(file: string | null, subimage?: number) {
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-  const [state, setState] = useState<ImageFile | null>(null);
+  const [data, setData] = useState<ImageFile | null>(null);
   const fetch = useCallback(async (file: string, subimage?: number) => {
-    const s = await invokeWithSchema(imageFileSchema, 'read_image_file', {
+    setLoading(true);
+    invokeWithSchema(imageFileSchema, 'render_image_file', {
       file,
       subimage: subimage ?? 0,
-    });
-    setState(s);
+    })
+      .then((i) => setData(i))
+      .catch((e) => setError(e))
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
     if (!file) {
       return;
     }
-    fetch(file, subimage).catch((e: any) =>
-      setError(new Error(`error fetching image: ${e}`)),
-    );
+    fetch(file, subimage);
   }, [fetch, file, subimage]);
 
-  return { error, data: state };
+  return { loading, error, data };
 }

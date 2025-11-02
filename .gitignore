@@ -22,6 +22,7 @@ release/app/dist
 release/build
 .erb/dll
 src-rust/target
+target
 
 .idea
 npm-debug.log.*
