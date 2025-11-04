@@ -1,4 +1,4 @@
-use crate::{config, invokables::Invokable, state};
+use crate::{config::PartialToolsetConfig, invokables::Invokable, state};
 use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
 use stracciatella::{mods::ModManager, vfs::Vfs};
@@ -6,17 +6,17 @@ use stracciatella::{mods::ModManager, vfs::Vfs};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SerializableToolsetConfig {
     partial: bool,
-    config: config::PartialToolsetConfig,
+    config: PartialToolsetConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GetToolsetConfig;
+pub struct ReadToolsetConfig;
 
-impl Invokable for GetToolsetConfig {
+impl Invokable for ReadToolsetConfig {
     type Output = SerializableToolsetConfig;
 
     fn name() -> &'static str {
-        "get_toolset_config"
+        "read_toolset_config"
     }
 
     fn invoke(&self, state: &state::AppState) -> Result<Self::Output> {
@@ -35,28 +35,20 @@ impl Invokable for GetToolsetConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SetToolsetConfig {
-    config: SerializableToolsetConfig,
+pub struct UpdateToolsetConfig {
+    config: PartialToolsetConfig,
 }
 
-impl Invokable for SetToolsetConfig {
+impl Invokable for UpdateToolsetConfig {
     type Output = SerializableToolsetConfig;
 
     fn name() -> &'static str {
-        "set_toolset_config"
+        "update_toolset_config"
     }
 
     fn invoke(&self, state: &state::AppState) -> Result<Self::Output> {
         {
-            let mut state = state.write();
-
-            if self.config.partial {
-                *state = state::ToolsetState::not_configured(self.config.config.clone());
-            } else {
-                let config = self.config.config.to_full_config().ok_or_else(|| {
-                    anyhow!("failed to create full config, but partial flag set to true")
-                })?;
-
+            if let Some(config) = self.config.to_full_config() {
                 // Test toolset config for errors
                 let engine_options = config.to_engine_options();
                 let mod_manager = ModManager::new_unchecked(&engine_options);
@@ -67,11 +59,17 @@ impl Invokable for SetToolsetConfig {
                     .context("failed to test config")?;
 
                 config.write()?;
-                *state = state::ToolsetState::configured(config);
+                {
+                    let mut state = state.write();
+                    *state = state::ToolsetState::configured(config);
+                }
+            } else {
+                let mut state = state.write();
+                *state = state::ToolsetState::not_configured(self.config.clone());
             }
         }
 
-        (GetToolsetConfig {})
+        (ReadToolsetConfig {})
             .invoke(state)
             .context("failed to get toolset config after update")
     }

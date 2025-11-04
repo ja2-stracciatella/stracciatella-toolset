@@ -1,27 +1,34 @@
-import { useCallback, useMemo, useState } from 'react';
-import { List, Button, Alert, Typography, Space } from 'antd';
-import { useAppDispatch, useAppSelector } from '../hooks/state';
-import { EditableMod, setSelectedMod } from '../state/mods';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { List, Button, Typography } from 'antd';
+import { EditableMod } from '../state/mods';
 import { NewMod } from './NewMod';
 import { FullSizeDialogLayout } from './FullSizeDialogLayout';
 import { ErrorAlert } from './ErrorAlert';
+import { useMods } from '../hooks/useMods';
+import { useSelectedMod } from '../hooks/useSelectedMod';
+import { FullSizeLoader } from './FullSizeLoader';
 
 export function OpenMod() {
-  const dispatch = useAppDispatch();
-  const error = useAppSelector((s) => s.mods.error);
-  const editableMods = useAppSelector((s) => s.mods.mods?.editable) ?? [];
+  const { loading, error: modsError, data, refresh } = useMods();
+  const { persisting, persistingError, update } = useSelectedMod();
+  const editableMods = data?.editable ?? [];
   const [newMod, setNewMod] = useState(false);
   const onNewModClick = useCallback(() => setNewMod(true), [setNewMod]);
   const onNewModCancel = useCallback(() => setNewMod(false), [setNewMod]);
   const onModClick = useCallback(
-    async (mod: EditableMod) => {
-      dispatch(setSelectedMod(mod));
-    },
-    [dispatch],
+    async (mod: EditableMod) => update(mod),
+    [update],
   );
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   if (newMod) {
     return <NewMod onCancel={onNewModCancel} />;
+  }
+  if (persisting || loading) {
+    return <FullSizeLoader />;
   }
   return (
     <FullSizeDialogLayout>
@@ -33,7 +40,7 @@ export function OpenMod() {
         <Button onClick={onNewModClick}>Create new mod</Button>
       </Typography.Paragraph>
       <Typography.Title>Editable Mods</Typography.Title>
-      <ErrorAlert error={error} />
+      <ErrorAlert error={modsError || persistingError} />
       <List
         dataSource={editableMods}
         renderItem={(mod) => (

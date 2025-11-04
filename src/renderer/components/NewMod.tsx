@@ -2,56 +2,23 @@ import { useCallback, useMemo, useState } from 'react';
 import { Button, Typography } from 'antd';
 import { IChangeEvent } from '@rjsf/core';
 import { JsonSchemaForm } from './JsonSchemaForm';
-import z from 'zod';
 import { useAppDispatch, useAppSelector } from '../hooks/state';
 import { createNewMod, Mod } from '../state/mods';
 import { FullSizeDialogLayout } from './FullSizeDialogLayout';
 import { Space } from 'antd/lib';
 import { ErrorAlert } from './ErrorAlert';
+import { useSelectedMod } from '../hooks/useSelectedMod';
+import { MOD_JSON_SCHEMA } from '../state/mods';
 
-const NEW_MOD_SCHEMA = {
-  type: 'object',
-  properties: {
-    id: {
-      title: 'Mod ID',
-      description:
-        'This is used as the identifier and directory name for your mod. Must contain only lowercase letters, numbers and dashes.',
-      type: 'string',
-      minLength: 1,
-      pattern: '^[a-z0-9\-]+$',
-    },
-    name: {
-      title: 'Mod Name',
-      description: 'The name that is displayed to the user for your mod.',
-      type: 'string',
-      minLength: 1,
-    },
-    description: {
-      title: 'Description',
-      description: 'A brief description of your mod.',
-      type: 'string',
-      minLength: 1,
-    },
-    version: {
-      title: 'Version',
-      description: 'A version for your mod. E.g. `0.1.0`',
-      type: 'string',
-      minLength: 1,
-    },
-  },
-  required: ['id', 'name', 'version'],
-};
-
-interface NewModProps {
-  onCancel: () => void;
-}
-
-export function NewMod({ onCancel }: NewModProps) {
-  const dispatch = useAppDispatch();
+export function NewMod({ onCancel }: { onCancel: () => void }) {
+  const {
+    persisting: loading,
+    persistingError: error,
+    create,
+  } = useSelectedMod();
   const stracciatellaHome = useAppSelector(
-    (s) => s.toolset.config.value.stracciatellaHome,
+    (s) => s.toolset.data?.config.stracciatellaHome,
   );
-  const error = useAppSelector((s) => s.mods.error);
   const [formData, setFormData] = useState<Mod>({
     id: '',
     name: '',
@@ -71,9 +38,9 @@ export function NewMod({ onCancel }: NewModProps) {
 
   const handleSubmit = useCallback(async () => {
     if (valid) {
-      dispatch(createNewMod(formData));
+      create(formData);
     }
-  }, [dispatch, formData, valid]);
+  }, [create, formData, valid]);
 
   return (
     <FullSizeDialogLayout>
@@ -88,14 +55,18 @@ export function NewMod({ onCancel }: NewModProps) {
       <ErrorAlert error={error} />
       <div>
         <JsonSchemaForm
-          schema={NEW_MOD_SCHEMA}
+          schema={MOD_JSON_SCHEMA}
           content={formData}
           onChange={handleChange}
           onSubmit={handleSubmit}
         />
         <Space>
           <Button onClick={onCancel}>Cancel</Button>
-          <Button type="primary" onClick={handleSubmit} disabled={!valid}>
+          <Button
+            type="primary"
+            onClick={handleSubmit}
+            disabled={!valid || loading}
+          >
             Submit
           </Button>
         </Space>

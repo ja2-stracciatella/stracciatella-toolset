@@ -10,6 +10,15 @@ export async function invokeWithSchema<T>(
   func: string,
   params: Record<string, unknown> | null = null,
 ): Promise<T> {
-  const res = await invoke(func, params);
-  return schema.parse(res);
+  try {
+    const res = await invoke(func, params);
+    return schema.parse(res);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new Error(
+        `failed to parse response from invoke ${func} with params ${JSON.stringify(params)}: ${error.message}`,
+      );
+    }
+    throw error;
+  }
 }

@@ -22,6 +22,12 @@ export function HostPathWidget({ value, onChange }: WidgetProps) {
     }
     setModalOpen(false);
   }, [onChange]);
+  const onInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange(e.target.value);
+    },
+    [onChange],
+  );
 
   return (
     <>
@@ -30,7 +36,7 @@ export function HostPathWidget({ value, onChange }: WidgetProps) {
           <Input
             style={{ flexGrow: 1 }}
             value={value}
-            onChange={onChange}
+            onChange={onInputChange}
             placeholder="Please select a resource..."
           />
         </Col>
