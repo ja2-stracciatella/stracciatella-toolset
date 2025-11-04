@@ -148,7 +148,6 @@ const filesSlice = createSlice({
       action: PayloadAction<{ filename: string; value: JsonRoot }>,
     ) => {
       const { filename, value } = action.payload;
-      const f = getDiskState(state, filename);
 
       state.open[filename] = value;
       state.modified[filename] = isModified(state, filename);
@@ -174,8 +173,6 @@ const filesSlice = createSlice({
       action: PayloadAction<{ filename: string; saveMode: SaveMode }>,
     ) {
       const { filename, saveMode } = action.payload;
-      const f = getDiskState(state, filename);
-      const o = state.open[filename];
       state.saveMode[filename] = saveMode;
       state.modified[filename] = isModified(state, filename);
     },

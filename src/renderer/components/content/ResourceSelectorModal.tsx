@@ -1,27 +1,18 @@
 import {
   HomeOutlined,
-  FolderOpenOutlined,
   FolderOutlined,
   FileOutlined,
   ArrowUpOutlined,
 } from '@ant-design/icons';
-import {
-  Button,
-  List,
-  Breadcrumb,
-  Flex,
-  Table,
-  TableProps,
-  Splitter,
-} from 'antd';
+import { Button, List, Breadcrumb, Flex, Splitter } from 'antd';
 import Modal from 'antd/lib/modal/Modal';
 import {
   useCallback,
   useState,
-  useEffect,
   useMemo,
   memo,
   FunctionComponent,
+  useEffect,
 } from 'react';
 import { ErrorAlert } from '../ErrorAlert';
 import { SoundPreview } from './SoundPreview';
@@ -45,7 +36,7 @@ const Breadcrumbs = memo(function Breadcrumbs({
   }, [currentDir, switchDir]);
   const items = useMemo(() => {
     return currentDir.reduce(
-      (prev, curr, currIndex, array) => {
+      (prev, curr, currIndex) => {
         const path = currentDir.slice(0, currIndex + 1);
         return [
           ...prev,
@@ -87,13 +78,19 @@ const GraphicsPreview = memo(function GraphicsPreview({
 }: {
   path: string;
 }) {
-  const { data, error } = useImageMetadata(path);
+  const { data, error, refresh } = useImageMetadata(path);
   const previews = useMemo(() => {
     if (!data) {
       return null;
     }
-    return data.images.map((_, i) => <StiPreview file={path} subimage={i} />);
+    return data.images.map((_, i) => (
+      <StiPreview key={i} file={path} subimage={i} />
+    ));
   }, [data, path]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   if (error) {
     return <ErrorAlert error={error} />;
@@ -157,6 +154,7 @@ export function ResourceSelectorModal({
     data: entries,
     loading,
     error,
+    refresh,
   } = useDirEntries(currentDir.join('/'), resourceType);
   const modalOnOk = useCallback(() => {
     if (selectedEntry !== null && selectedEntry.type === 'File') {
@@ -232,6 +230,10 @@ export function ResourceSelectorModal({
       />
     );
   }, [entries, error, renderItem]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   return (
     <Modal

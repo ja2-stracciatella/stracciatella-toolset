@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { List, Button, Typography } from 'antd';
 import { EditableMod } from '../state/mods';
 import { NewMod } from './NewMod';

@@ -6,7 +6,6 @@ import {
   readToolsetConfig,
   PartialToolsetConfig,
   updateToolsetConfig,
-  ToolsetConfig,
 } from '../state/toolset';
 
 export function useToolsetConfig() {

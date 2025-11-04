@@ -1,5 +1,5 @@
 import { PropsWithChildren, useCallback, useEffect, useState } from 'react';
-import { Alert, Button, Typography } from 'antd';
+import { Button, Typography } from 'antd';
 import { IChangeEvent } from '@rjsf/core';
 import {
   PartialToolsetConfig,
@@ -7,7 +7,6 @@ import {
 } from '../state/toolset';
 import { FullSizeLoader } from './FullSizeLoader';
 import { JsonSchemaForm } from './JsonSchemaForm';
-import { useAppDispatch, useAppSelector } from '../hooks/state';
 import { FullSizeDialogLayout } from './FullSizeDialogLayout';
 import { ErrorAlert } from './ErrorAlert';
 import { HostPathWidget } from './form/HostPathWidget';
@@ -49,7 +48,7 @@ function Configure() {
 
   useEffect(() => {
     if (data) {
-      setState(data.config);
+      setImmediate(() => setState(data.config));
     }
   }, [data]);
 
@@ -82,7 +81,7 @@ function Configure() {
   );
 }
 
-export function WithToolsetConfig({ children }: PropsWithChildren<{}>) {
+export function WithToolsetConfig({ children }: PropsWithChildren<unknown>) {
   const { loading, loadingError, data, refresh } = useToolsetConfig();
 
   useEffect(() => {

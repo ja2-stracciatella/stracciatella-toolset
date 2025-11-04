@@ -1,7 +1,5 @@
 import { IChangeEvent, withTheme } from '@rjsf/core';
 import { UiSchema, FieldTemplateProps, FieldProps } from '@rjsf/utils';
-
-// @ts-ignore
 import { Theme as AntdTheme } from '@rjsf/antd';
 import { Form } from 'antd';
 import ReactMarkdown from 'react-markdown';
@@ -32,23 +30,23 @@ const HORIZONTAL_WRAPPER_COL = { span: 18 };
 // Cloned from Antd theme with some changes
 const MarkdownFieldTemplate = memo(function MarkdownFieldTemplate({
   children,
-  classNames,
-  description,
-  disabled,
+  // classNames,
+  // description,
+  // disabled,
   displayLabel,
   // errors,
   // fields,
   formContext,
-  help,
+  // help,
   hidden,
   id,
   label,
-  onDropPropertyClick,
-  onKeyChange,
+  // onDropPropertyClick,
+  // onKeyChange,
   rawDescription,
   rawErrors,
-  rawHelp,
-  readonly,
+  // rawHelp,
+  // readonly,
   required,
   schema,
 }: // uiSchema,
@@ -139,6 +137,7 @@ export function JsonSchemaForm({
       idPrefix={idPrefix}
       schema={schema}
       formData={content}
+      // eslint-disable-next-line react/no-children-prop
       children={renderButton ? undefined : true}
       validator={validator}
       liveValidate

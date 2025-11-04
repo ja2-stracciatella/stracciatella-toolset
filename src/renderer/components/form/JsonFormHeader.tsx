@@ -11,11 +11,12 @@ export const JsonFormHeader = memo(function Header({
   file,
 }: JsonFormHeaderProps) {
   const schema = useFileSchema(file);
-  const title = useMemo(() => schema?.title, [schema]) ?? file;
-  const description = useMemo(() => schema?.description, [schema]) ?? null;
-  const itemsDescription =
-    useMemo(() => schema?.items?.description, [schema?.items?.description]) ??
-    null;
+  const title = useMemo(() => schema?.title ?? file, [schema, file]);
+  const description = useMemo(() => schema?.description ?? null, [schema]);
+  const itemsDescription = useMemo(
+    () => schema?.items?.description ?? null,
+    [schema?.items?.description],
+  );
   const combinedDescription = useMemo(
     () => [itemsDescription, description].filter((v) => !!v).join('\n\n'),
     [itemsDescription, description],

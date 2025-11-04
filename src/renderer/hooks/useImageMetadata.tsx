@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { z } from 'zod';
 import { invokeWithSchema } from '../lib/invoke';
 
@@ -18,22 +18,26 @@ export function useImageMetadata(file: string | null) {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
   const [data, setData] = useState<ImageMetadata | null>(null);
-  const fetch = useCallback(async (file: string) => {
-    setLoading(true);
-    invokeWithSchema(imageMetadataSchema, 'read_image_metadata', {
-      file,
-    })
-      .then((m) => setData(m))
-      .catch((e) => setError(e))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
+  const refresh = useCallback(async () => {
     if (!file) {
       return;
     }
-    fetch(file);
-  }, [fetch, file]);
+    setLoading(true);
+    try {
+      const m = await invokeWithSchema(
+        imageMetadataSchema,
+        'read_image_metadata',
+        {
+          file,
+        },
+      );
+      setData(m);
+    } catch (e: any) {
+      setError(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [file]);
 
-  return { loading, error, data };
+  return { loading, error, data, refresh };
 }

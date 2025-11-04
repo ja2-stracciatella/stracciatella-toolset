@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from './state';
 import {
   changeJson,
@@ -18,10 +18,10 @@ type UseFilesResult<R extends UseFilesRequest, V> = {
   [key in keyof R]: V;
 };
 
-const useAppFilesProxySelector = <R extends any>(
+const useAppFilesProxySelector = function useAppFilesProxySelector<R>(
   fn: (state: AppState) => R,
   deps: any[],
-): R => {
+): R {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   return useAppSelector(useCallback(memoize(fn), deps));
 };

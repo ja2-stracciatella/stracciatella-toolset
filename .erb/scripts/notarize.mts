@@ -1,7 +1,4 @@
 import { notarize } from '@electron/notarize';
-import packageJson from '../../package.json' with { type: 'json' };
-
-const { build } = packageJson;
 
 export default async function notarizeMacos(context) {
   const { electronPlatformName, appOutDir } = context;

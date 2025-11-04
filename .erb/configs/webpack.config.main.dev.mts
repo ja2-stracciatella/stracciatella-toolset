@@ -37,7 +37,6 @@ const configuration: webpack.Configuration = {
   },
 
   plugins: [
-    // @ts-ignore
     new BundleAnalyzerPlugin({
       analyzerMode: process.env.ANALYZE === 'true' ? 'server' : 'disabled',
       analyzerPort: 8888,

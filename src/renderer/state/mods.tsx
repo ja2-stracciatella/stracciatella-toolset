@@ -14,7 +14,7 @@ const modSchema = z.object({
   id: z
     .string()
     .min(1)
-    .regex(/^[a-z0-9\-]+$/)
+    .regex(/^[a-z0-9-]+$/)
     .meta({
       title: 'Mod ID',
       description:

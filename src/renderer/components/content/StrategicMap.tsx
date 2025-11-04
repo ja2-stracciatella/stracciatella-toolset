@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useImageFile } from '../../hooks/useImage';
 
 import './StrategicMap.css';
@@ -55,7 +55,7 @@ export function StrategicMap({
   highlightedSectorIds,
   onSectorClick,
 }: StrategicMapProps) {
-  const { data: image, error } = useImageFile('interface/map_1.sti');
+  const { data: image, error, refresh } = useImageFile('interface/map_1.sti');
   const imageStyle = useMemo(() => {
     if (!image) {
       return {};
@@ -68,10 +68,19 @@ export function StrategicMap({
     return tilePrefabs.map((p) => {
       const highlighted = highlightedSectorIds.includes(p.sectorId);
       return (
-        <Tile {...p} highlighted={highlighted} onSectorClick={onSectorClick} />
+        <Tile
+          key={`${p.x}-${p.y}`}
+          {...p}
+          highlighted={highlighted}
+          onSectorClick={onSectorClick}
+        />
       );
     });
   }, [highlightedSectorIds, onSectorClick]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   if (error) {
     throw error;

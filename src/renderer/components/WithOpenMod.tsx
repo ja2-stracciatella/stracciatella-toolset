@@ -5,7 +5,7 @@ import { FullSizeDialogLayout } from './FullSizeDialogLayout';
 import { ErrorAlert } from './ErrorAlert';
 import { useSelectedMod } from '../hooks/useSelectedMod';
 
-export function WithOpenMod({ children }: PropsWithChildren<{}>) {
+export function WithOpenMod({ children }: PropsWithChildren<unknown>) {
   const { loading, loadingError, data, refresh } = useSelectedMod();
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { WidgetProps } from '@rjsf/utils';
-import { Input, Button, Space, Row, Col, Flex } from 'antd';
+import { Input, Button, Flex } from 'antd';
 import { useCallback, useMemo, useState } from 'react';
 import { ResourceSelectorModal } from '../content/ResourceSelectorModal';
 import { SoundPreview } from '../content/SoundPreview';

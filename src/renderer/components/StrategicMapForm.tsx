@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Space } from 'antd';
+import { Space } from 'antd';
 
 import { UiSchema } from '@rjsf/utils';
 import { FullSizeLoader } from './FullSizeLoader';

@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useAppDispatch } from './state';
 import { loadMods } from '../state/mods';
 import { useLoadable } from './useLoadable';

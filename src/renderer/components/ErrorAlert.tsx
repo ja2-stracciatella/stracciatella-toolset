@@ -1,4 +1,3 @@
-import { SerializedError } from '@reduxjs/toolkit';
 import { Alert, Typography } from 'antd';
 
 interface ErrorAlertProps {
