@@ -2,7 +2,7 @@ import { ExclamationCircleOutlined, SaveOutlined } from '@ant-design/icons';
 import { Button, Flex, Select, Space, Typography } from 'antd';
 import { ReactNode, memo, useCallback, useMemo } from 'react';
 import './EditorContent.css';
-import { useAppDispatch, useAppSelector } from '../hooks/state';
+import { useAppDispatch } from '../hooks/state';
 import { changeSaveMode, persistJSON, SaveMode } from '../state/files';
 import {
   useFileError,
@@ -43,11 +43,7 @@ const EditorContentHeader = memo(function EditorContentHeader({
   const error = useFileError(path);
   const errorStyle = useMemo(() => ({ color: '#9d1e1c' }), []);
   const saveFileToPath = useCallback(() => {
-    dispatch(
-      persistJSON({
-        filename: path,
-      }),
-    );
+    dispatch(persistJSON(path));
   }, [dispatch, path]);
   const setSaveMode = useCallback(
     (saveMode: SaveMode) => {

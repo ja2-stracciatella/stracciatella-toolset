@@ -41,14 +41,15 @@ impl Invokables {
         new.register::<images::ReadImageMetadata>();
         new.register::<json::OpenJsonWithSchema>();
         new.register::<json::PersistJson>();
-        new.register::<mods::GetAvailableMods>();
-        new.register::<mods::GetEditableMods>();
-        new.register::<mods::SetSelectedMod>();
-        new.register::<mods::NewMod>();
+        new.register::<mods::ReadAvailableMods>();
+        new.register::<mods::ReadEditableMods>();
+        new.register::<mods::ReadSelectedMod>();
+        new.register::<mods::UpdateSelectedMod>();
+        new.register::<mods::CreateNewMod>();
         new.register::<resources::ListResources>();
         new.register::<sounds::ReadSound>();
-        new.register::<toolset_config::GetToolsetConfig>();
-        new.register::<toolset_config::SetToolsetConfig>();
+        new.register::<toolset_config::ReadToolsetConfig>();
+        new.register::<toolset_config::UpdateToolsetConfig>();
 
         new
     }

@@ -1,10 +1,6 @@
-import {
-  ExclamationOutlined,
-  LoadingOutlined,
-  QuestionOutlined,
-} from '@ant-design/icons';
+import { ExclamationOutlined } from '@ant-design/icons';
 import { Image, Flex, Spin } from 'antd';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useImageFile } from '../../hooks/useImage';
 import { useFileJson } from '../../hooks/files';
 
@@ -43,11 +39,13 @@ export function MercPreview({ profile }: MercPreviewProps) {
     loading: loading1,
     data: image1,
     error: error1,
+    refresh: refresh1,
   } = useImageFile(graphic1);
   const {
     loading: loading2,
     data: image2,
     error: error2,
+    refresh: refresh2,
   } = useImageFile(graphic2);
   const image = useMemo(() => {
     const loading = loading1 || loading2;
@@ -63,6 +61,11 @@ export function MercPreview({ profile }: MercPreviewProps) {
     }
     return <Image preview={false} src={(image1 || image2) ?? undefined} />;
   }, [error1, error2, image1, image2, loading1, loading2]);
+
+  useEffect(() => {
+    refresh1();
+    refresh2();
+  }, [refresh1, refresh2]);
 
   return (
     <Flex

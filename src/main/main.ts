@@ -1,4 +1,4 @@
-/* eslint global-require: off, no-console: off, promise/always-return: off, @typescript-eslint/no-var-requires: off */
+/* eslint no-console: off, promise/always-return: off */
 
 /**
  * This module executes inside of electron's main process. You can start
@@ -16,6 +16,12 @@ import {
   ipcMain,
   IpcMainInvokeEvent,
 } from 'electron';
+import sourceMapSupport from 'source-map-support';
+import {
+  installExtension,
+  REACT_DEVELOPER_TOOLS,
+  REDUX_DEVTOOLS,
+} from 'electron-devtools-installer';
 import * as z from 'zod';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
@@ -49,7 +55,6 @@ let mainWindow: BrowserWindow | null = null;
 ipcMain.handle('invoke', handleInvoke);
 
 if (process.env.NODE_ENV === 'production') {
-  const sourceMapSupport = require('source-map-support');
   sourceMapSupport.install();
 }
 
@@ -61,16 +66,12 @@ if (isDebug) {
 }
 
 const installExtensions = async () => {
-  const installer = require('electron-devtools-installer');
   const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-  const extensions = ['REACT_DEVELOPER_TOOLS', 'REDUX_DEVTOOLS'];
 
-  return installer
-    .default(
-      extensions.map((name) => installer[name]),
-      forceDownload,
-    )
-    .catch(console.log);
+  await Promise.all([
+    installExtension(REDUX_DEVTOOLS, { forceDownload }),
+    installExtension(REACT_DEVELOPER_TOOLS, { forceDownload }),
+  ]).catch(console.error);
 };
 
 const createWindow = async () => {

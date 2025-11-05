@@ -1,14 +1,40 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import type { SerializedError } from '@reduxjs/toolkit';
-import { z } from 'zod';
+import { toJSONSchema, z } from 'zod';
 import { invokeWithSchema } from '../lib/invoke';
+import {
+  Loadable,
+  makeLoadable,
+  Persistable,
+  makePersistable,
+  buildLoadableMapping,
+  buildPersistableMapping,
+} from './types';
 
 const modSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.optional(z.string()),
-  version: z.string(),
+  id: z
+    .string()
+    .min(1)
+    .regex(/^[a-z0-9-]+$/)
+    .meta({
+      title: 'Mod ID',
+      description:
+        'This is used as the identifier and directory name for your mod. Must contain only lowercase letters, numbers and dashes.',
+    }),
+  name: z.string().min(1).meta({
+    title: 'Mod Name',
+    description: 'The name that is displayed to the user for your mod.',
+  }),
+  description: z.optional(z.string()).meta({
+    title: 'Description',
+    description: 'A brief description of your mod.',
+  }),
+  version: z.string().min(1).meta({
+    title: 'Version',
+    description: 'A version for your mod. E.g. `0.1.0`',
+  }),
 });
+
+export const MOD_JSON_SCHEMA = toJSONSchema(modSchema);
 
 export type Mod = z.infer<typeof modSchema>;
 
@@ -24,25 +50,21 @@ interface Mods {
 }
 
 interface ModsState {
-  loading: boolean;
-  error: SerializedError | null;
-  mods: Mods | null;
-  selected: EditableMod | null;
+  mods: Loadable<Mods>;
+  selected: Persistable<EditableMod>;
 }
 
 const initialState: ModsState = {
-  loading: true,
-  error: null,
-  mods: null,
-  selected: null,
+  mods: makeLoadable<Mods>(null),
+  selected: makePersistable<EditableMod>(null),
 };
 
-export const getMods = createAsyncThunk('mods/get', async () => {
+export const loadMods = createAsyncThunk('mods/get', async () => {
   const MODS_SCHEMA = z.array(modSchema);
   const EDITABLE_MODS_SCHEMA = z.array(editableModSchema);
   const [available, editable] = await Promise.all([
-    invokeWithSchema(MODS_SCHEMA, 'get_available_mods'),
-    invokeWithSchema(EDITABLE_MODS_SCHEMA, 'get_editable_mods'),
+    invokeWithSchema(MODS_SCHEMA, 'read_available_mods'),
+    invokeWithSchema(EDITABLE_MODS_SCHEMA, 'read_editable_mods'),
   ]);
   return {
     available,
@@ -50,18 +72,20 @@ export const getMods = createAsyncThunk('mods/get', async () => {
   };
 });
 
-export const setSelectedMod = createAsyncThunk(
-  'mods/set_selected',
-  async (mod: EditableMod, { getState }) => {
-    const { mods } = getState() as { mods: ModsState };
-    if (mods.mods == null) {
-      throw new Error('cannot select mod while mods are loading');
-    }
-    if (!mods.mods.editable.find((m) => m.id === mod.id)) {
-      throw new Error(`cannot select unknown mod "${mod.id}"`);
-    }
+export const readSelectedMod = createAsyncThunk(
+  'mods/read_selected',
+  async () => {
+    return await invokeWithSchema(
+      z.nullable(editableModSchema),
+      'read_selected_mod',
+    );
+  },
+);
 
-    return await invokeWithSchema(editableModSchema, 'set_selected_mod', {
+export const updateSelectedMod = createAsyncThunk(
+  'mods/update_selected',
+  async (mod: EditableMod) => {
+    return await invokeWithSchema(editableModSchema, 'update_selected_mod', {
       mod_id: mod.id,
     });
   },
@@ -69,12 +93,7 @@ export const setSelectedMod = createAsyncThunk(
 
 export const createNewMod = createAsyncThunk(
   'mods/create_new',
-  async (newMod: Mod, { getState }) => {
-    const { mods } = getState() as { mods: ModsState };
-    if (mods.mods == null) {
-      throw new Error('cannot create mod while mods are loading');
-    }
-
+  async (newMod: Mod) => {
     return await invokeWithSchema(editableModSchema, 'create_new_mod', newMod);
   },
 );
@@ -84,43 +103,30 @@ const modsSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers: (builder) => {
-    const pending = (state: ModsState) => {
-      state.loading = true;
-      state.error = null;
-    };
-    const rejected = (state: ModsState, action: { error: SerializedError }) => {
-      state.loading = false;
-      state.error = action.error;
-    };
-
-    builder.addCase(getMods.pending, pending);
-    // TODO: Find a way to extract (same as setSelectedMod)
-    builder.addCase(getMods.rejected, rejected);
-    // TODO: Find a way to extract (same as setSelectedMod)
-    builder.addCase(getMods.fulfilled, (state, action) => {
-      state.loading = false;
-      state.error = null;
-      state.mods = action.payload;
-    });
-
-    builder.addCase(setSelectedMod.pending, pending);
-    builder.addCase(setSelectedMod.rejected, rejected);
-    builder.addCase(setSelectedMod.fulfilled, (state, action) => {
-      state.loading = false;
-      state.error = null;
-      state.selected = action.payload;
-    });
-
-    builder.addCase(createNewMod.pending, pending);
-    builder.addCase(createNewMod.rejected, rejected);
-    builder.addCase(createNewMod.fulfilled, (state, action) => {
-      state.loading = false;
-      state.error = null;
-      if (state.mods) {
-        state.mods.editable = [...state.mods.editable, action.payload];
-        state.selected = action.payload;
-      }
-    });
+    buildLoadableMapping(
+      builder,
+      loadMods,
+      (state) => state.mods,
+      (mods) => mods,
+    );
+    buildLoadableMapping(
+      builder,
+      readSelectedMod,
+      (state) => state.selected,
+      (selected) => selected,
+    );
+    buildPersistableMapping(
+      builder,
+      updateSelectedMod,
+      (state) => state.selected,
+      (selected) => selected,
+    );
+    buildPersistableMapping(
+      builder,
+      createNewMod,
+      (state) => state.selected,
+      (selected) => selected,
+    );
   },
 });
 

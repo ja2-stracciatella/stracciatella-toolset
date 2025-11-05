@@ -78,7 +78,7 @@ function SideMenu() {
 }
 
 export function EditorLayout({ children }: LayoutProps) {
-  const selectedModName = useAppSelector((s) => s.mods.selected?.name);
+  const selectedModName = useAppSelector((s) => s.mods.selected.data?.name);
   const modSuffix = useMemo(
     () => (selectedModName ? ` - ${selectedModName}` : ''),
     [selectedModName],

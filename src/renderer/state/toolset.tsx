@@ -1,83 +1,84 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import type { SerializedError } from '@reduxjs/toolkit';
-import { z } from 'zod';
+import { toJSONSchema, z } from 'zod';
 import { invokeWithSchema } from '../lib/invoke';
+import {
+  buildLoadableMapping,
+  buildPersistableMapping,
+  makePersistable,
+  Persistable,
+} from './types';
 
 const partialToolsetConfigSchema = z.object({
-  stracciatellaHome: z.union([z.string(), z.null()]),
-  vanillaGameDir: z.union([z.string(), z.null()]),
-  stracciatellaInstallDir: z.union([z.string(), z.null()]),
-  lastSelectedMod: z.union([z.string(), z.null()]),
+  stracciatellaHome: z.nullable(z.string()),
+  vanillaGameDir: z.nullable(z.string()),
+  stracciatellaInstallDir: z.nullable(z.string()),
+  lastSelectedMod: z.nullable(z.string()),
 });
 
 export type PartialToolsetConfig = z.infer<typeof partialToolsetConfigSchema>;
 
 const fullToolsetConfigSchema = z.object({
-  stracciatellaHome: z.string(),
-  vanillaGameDir: z.string(),
-  stracciatellaInstallDir: z.string(),
-  lastSelectedMod: z.union([z.string(), z.null()]),
+  stracciatellaHome: z.string().min(1).meta({
+    title: 'JA2 Stracciatella Home Directory',
+    description:
+      'This should be auto-populated if you have JA2 Stracciatella installed and started it successfully at least once. It is the location of your JA2 Stracciatella configuration and mods.',
+  }),
+  vanillaGameDir: z.string().min(1).meta({
+    title: 'Vanilla Game Directory',
+    description:
+      'This should be auto-populated if you have JA2 Stracciatella installed and started it successfully at least once. It is the location of your vanilla (original) Jagged Alliance 2 installation.',
+  }),
+  stracciatellaInstallDir: z.string().min(1).meta({
+    title: 'JA2 Stracciatella Directory',
+    description:
+      'This should point at your JA2 Straccciatella install directory. It is used to read the JSON files included with the game.',
+  }),
+  lastSelectedMod: z.nullable(z.string().min(1)).meta({
+    title: 'Last Selected Mod',
+    description: 'The last mod that was selected in the mod selection dialog.',
+  }),
 });
+
+export const FULL_TOOLSET_CONFIG_JSON_SCHEMA = toJSONSchema(
+  fullToolsetConfigSchema,
+);
 
 export type FullToolsetConfig = z.infer<typeof fullToolsetConfigSchema>;
 
-const SerializedSchema = z.object({
-  partial: z.boolean(),
-  config: partialToolsetConfigSchema,
-});
+const toolsetConfigSchema = z.union([
+  z.object({
+    partial: z.literal(true),
+    config: partialToolsetConfigSchema,
+  }),
+  z.object({
+    partial: z.literal(false),
+    config: fullToolsetConfigSchema,
+  }),
+]);
 
-interface PartialToolsetConfigState {
-  partial: true;
-  value: PartialToolsetConfig;
-}
+export type ToolsetConfig = z.infer<typeof toolsetConfigSchema>;
 
-interface FullToolsetConfigState {
-  partial: false;
-  value: FullToolsetConfig;
-}
+type ToolsetState = Persistable<ToolsetConfig>;
 
-type ToolsetConfigState = PartialToolsetConfigState | FullToolsetConfigState;
+const initialState: ToolsetState = makePersistable<ToolsetConfig>(null);
 
-interface ToolsetState {
-  loading: boolean;
-  error: SerializedError | null;
-  config: ToolsetConfigState;
-}
-
-const initialState: ToolsetState = {
-  loading: true,
-  error: null,
-  config: {
-    partial: true,
-    value: {
-      stracciatellaHome: null,
-      vanillaGameDir: null,
-      stracciatellaInstallDir: null,
-      lastSelectedMod: null,
-    },
-  },
-};
-
-export const getToolsetConfig = createAsyncThunk(
-  'toolset-config/get',
+export const readToolsetConfig = createAsyncThunk(
+  'toolset-config/read',
   async () => {
-    return invokeWithSchema(SerializedSchema, 'get_toolset_config');
+    return await invokeWithSchema(toolsetConfigSchema, 'read_toolset_config');
   },
 );
 
-export const setToolsetConfig = createAsyncThunk(
-  'toolset-config/set',
+export const updateToolsetConfig = createAsyncThunk(
+  'toolset-config/update',
   async (config: PartialToolsetConfig) => {
-    const partial = [
-      config.stracciatellaHome,
-      config.stracciatellaInstallDir,
-      config.vanillaGameDir,
-    ].some((v) => v === null);
-
-    return invokeWithSchema(SerializedSchema, 'set_toolset_config', {
-      partial,
-      config,
-    });
+    return await invokeWithSchema(
+      toolsetConfigSchema,
+      'update_toolset_config',
+      {
+        config,
+      },
+    );
   },
 );
 
@@ -86,54 +87,18 @@ const toolsetSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers: (builder) => {
-    const pending = (state: ToolsetState) => {
-      state.loading = true;
-      state.error = null;
-    };
-
-    builder.addCase(getToolsetConfig.pending, pending);
-    // TODO: Find a way to extract (same as setToolsetConfig)
-    builder.addCase(getToolsetConfig.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.error;
-    });
-    // TODO: Find a way to extract (same as setToolsetConfig)
-    builder.addCase(getToolsetConfig.fulfilled, (state, action) => {
-      state.loading = false;
-      state.error = null;
-      if (action.payload.partial) {
-        state.config = {
-          partial: true,
-          value: action.payload.config,
-        };
-      } else {
-        state.config = {
-          partial: false,
-          value: fullToolsetConfigSchema.parse(action.payload.config),
-        };
-      }
-    });
-
-    builder.addCase(setToolsetConfig.pending, pending);
-    builder.addCase(setToolsetConfig.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.error;
-    });
-    builder.addCase(setToolsetConfig.fulfilled, (state, action) => {
-      state.loading = false;
-      state.error = null;
-      if (action.payload.partial) {
-        state.config = {
-          partial: true,
-          value: action.payload.config,
-        };
-      } else {
-        state.config = {
-          partial: false,
-          value: fullToolsetConfigSchema.parse(action.payload.config),
-        };
-      }
-    });
+    buildLoadableMapping(
+      builder,
+      readToolsetConfig,
+      (state) => state,
+      (config) => config,
+    );
+    buildPersistableMapping(
+      builder,
+      updateToolsetConfig,
+      (state) => state,
+      (config) => config,
+    );
   },
 });
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from './state';
 import {
   changeJson,
@@ -18,10 +18,10 @@ type UseFilesResult<R extends UseFilesRequest, V> = {
   [key in keyof R]: V;
 };
 
-const useAppFilesProxySelector = <R extends any>(
+const useAppFilesProxySelector = function useAppFilesProxySelector<R>(
   fn: (state: AppState) => R,
   deps: any[],
-): R => {
+): R {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   return useAppSelector(useCallback(memoize(fn), deps));
 };
@@ -50,7 +50,7 @@ export function useFilesError<R extends UseFilesRequest>(
     function selectFilesError(s) {
       const errors: { [key in keyof R]: SerializedError | null } = {} as any;
       for (const key in files) {
-        errors[key] = s.files.disk[files[key]]?.error ?? null;
+        errors[key] = s.files.disk[files[key]]?.loadingError ?? null;
       }
       return errors;
     },
@@ -68,7 +68,7 @@ export function useFilesSchema<R extends UseFilesRequest>(
       const schemas: { [key in keyof R]: Record<string, any> | null } =
         {} as any;
       for (const key in files) {
-        schemas[key] = s.files.disk[files[key]]?.content?.schema ?? null;
+        schemas[key] = s.files.disk[files[key]]?.data?.schema ?? null;
       }
       return schemas;
     },
@@ -147,7 +147,7 @@ export function useFileLoading(filename: string): boolean | null {
 
 export function useFileSaving(filename: string): boolean | null {
   return useAppSelector(function selectFileSaving(s) {
-    return s.files.disk[filename]?.saving ?? null;
+    return s.files.disk[filename]?.persisting ?? null;
   });
 }
 
@@ -159,13 +159,13 @@ export function useFileSaveMode(filename: string): SaveMode | null {
 
 export function useFileError(filename: string): SerializedError | null {
   return useAppSelector(function selectFileError(s) {
-    return s.files.disk[filename]?.error ?? null;
+    return s.files.disk[filename]?.loadingError ?? null;
   });
 }
 
 export function useFileSchema(filename: string): JsonSchema | null {
   return useAppSelector(function selectFileSchema(s) {
-    return s.files.disk[filename]?.content?.schema ?? null;
+    return s.files.disk[filename]?.data?.schema ?? null;
   });
 }
 

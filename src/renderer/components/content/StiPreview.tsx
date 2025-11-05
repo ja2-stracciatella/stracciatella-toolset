@@ -1,6 +1,6 @@
 import { ExclamationOutlined } from '@ant-design/icons';
-import { Avatar, Flex, Image, Spin } from 'antd';
-import { useMemo } from 'react';
+import { Flex, Image, Spin } from 'antd';
+import { useEffect, useMemo } from 'react';
 import { useImageFile } from '../../hooks/useImage';
 
 export function StiPreview({
@@ -10,7 +10,7 @@ export function StiPreview({
   file: string;
   subimage?: number;
 }) {
-  const { loading, data, error } = useImageFile(file, subimage);
+  const { loading, data, error, refresh } = useImageFile(file, subimage);
   const image = useMemo(() => {
     if (loading) {
       return <Spin size="small" />;
@@ -23,6 +23,10 @@ export function StiPreview({
     }
     return <Image preview={false} src={data} />;
   }, [loading, error, data]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   return (
     <Flex

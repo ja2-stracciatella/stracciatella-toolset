@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState, JSX, memo } from 'react';
-import { Alert, Collapse, Space } from 'antd';
+import { useCallback, useMemo, JSX, memo } from 'react';
+import { Collapse, Space } from 'antd';
 
 import { JsonSchemaForm } from './JsonSchemaForm';
 import { FullSizeLoader } from './FullSizeLoader';
@@ -16,7 +16,6 @@ import {
   useFileJson,
 } from '../hooks/files';
 import { ErrorAlert } from './ErrorAlert';
-import { miniSerializeError } from '@reduxjs/toolkit';
 
 type PreviewFn = (item: any) => JSX.Element | string | null;
 
