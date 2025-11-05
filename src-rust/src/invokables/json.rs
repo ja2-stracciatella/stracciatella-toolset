@@ -125,7 +125,7 @@ pub struct PersistJson {
 }
 
 impl Invokable for PersistJson {
-    type Output = Persisted;
+    type Output = JsonFileWithSchema;
 
     fn name() -> &'static str {
         "persist_json"
@@ -138,9 +138,9 @@ impl Invokable for PersistJson {
         Ok(())
     }
 
-    fn invoke(&self, state: &state::AppState) -> Result<Self::Output> {
+    fn invoke(&self, app_state: &state::AppState) -> Result<Self::Output> {
         let filename = &self.filename;
-        let state = state.read();
+        let state = app_state.read();
         let selected_mod = state
             .try_selected_mod()
             .context("failed to get selected mod")?;
@@ -154,7 +154,6 @@ impl Invokable for PersistJson {
             delete_file(&path).context("failed to delete value")?;
         }
 
-        let mut rewrite_patch_to_none = false;
         let path = selected_mod.data_path(filename.patch_filename().as_str());
         if let Some(mod_patch_value) = &self.values.patch {
             if !mod_patch_value.is_empty() {
@@ -162,21 +161,17 @@ impl Invokable for PersistJson {
                     .context("failed to serialize patch value")?;
                 write(&path, &content).context("failed to write patch value")?;
             } else {
-                rewrite_patch_to_none = true;
                 delete_file(&path).context("failed to delete patch value")?;
             }
         } else {
             delete_file(&path).context("failed to delete patch value")?;
         }
 
-        Ok(Persisted {
-            value: self.values.value.clone(),
-            patch: if rewrite_patch_to_none {
-                None
-            } else {
-                self.values.patch.clone()
-            },
-        })
+        Ok(OpenJsonWithSchema {
+            filename: self.filename.clone(),
+        }
+        .invoke(app_state)
+        .context("failed to get value after update")?)
     }
 }
 

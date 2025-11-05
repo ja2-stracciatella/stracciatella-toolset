@@ -1,13 +1,15 @@
-import {
-  createAsyncThunk,
-  createSlice,
-  miniSerializeError,
-} from '@reduxjs/toolkit';
-import type { PayloadAction, SerializedError } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
 import { z } from 'zod';
 import { applyReducer, Operation, compare } from 'fast-json-patch';
 import { invokeWithSchema } from '../lib/invoke';
 import { deepEquals } from '@rjsf/utils';
+import {
+  buildLoadableMapping,
+  buildPersistableMapping,
+  makePersistable,
+  Persistable,
+} from './types';
 
 const anyJsonObjectSchema = z.object().catchall(z.any());
 const jsonRootSchema = z.union([
@@ -32,21 +34,16 @@ export type JsonSchema = z.infer<typeof jsonSchemaSchema>;
 export type SaveMode = 'patch' | 'replace';
 
 interface JsonFile {
-  loading: boolean | null;
-  saving: boolean | null;
-  error: SerializedError | null;
-  content: {
-    schema: JsonSchema;
-    vanilla: JsonRoot;
-    mod: JsonRoot | null;
-    patch: JsonPatch | null;
-    applied: JsonRoot | null;
-    saveMode: SaveMode;
-  } | null;
+  saveMode: SaveMode;
+  schema: JsonSchema;
+  vanilla: JsonRoot;
+  mod: JsonRoot | null;
+  patch: JsonPatch | null;
+  applied: JsonRoot | null;
 }
 
 interface FilesState {
-  disk: Record<string, JsonFile>;
+  disk: Record<string, Persistable<JsonFile>>;
   open: Record<string, JsonRoot>;
   saveMode: Record<string, SaveMode>;
   modified: Record<string, boolean>;
@@ -59,27 +56,27 @@ const initialState: FilesState = {
   modified: {},
 };
 
+const invokeResultSchema = z.object({
+  schema: jsonSchemaSchema,
+  vanilla: jsonRootSchema,
+  value: z.union([jsonRootSchema, z.null()]),
+  patch: z.union([jsonPatchSchema, z.null()]),
+});
+
+type InvokeResult = z.infer<typeof invokeResultSchema>;
+
 export const loadJSON = createAsyncThunk(
   'files/load-json',
   async (filename: string) => {
-    return invokeWithSchema(
-      z.object({
-        schema: jsonSchemaSchema,
-        vanilla: jsonRootSchema,
-        value: z.union([jsonRootSchema, z.null()]),
-        patch: z.union([jsonPatchSchema, z.null()]),
-      }),
-      'open_json_with_schema',
-      {
-        filename,
-      },
-    );
+    return invokeWithSchema(invokeResultSchema, 'open_json_with_schema', {
+      filename,
+    });
   },
 );
 
 export const persistJSON = createAsyncThunk(
   'files/persist-json',
-  async ({ filename }: { filename: string }, { getState }) => {
+  async (filename: string, { getState }) => {
     const { files } = getState() as { files: FilesState };
 
     const editorValue = files.open[filename] ?? null;
@@ -88,7 +85,7 @@ export const persistJSON = createAsyncThunk(
       throw new Error('tried to save a non-open file');
     }
 
-    const vanillaValue = files.disk[filename]?.content?.vanilla ?? null;
+    const vanillaValue = files.disk[filename]?.data?.vanilla ?? null;
     if (vanillaValue === null) {
       throw new Error('tried to save a non-loaded file');
     }
@@ -107,32 +104,27 @@ export const persistJSON = createAsyncThunk(
       toSynchronize.patch = compare(vanillaValue, editorValue);
     }
 
-    return invokeWithSchema(
-      z.object({
-        value: z.union([jsonRootSchema, z.null()]),
-        patch: z.union([jsonPatchSchema, z.null()]),
-      }),
+    return await invokeWithSchema(
+      invokeResultSchema,
       'persist_json',
       toSynchronize,
     );
   },
 );
 
-function getDiskState(state: FilesState, filename: string): JsonFile {
+function getDiskState(
+  state: FilesState,
+  filename: string,
+): Persistable<JsonFile> {
   if (!state.disk[filename]) {
-    state.disk[filename] = {
-      saving: null,
-      loading: null,
-      error: null,
-      content: null,
-    };
+    state.disk[filename] = makePersistable<JsonFile>(null);
   }
   return state.disk[filename];
 }
 
 function isModified(files: FilesState, filename: string) {
-  const diskSaveMode = files.disk[filename]?.content?.saveMode ?? null;
-  const diskValue = files.disk[filename]?.content?.applied ?? null;
+  const diskSaveMode = files.disk[filename]?.data?.saveMode ?? null;
+  const diskValue = files.disk[filename]?.data?.applied ?? null;
   const value = files.open[filename] ?? null;
   const saveMode = files.saveMode[filename] ?? null;
 
@@ -157,13 +149,9 @@ const filesSlice = createSlice({
       action: PayloadAction<{ filename: string; index: number; value: any }>,
     ) => {
       const { filename, index, value } = action.payload;
-      const f = getDiskState(state, filename);
       const o = state.open[filename];
       if (!Array.isArray(o)) {
-        f.error = miniSerializeError(
-          new Error('tried to change item of a non-array file'),
-        );
-        return;
+        throw new Error('tried to change item of a non-array file');
       }
       (o as Array<any>)[index] = value;
       state.modified[filename] = isModified(state, filename);
@@ -178,92 +166,50 @@ const filesSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(loadJSON.pending, (state, action) => {
-      const file = action.meta.arg;
-      const c = getDiskState(state, file);
-      c.loading = true;
-      c.error = null;
-    });
-    // TODO: Find a way to extract (same as setSelectedMod)
-    builder.addCase(loadJSON.rejected, (state, action) => {
-      const file = action.meta.arg;
-      const c = getDiskState(state, file);
-      c.loading = false;
-      c.error = action.error;
-    });
-    // TODO: Find a way to extract (same as setSelectedMod)
-    builder.addCase(loadJSON.fulfilled, (state, action) => {
-      const file = action.meta.arg;
-      const c = getDiskState(state, file);
-      const saveMode = action.payload.value ? 'replace' : 'patch';
-      const applied = (action.payload.patch ?? []).reduce(
+    const transform = (data: InvokeResult) => {
+      const saveMode: SaveMode = data.value ? 'replace' : 'patch';
+      const applied = (data.patch ?? []).reduce(
         applyReducer,
-        JSON.parse(
-          JSON.stringify(action.payload.value ?? action.payload.vanilla),
-        ),
+        JSON.parse(JSON.stringify(data.value ?? data.vanilla)),
       );
 
-      c.loading = false;
-      c.error = null;
-      c.content = {
-        schema: action.payload.schema,
-        vanilla: action.payload.vanilla,
-        mod: action.payload.value,
-        patch: action.payload.patch as Array<Operation> | null,
+      return {
+        schema: data.schema,
+        vanilla: data.vanilla,
+        mod: data.value,
+        patch: data.patch as Array<Operation> | null,
         applied,
         saveMode,
       };
-
-      if (!state.saveMode[file]) {
-        state.saveMode[file] = action.payload.value ? 'replace' : 'patch';
-      }
-      if (!state.open[file]) {
-        state.open[file] = applied;
-      }
-    });
-
-    builder.addCase(persistJSON.pending, (state, action) => {
-      const { filename } = action.meta.arg;
-      const c = getDiskState(state, filename);
-      c.saving = true;
-      c.error = null;
-    });
-    builder.addCase(persistJSON.rejected, (state, action) => {
-      const { filename } = action.meta.arg;
-      const c = getDiskState(state, filename);
-      c.saving = false;
-      c.error = action.error;
-    });
-    builder.addCase(persistJSON.fulfilled, (state, action) => {
-      const { filename } = action.meta.arg;
-
-      const c = getDiskState(state, filename);
-      c.saving = false;
-
-      const { content } = c;
-      if (content === null) {
-        c.error = miniSerializeError(new Error('saved non-loaded file'));
-        return;
-      }
-
-      const o = state.open[filename];
-      if (o === null) {
-        c.error = miniSerializeError(new Error('saved non-open file'));
-        return;
-      }
-
-      content.mod = action.payload.value;
-      content.patch = action.payload.patch;
-      content.saveMode = state.saveMode[filename];
-
-      const applied = (content.patch ?? []).reduce(
-        applyReducer,
-        JSON.parse(JSON.stringify(content.mod ?? content.vanilla)),
-      );
-      content.applied = applied;
-
-      state.modified[filename] = isModified(state, filename);
-    });
+    };
+    buildLoadableMapping(
+      builder,
+      loadJSON,
+      (state, payload) => getDiskState(state, payload.meta.arg),
+      transform,
+      (state, payload) => {
+        const filename = payload.meta.arg;
+        if (!state.saveMode[filename]) {
+          state.saveMode[filename] = payload.payload.value
+            ? 'replace'
+            : 'patch';
+        }
+        if (!state.open[filename]) {
+          state.open[filename] =
+            getDiskState(state, filename).data?.applied ?? {};
+        }
+      },
+    );
+    buildPersistableMapping(
+      builder,
+      persistJSON,
+      (state, payload) => getDiskState(state, payload.meta.arg),
+      transform,
+      (state, payload) => {
+        const filename = payload.meta.arg;
+        state.modified[filename] = isModified(state, filename);
+      },
+    );
   },
 });
 

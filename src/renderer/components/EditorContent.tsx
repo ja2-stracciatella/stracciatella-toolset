@@ -43,11 +43,7 @@ const EditorContentHeader = memo(function EditorContentHeader({
   const error = useFileError(path);
   const errorStyle = useMemo(() => ({ color: '#9d1e1c' }), []);
   const saveFileToPath = useCallback(() => {
-    dispatch(
-      persistJSON({
-        filename: path,
-      }),
-    );
+    dispatch(persistJSON(path));
   }, [dispatch, path]);
   const setSaveMode = useCallback(
     (saveMode: SaveMode) => {

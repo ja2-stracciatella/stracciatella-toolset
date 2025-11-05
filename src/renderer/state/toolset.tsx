@@ -87,8 +87,18 @@ const toolsetSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers: (builder) => {
-    buildLoadableMapping(builder, (state) => state, readToolsetConfig);
-    buildPersistableMapping(builder, (state) => state, updateToolsetConfig);
+    buildLoadableMapping(
+      builder,
+      readToolsetConfig,
+      (state) => state,
+      (config) => config,
+    );
+    buildPersistableMapping(
+      builder,
+      updateToolsetConfig,
+      (state) => state,
+      (config) => config,
+    );
   },
 });
 

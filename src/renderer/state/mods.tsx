@@ -103,14 +103,30 @@ const modsSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers: (builder) => {
-    buildLoadableMapping(builder, (state) => state.mods, loadMods);
-    buildLoadableMapping(builder, (state) => state.selected, readSelectedMod);
+    buildLoadableMapping(
+      builder,
+      loadMods,
+      (state) => state.mods,
+      (mods) => mods,
+    );
+    buildLoadableMapping(
+      builder,
+      readSelectedMod,
+      (state) => state.selected,
+      (selected) => selected,
+    );
     buildPersistableMapping(
       builder,
-      (state) => state.selected,
       updateSelectedMod,
+      (state) => state.selected,
+      (selected) => selected,
     );
-    buildPersistableMapping(builder, (state) => state.selected, createNewMod);
+    buildPersistableMapping(
+      builder,
+      createNewMod,
+      (state) => state.selected,
+      (selected) => selected,
+    );
   },
 });
 

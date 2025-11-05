@@ -35,26 +35,42 @@ function rejectedLoadable<T>(
   state.loadingError = payload.error;
 }
 
-function fulfilledLoadable<T>(
-  state: WritableDraft<Loadable<T>>,
-  payload: PayloadAction<T>,
-) {
+function fulfilledLoadable<T>(state: WritableDraft<Loadable<T>>, payload: T) {
   state.loading = false;
   state.loadingError = null;
-  state.data = payload.payload as Draft<T>;
+  state.data = payload as Draft<T>;
 }
 
-export function buildLoadableMapping<S, I, T>(
-  builder: ActionReducerMapBuilder<S>,
-  fn: (state: Draft<S>) => Draft<Loadable<T>>,
-  thunk: AsyncThunk<T, I, AsyncThunkConfig>,
+export function buildLoadableMapping<
+  State,
+  Input,
+  Returned,
+  Transformed = Returned,
+>(
+  builder: ActionReducerMapBuilder<State>,
+  thunk: AsyncThunk<Returned, Input, AsyncThunkConfig>,
+  selector: (
+    state: Draft<State>,
+    payload: PayloadAction<unknown, string, { arg: Input }>,
+  ) => Draft<Loadable<Transformed>>,
+  transform: (data: Returned) => Transformed,
+  postProcess: (
+    state: Draft<State>,
+    payload: PayloadAction<Returned, string, { arg: Input }>,
+  ) => void = () => {},
 ) {
-  builder.addCase(thunk.pending, (state) => pendingLoadable(fn(state)));
-  builder.addCase(thunk.rejected, (state, payload) =>
-    rejectedLoadable(fn(state), payload),
+  builder.addCase(thunk.pending, (state, payload) =>
+    pendingLoadable(selector(state, payload)),
   );
-  builder.addCase(thunk.fulfilled, (state, action) => {
-    fulfilledLoadable<T>(fn(state), action);
+  builder.addCase(thunk.rejected, (state, payload) =>
+    rejectedLoadable(selector(state, payload), payload),
+  );
+  builder.addCase(thunk.fulfilled, (state, payload) => {
+    fulfilledLoadable<Transformed>(
+      selector(state, payload),
+      transform(payload.payload),
+    );
+    postProcess(state, payload);
   });
 }
 
@@ -86,23 +102,39 @@ function rejectedPersistable<T>(
 
 function fulfilledPersistable<T>(
   state: WritableDraft<Persistable<T>>,
-  payload: PayloadAction<T>,
+  payload: T,
 ) {
   state.persisting = false;
   state.persistingError = null;
-  state.data = payload.payload as Draft<T>;
+  state.data = payload as Draft<T>;
 }
 
-export function buildPersistableMapping<S, I, T>(
-  builder: ActionReducerMapBuilder<S>,
-  fn: (state: Draft<S>) => Draft<Persistable<T>>,
-  thunk: AsyncThunk<T, I, AsyncThunkConfig>,
+export function buildPersistableMapping<
+  State,
+  Input,
+  Returned,
+  Transformed = Returned,
+>(
+  builder: ActionReducerMapBuilder<State>,
+  thunk: AsyncThunk<Returned, Input, AsyncThunkConfig>,
+  selector: (
+    state: Draft<State>,
+    payload: PayloadAction<unknown, string, { arg: Input }>,
+  ) => Draft<Persistable<Transformed>>,
+  transform: (data: Returned) => Transformed,
+  postProcess: (
+    state: Draft<State>,
+    payload: PayloadAction<Returned, string, { arg: Input }>,
+  ) => void = () => {},
 ) {
-  builder.addCase(thunk.pending, (state) => pendingPersistable(fn(state)));
+  builder.addCase(thunk.pending, (state, payload) =>
+    pendingPersistable(selector(state, payload)),
+  );
   builder.addCase(thunk.rejected, (state, payload) =>
-    rejectedPersistable(fn(state), payload),
+    rejectedPersistable(selector(state, payload), payload),
   );
   builder.addCase(thunk.fulfilled, (state, payload) => {
-    fulfilledPersistable(fn(state), payload);
+    fulfilledPersistable(selector(state, payload), transform(payload.payload));
+    postProcess(state, payload);
   });
 }
