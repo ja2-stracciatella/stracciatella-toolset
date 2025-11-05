@@ -73,6 +73,7 @@ export interface Item {
   type: 'Item';
   id: string;
   label: string;
+  file?: string;
   component: () => ReactElement;
 }
 
@@ -101,6 +102,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'compositions',
         label: 'Compositions',
+        file: 'army-compositions.json',
         component: function ArmyCompositions() {
           return (
             <JsonItemsForm
@@ -126,6 +128,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'garrison-groups',
         label: 'Garrison Groups',
+        file: 'army-garrison-groups.json',
         component: function ArmyGarrisonGroups() {
           return (
             <JsonStrategicMapForm
@@ -145,6 +148,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'gun-choice-extended',
         label: 'Gun Choice Extended',
+        file: 'army-gun-choice-extended.json',
         component: function ArmyGunChoiceExtended() {
           const uiSchema = useMemo(
             () => ({
@@ -171,6 +175,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'gun-choice-normal',
         label: 'Gun Choice Normal',
+        file: 'army-gun-choice-normal.json',
         component: function ArmyGunChoiceNormal() {
           return (
             <JsonForm
@@ -190,6 +195,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'patrol-groups',
         label: 'Patrol Groups',
+        file: 'army-patrol-groups.json',
         component: function ArmyPatrolGroups() {
           const getPatrolGroupName = useCallback((item: any) => {
             return item.points.join(', ') as string;
@@ -206,6 +212,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'ai-policy',
         label: 'Strategic AI Policy',
+        file: 'strategic-ai-policy.json',
         component: function StrategicAIPolicy() {
           return <JsonForm file="strategic-ai-policy.json" />;
         },
@@ -216,6 +223,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     type: 'Item',
     id: 'dealers',
     label: 'Dealers',
+    file: 'dealers.json',
     component: function Dealers() {
       const preview = useCallback(
         (item: any) => <MercPreview profile={item.profile} />,
@@ -254,6 +262,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'explosion-animations',
         label: 'Explosion Animations',
+        file: 'explosion-animations.json',
         component: function ExplosionAnimations() {
           const preview = useCallback(
             (item: any) => (
@@ -297,6 +306,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'smoke-effects',
         label: 'Smoke Effects',
+        file: 'smoke-effects.json',
         component: function SmokeEffects() {
           const preview = useCallback(
             (item: any) => <StiPreview file={item.staticGraphics} />,
@@ -333,6 +343,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     type: 'Item',
     id: 'game',
     label: 'Game',
+    file: 'game.json',
     component: function Game() {
       return <JsonForm file="game.json" />;
     },
@@ -341,6 +352,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     type: 'Item',
     id: 'imp',
     label: 'IMP',
+    file: 'imp.json',
     component: function Imp() {
       return (
         <JsonForm
@@ -382,6 +394,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'ammo-types',
         label: 'Ammo Types',
+        file: 'ammo-types.json',
         component: function AmmoTypes() {
           return (
             <JsonItemsForm
@@ -396,6 +409,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'armours',
         label: 'Armours',
+        file: 'armours.json',
         component: function Armours() {
           const preview = useCallback(
             (item: any) => (
@@ -430,6 +444,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'calibres',
         label: 'Calibres',
+        file: 'calibres.json',
         component: function Calibres() {
           const uiSchema = useMemo(
             () => ({
@@ -466,6 +481,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'explosive-calibres',
         label: 'Explosive Calibres',
+        file: 'explosive-calibres.json',
         component: function ExplosiveCalibres() {
           return (
             <JsonItemsForm file="explosive-calibres.json" name="internalName" />
@@ -476,6 +492,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'explosives',
         label: 'Explosives',
+        file: 'explosives.json',
         component: function Explosives() {
           const preview = useCallback(
             (item: any) => (
@@ -519,6 +536,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'items',
         label: 'Items',
+        file: 'items.json',
         component: function Items() {
           const preview = useCallback(
             (item: any) => (
@@ -548,6 +566,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'magazines',
         label: 'Magazines',
+        file: 'magazines.json',
         component: function Magazines() {
           const preview = useCallback(
             (item: any) => (
@@ -588,6 +607,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'tactical-map-item-replacements',
         label: 'Tactical Map Item Replacements',
+        file: 'tactical-map-item-replacements.json',
         component: function TacticalMapItemReplacements() {
           const getItemReplacementName = useCallback((item: any) => {
             return `${item.from} to ${item.to}`;
@@ -614,6 +634,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'weapons',
         label: 'Weapons',
+        file: 'weapons.json',
         component: function Weapons() {
           const preview = useCallback(
             (item: any) => (
@@ -691,6 +712,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     type: 'Item',
     id: 'loading-screens',
     label: 'Loading Screens',
+    file: 'loading-screens.json',
     component: function LoadingScreens() {
       return (
         <JsonItemsForm
@@ -705,6 +727,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     type: 'Item',
     id: 'loading-screens-mapping',
     label: 'Loading Screens Mapping',
+    file: 'loading-screens-mapping.json',
     component: function LoadingScreensMapping() {
       return (
         <JsonStrategicMapForm
@@ -729,6 +752,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'merc-listings',
         label: 'M.E.R.C. Listings',
+        file: 'mercs-MERC-listings.json',
         component: function MercsMERCListings() {
           const preview = useCallback(
             (item: any) => <MercPreview profile={item.profile} />,
@@ -767,6 +791,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'relations',
         label: 'Opinions',
+        file: 'mercs-relations.json',
         component: function MercsRelations() {
           return (
             <JsonItemsForm file="mercs-relations.json" name="internalName" />
@@ -777,6 +802,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'profiles',
         label: 'Profiles',
+        file: 'mercs-profile-info.json',
         component: function MercsProfileInfo() {
           const preview = useCallback(
             (item: any) => <MercPreview profile={item.internalName} />,
@@ -846,6 +872,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'rpc-small-faces',
         label: 'RPC Small Faces',
+        file: 'mercs-rpc-small-faces.json',
         component: function MercsRpcSmallFaces() {
           const preview = useCallback(
             (item: any) => <MercPreview profile={item.profile} />,
@@ -872,6 +899,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     type: 'Item',
     id: 'music',
     label: 'Music',
+    file: 'music.json',
     component: function Music() {
       const uiSchema = useMemo(
         () =>
@@ -911,6 +939,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'records',
         label: 'NPC Records',
+        file: 'script-records-NPCs.json',
         component: function Records() {
           const preview = useCallback(
             (item: any) => <MercPreview profile={item.profile} />,
@@ -979,6 +1008,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'records-control',
         label: 'Records Control',
+        file: 'script-records-control.json',
         component: function RecordsControl() {
           return (
             <JsonForm
@@ -1009,6 +1039,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     type: 'Item',
     id: 'shipping-destinations',
     label: 'Shipping Destinations',
+    file: 'shipping-destinations.json',
     component: function ShippingDestinations() {
       return (
         <JsonItemsForm
@@ -1044,6 +1075,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'bloodcat-placements',
         label: 'Bloodcat Placements',
+        file: 'strategic-bloodcat-placements.json',
         component: function StrategicBloodcatPlacements() {
           return (
             <JsonStrategicMapForm
@@ -1060,6 +1092,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'bloodcat-spawns',
         label: 'Bloodcat Spawns',
+        file: 'strategic-bloodcat-spawns.json',
         component: function StrategicBloodcatSpawns() {
           return (
             <JsonStrategicMapForm
@@ -1083,6 +1116,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'fact-params',
         label: 'Fact Params',
+        file: 'strategic-fact-params.json',
         component: function StrategicFactParams() {
           return (
             <JsonItemsForm file="strategic-fact-params.json" name="fact" />
@@ -1093,6 +1127,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'cache-sectors',
         label: 'Weapon Cache Sectors',
+        file: 'strategic-map-cache-sectors.json',
         component: function StrategicMapCacheSectors() {
           return <JsonForm file="strategic-map-cache-sectors.json" />;
         },
@@ -1101,6 +1136,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'creature-lairs',
         label: 'Creature Lairs',
+        file: 'strategic-map-creature-lairs.json',
         component: function StrategicMapCreatureLairs() {
           const getCreatureLairName = useCallback((item: any) => {
             return item.entranceSector[0];
@@ -1127,6 +1163,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'movement-costs',
         label: 'Movement Costs',
+        file: 'strategic-map-movement-costs.json',
         component: function StrategicMapMovementCosts() {
           return <JsonForm file="strategic-map-movement-costs.json" />;
         },
@@ -1135,6 +1172,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'npc-placements',
         label: 'NPC Placements',
+        file: 'strategic-map-npc-placements.json',
         component: function StrategicMapNpcPlacements() {
           const preview = useCallback(
             (item: any) => <MercPreview profile={item.profile} />,
@@ -1165,6 +1203,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'sam-sites-air-control',
         label: 'Sam Sites Air Control',
+        file: 'strategic-map-sam-sites-air-control.json',
         component: function StrategicMapSamSitesAirControl() {
           return <JsonForm file="strategic-map-sam-sites-air-control.json" />;
         },
@@ -1173,6 +1212,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'sam-sites',
         label: 'Sam Sites',
+        file: 'strategic-map-sam-sites.json',
         component: function StrategicMapSamSites() {
           return (
             <JsonStrategicMapForm
@@ -1189,6 +1229,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'secrets',
         label: 'Secrets',
+        file: 'strategic-map-secrets.json',
         component: function StrategicMapSecrets() {
           return (
             <JsonStrategicMapForm
@@ -1211,6 +1252,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'sectors-descriptions',
         label: 'Sector Descriptions',
+        file: 'strategic-map-sectors-descriptions.json',
         component: function StrategicMapSectorsDescriptions() {
           return (
             <JsonStrategicMapForm
@@ -1228,6 +1270,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'towns',
         label: 'Towns',
+        file: 'strategic-map-towns.json',
         component: function StrategicMapTowns() {
           return (
             <JsonItemsForm
@@ -1250,6 +1293,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'traversibility-ratings',
         label: 'Traversibility Ratings',
+        file: 'strategic-map-traversibility-ratings.json',
         component: function StrategicMapTraversibilityRatings() {
           return <JsonForm file="strategic-map-traversibility-ratings.json" />;
         },
@@ -1258,6 +1302,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'underground-sectors',
         label: 'Underground Sectors',
+        file: 'strategic-map-underground-sectors.json',
         component: function StrategicMapUndergroundSectors() {
           return (
             <JsonStrategicMapForm
@@ -1285,6 +1330,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         type: 'Item',
         id: 'mines',
         label: 'Mines',
+        file: 'strategic-mines.json',
         component: function StrategicMines() {
           return (
             <JsonStrategicMapForm
@@ -1316,6 +1362,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     type: 'Item',
     id: 'tactical-npc-action-params',
     label: 'Tactical Npc Action Params',
+    file: 'tactical-npc-action-params.json',
     component: function TacticalNpcActionParams() {
       return (
         <JsonItemsForm
@@ -1329,6 +1376,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     type: 'Item',
     id: 'vehicles',
     label: 'Vehicles',
+    file: 'vehicles.json',
     component: function Vehicles() {
       const preview = useCallback(
         (item: any) => <MercPreview profile={item.profile} />,
