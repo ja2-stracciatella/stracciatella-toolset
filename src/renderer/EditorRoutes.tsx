@@ -1,6 +1,5 @@
-import { ReactElement, useCallback, useMemo } from 'react';
+import { FunctionComponent, ReactElement } from 'react';
 import {
-  stringReferenceTo,
   stringReferenceToAmmoTypes,
   stringReferenceToArmours,
   stringReferenceToArmyCompositions,
@@ -86,6 +85,24 @@ export interface Submenu {
 
 export type MenuItem = Item | Submenu;
 
+function makeFileItem<Props extends { file: string }>(
+  file: string,
+  label: string,
+  Component: FunctionComponent<Props>,
+  extraProps: Omit<Props, 'file'>,
+): Item {
+  const props = { file, ...extraProps } as Props;
+  return {
+    type: 'Item',
+    id: file,
+    label,
+    file,
+    component: function () {
+      return <Component {...props} />;
+    },
+  };
+}
+
 export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
   {
     type: 'Item',
@@ -98,1311 +115,859 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     id: 'army',
     label: 'Army',
     children: [
-      {
-        type: 'Item',
-        id: 'compositions',
-        label: 'Compositions',
-        file: 'army-compositions.json',
-        component: function ArmyCompositions() {
-          return (
-            <JsonItemsForm
-              file="army-compositions.json"
-              name="name"
-              uiSchema={{
-                'ui:order': [
-                  'id',
-                  'name',
-                  'priority',
-                  'startPopulation',
-                  'desiredPopulation',
-                  'adminPercentage',
-                  'troopPercentage',
-                  'elitePercentage',
-                ],
-              }}
-            />
-          );
+      makeFileItem('army-compositions.json', 'Compositions', JsonItemsForm, {
+        name: 'name',
+        uiSchema: {
+          'ui:order': [
+            'id',
+            'name',
+            'priority',
+            'startPopulation',
+            'desiredPopulation',
+            'adminPercentage',
+            'troopPercentage',
+            'elitePercentage',
+          ],
         },
-      },
-      {
-        type: 'Item',
-        id: 'garrison-groups',
-        label: 'Garrison Groups',
-        file: 'army-garrison-groups.json',
-        component: function ArmyGarrisonGroups() {
-          return (
-            <JsonStrategicMapForm
-              file="army-garrison-groups.json"
-              uiSchema={{
-                'ui:order': ['sector', 'composition'],
-                sector: { 'ui:disabled': true },
-                composition: {
-                  'ui:widget': stringReferenceToArmyCompositions,
-                },
-              }}
-            />
-          );
+      }),
+      makeFileItem(
+        'army-garrison-groups.json',
+        'Garrison Groups',
+        JsonStrategicMapForm,
+        {
+          uiSchema: {
+            'ui:order': ['sector', 'composition'],
+            sector: { 'ui:disabled': true },
+            composition: {
+              'ui:widget': stringReferenceToArmyCompositions,
+            },
+          },
         },
-      },
-      {
-        type: 'Item',
-        id: 'gun-choice-extended',
-        label: 'Gun Choice Extended',
-        file: 'army-gun-choice-extended.json',
-        component: function ArmyGunChoiceExtended() {
-          const uiSchema = useMemo(
-            () => ({
+      ),
+      makeFileItem(
+        'army-gun-choice-normal.json',
+        'Gun Choice Normal',
+        JsonForm,
+        {
+          uiSchema: {
+            items: {
               items: {
-                items: {
-                  'ui:widget': stringReferenceTo(
-                    'weapons.json',
-                    'internalName',
-                  ),
-                },
+                'ui:widget': stringReferenceToWeapons,
               },
-            }),
-            [],
-          );
-          return (
-            <JsonForm
-              file="army-gun-choice-extended.json"
-              uiSchema={uiSchema}
-            />
-          );
+            },
+          },
         },
-      },
-      {
-        type: 'Item',
-        id: 'gun-choice-normal',
-        label: 'Gun Choice Normal',
-        file: 'army-gun-choice-normal.json',
-        component: function ArmyGunChoiceNormal() {
-          return (
-            <JsonForm
-              file="army-gun-choice-normal.json"
-              uiSchema={{
-                items: {
-                  items: {
-                    'ui:widget': stringReferenceToWeapons,
-                  },
-                },
-              }}
-            />
-          );
+      ),
+      makeFileItem(
+        'army-gun-choice-extended.json',
+        'Gun Choice Extended',
+        JsonForm,
+        {
+          uiSchema: {
+            items: {
+              items: {
+                'ui:widget': stringReferenceToWeapons,
+              },
+            },
+          },
         },
-      },
-      {
-        type: 'Item',
-        id: 'patrol-groups',
-        label: 'Patrol Groups',
-        file: 'army-patrol-groups.json',
-        component: function ArmyPatrolGroups() {
-          const getPatrolGroupName = useCallback((item: any) => {
-            return item.points.join(', ') as string;
-          }, []);
-          return (
-            <JsonItemsForm
-              file="army-patrol-groups.json"
-              name={getPatrolGroupName}
-            />
-          );
+      ),
+      makeFileItem('army-patrol-groups.json', 'Patrol Groups', JsonItemsForm, {
+        name: function getPatrolGroupName(item: any): string {
+          return item.points.join(', ');
         },
-      },
-      {
-        type: 'Item',
-        id: 'ai-policy',
-        label: 'Strategic AI Policy',
-        file: 'strategic-ai-policy.json',
-        component: function StrategicAIPolicy() {
-          return <JsonForm file="strategic-ai-policy.json" />;
-        },
-      },
+      }),
+      makeFileItem(
+        'strategic-ai-policy.json',
+        'Strategic AI Policy',
+        JsonForm,
+        {},
+      ),
     ],
   },
-  {
-    type: 'Item',
-    id: 'dealers',
-    label: 'Dealers',
-    file: 'dealers.json',
-    component: function Dealers() {
-      const preview = useCallback(
-        (item: any) => <MercPreview profile={item.profile} />,
-        [],
-      );
-      return (
-        <JsonItemsForm
-          file="dealers.json"
-          name="profile"
-          preview={preview}
-          uiSchema={{
-            'ui:order': [
-              'profile',
-              'type',
-              'initialCash',
-              'buyingPrice',
-              'sellingPrice',
-              'repairCost',
-              'repairSpeed',
-              'flags',
-            ],
-            profile: {
-              'ui:widget': stringReferenceToMercProfiles,
-            },
-          }}
-        />
-      );
+  makeFileItem('dealers.json', 'Dealers', JsonItemsForm, {
+    name: 'profile',
+    preview: (item: any) => <MercPreview profile={item.profile} />,
+    uiSchema: {
+      'ui:order': [
+        'profile',
+        'type',
+        'initialCash',
+        'buyingPrice',
+        'sellingPrice',
+        'repairCost',
+        'repairSpeed',
+        'flags',
+      ],
+      profile: {
+        'ui:widget': stringReferenceToMercProfiles,
+      },
     },
-  },
+  }),
   {
     type: 'Submenu',
     id: 'explosions',
     label: 'Explosions',
     children: [
-      {
-        type: 'Item',
-        id: 'explosion-animations',
-        label: 'Explosion Animations',
-        file: 'explosion-animations.json',
-        component: function ExplosionAnimations() {
-          const preview = useCallback(
-            (item: any) => (
-              <StiPreview file={item.graphics} subimage={item.damageKeyframe} />
-            ),
-            [],
-          );
-          return (
-            <JsonItemsForm
-              file="explosion-animations.json"
-              name="name"
-              preview={preview}
-              uiSchema={{
-                'ui:order': [
-                  'id',
-                  'name',
-                  'blastSpeed',
-                  'damageKeyframe',
-                  'transparentKeyframe',
-                  'graphics',
-                  'sounds',
-                  'waterAnimation',
-                ],
-                waterAnimation: {
-                  'ui:widget': stringReferenceToExplosionAnimations,
-                },
-                graphics: {
-                  'ui:widget': resourceReferenceToGraphics,
-                },
-                sounds: {
-                  items: {
-                    'ui:widget': resourceReferenceToSound,
-                  },
-                },
-              }}
-            />
-          );
+      makeFileItem(
+        'explosion-animations.json',
+        'Explosion Animations',
+        JsonItemsForm,
+        {
+          name: 'name',
+          preview: (item: any) => (
+            <StiPreview file={item.graphics} subimage={item.damageKeyframe} />
+          ),
+          uiSchema: {
+            'ui:order': [
+              'id',
+              'name',
+              'blastSpeed',
+              'damageKeyframe',
+              'transparentKeyframe',
+              'graphics',
+              'sounds',
+              'waterAnimation',
+            ],
+            waterAnimation: {
+              'ui:widget': stringReferenceToExplosionAnimations,
+            },
+            graphics: {
+              'ui:widget': resourceReferenceToGraphics,
+            },
+            sounds: {
+              items: {
+                'ui:widget': resourceReferenceToSound,
+              },
+            },
+          },
         },
-      },
-      {
-        type: 'Item',
-        id: 'smoke-effects',
-        label: 'Smoke Effects',
-        file: 'smoke-effects.json',
-        component: function SmokeEffects() {
-          const preview = useCallback(
-            (item: any) => <StiPreview file={item.staticGraphics} />,
-            [],
-          );
-          return (
-            <JsonItemsForm
-              file="smoke-effects.json"
-              name="name"
-              preview={preview}
-              uiSchema={{
-                'ui:order': [
-                  'name',
-                  'damage',
-                  'breathDamage',
-                  'maxVisibility',
-                  'maxVisibilityWhenAffected',
-                  'lostVisibilityPerTile',
-                  'graphics',
-                  'staticGraphics',
-                  'dissipatingGraphics',
-                  'ignoresGasMask',
-                  'affectsMonsters',
-                  'affectsRobot',
-                ],
-              }}
-            />
-          );
+      ),
+      makeFileItem('smoke-effects.json', 'Smoke Effects', JsonItemsForm, {
+        name: 'name',
+        preview: (item: any) => <StiPreview file={item.staticGraphics} />,
+        uiSchema: {
+          'ui:order': [
+            'name',
+            'damage',
+            'breathDamage',
+            'maxVisibility',
+            'maxVisibilityWhenAffected',
+            'lostVisibilityPerTile',
+            'graphics',
+            'staticGraphics',
+            'dissipatingGraphics',
+            'ignoresGasMask',
+            'affectsMonsters',
+            'affectsRobot',
+          ],
         },
-      },
+      }),
     ],
   },
-  {
-    type: 'Item',
-    id: 'game',
-    label: 'Game',
-    file: 'game.json',
-    component: function Game() {
-      return <JsonForm file="game.json" />;
+  makeFileItem('game.json', 'Game', JsonForm, {}),
+  makeFileItem('imp.json', 'IMP', JsonForm, {
+    uiSchema: {
+      'ui:order': [
+        'activation_codes',
+        'starting_level',
+        'inventory',
+        'if_normal_shooter',
+        'if_good_shooter',
+      ],
+      inventory: {
+        items: {
+          'ui:widget': stringReferenceToItems,
+        },
+      },
+      if_normal_shooter: {
+        items: {
+          'ui:widget': stringReferenceToItems,
+        },
+      },
+      if_good_shooter: {
+        items: {
+          'ui:widget': stringReferenceToItems,
+        },
+      },
     },
-  },
-  {
-    type: 'Item',
-    id: 'imp',
-    label: 'IMP',
-    file: 'imp.json',
-    component: function Imp() {
-      return (
-        <JsonForm
-          file="imp.json"
-          uiSchema={{
-            'ui:order': [
-              'activation_codes',
-              'starting_level',
-              'inventory',
-              'if_normal_shooter',
-              'if_good_shooter',
-            ],
-            inventory: {
-              items: {
-                'ui:widget': stringReferenceToItems,
-              },
-            },
-            if_normal_shooter: {
-              items: {
-                'ui:widget': stringReferenceToItems,
-              },
-            },
-            if_good_shooter: {
-              items: {
-                'ui:widget': stringReferenceToItems,
-              },
-            },
-          }}
-        />
-      );
-    },
-  },
+  }),
   {
     type: 'Submenu',
     id: 'items',
     label: 'Items',
     children: [
-      {
-        type: 'Item',
-        id: 'ammo-types',
-        label: 'Ammo Types',
-        file: 'ammo-types.json',
-        component: function AmmoTypes() {
-          return (
-            <JsonItemsForm
-              file="ammo-types.json"
-              name="internalName"
-              uiSchema={{ 'ui:order': ['index', 'internalName'] }}
-            />
-          );
+      makeFileItem('ammo-types.json', 'Ammo Types', JsonItemsForm, {
+        name: 'internalName',
+        uiSchema: { 'ui:order': ['index', 'internalName'] },
+      }),
+      makeFileItem('armours.json', 'Armours', JsonItemsForm, {
+        name: 'internalName',
+        preview: (item: any) => (
+          <ItemPreview inventoryGraphics={item.inventoryGraphics} />
+        ),
+        uiSchema: {
+          'ui:order': [
+            ...baseItemProps,
+
+            'armourClass',
+            'protection',
+            'explosivesProtection',
+            'degradePercentage',
+
+            'ignoreForMaxProtection',
+
+            ...baseItemFlags,
+          ],
         },
-      },
-      {
-        type: 'Item',
-        id: 'armours',
-        label: 'Armours',
-        file: 'armours.json',
-        component: function Armours() {
-          const preview = useCallback(
-            (item: any) => (
-              <ItemPreview inventoryGraphics={item.inventoryGraphics} />
-            ),
-            [],
-          );
-          return (
-            <JsonItemsForm
-              file="armours.json"
-              name="internalName"
-              preview={preview}
-              uiSchema={{
-                'ui:order': [
-                  ...baseItemProps,
-
-                  'armourClass',
-                  'protection',
-                  'explosivesProtection',
-                  'degradePercentage',
-
-                  'ignoreForMaxProtection',
-
-                  ...baseItemFlags,
-                ],
-              }}
-            />
-          );
+      }),
+      makeFileItem('calibres.json', 'Calibres', JsonItemsForm, {
+        name: 'internalName',
+        uiSchema: {
+          'ui:order': [
+            'index',
+            'internalName',
+            'sound',
+            'silencedSound',
+            'burstSound',
+            'silencedBurstSound',
+            'monsterWeapon',
+            'showInHelpText',
+          ],
+          sound: {
+            'ui:widget': resourceReferenceToSound,
+          },
+          silencedSound: {
+            'ui:widget': resourceReferenceToSound,
+          },
         },
-      },
-      {
-        type: 'Item',
-        id: 'calibres',
-        label: 'Calibres',
-        file: 'calibres.json',
-        component: function Calibres() {
-          const uiSchema = useMemo(
-            () => ({
-              'ui:order': [
-                'index',
-                'internalName',
-                'sound',
-                'silencedSound',
-                'burstSound',
-                'silencedBurstSound',
-                'monsterWeapon',
-                'showInHelpText',
+      }),
+      makeFileItem(
+        'explosive-calibres.json',
+        'Explosive Calibres',
+        JsonItemsForm,
+        {
+          name: 'internalName',
+        },
+      ),
+      makeFileItem('explosives.json', 'Explosives', JsonItemsForm, {
+        name: 'internalName',
+        preview: (item: any) => (
+          <ItemPreview inventoryGraphics={item.inventoryGraphics} />
+        ),
+        uiSchema: {
+          'ui:order': [
+            ...baseItemProps,
+            'itemClass',
+            'noise',
+            'volatility',
+            'calibre',
+            'cursor',
+            'animation',
+            'blastEffect',
+            'stunEffect',
+            'smokeEffect',
+            'lightEffect',
+            'isPressureTriggered',
+            ...baseItemFlags,
+          ],
+          calibre: {
+            'ui:widget': stringReferenceToExplosiveCalibres,
+          },
+          animation: {
+            'ui:widget': stringReferenceToExplosionAnimations,
+          },
+        },
+      }),
+      makeFileItem('items.json', 'Items', JsonItemsForm, {
+        name: 'internalName',
+        preview: (item: any) => (
+          <ItemPreview inventoryGraphics={item.inventoryGraphics} />
+        ),
+        uiSchema: {
+          'ui:order': [
+            'usItemClass',
+            ...baseItemProps,
+            'ubCursor',
+            'ubClassIndex',
+            ...baseItemFlags,
+          ],
+        },
+      }),
+      makeFileItem('magazines.json', 'Magazines', JsonItemsForm, {
+        name: 'internalName',
+        preview: (item: any) => (
+          <ItemPreview inventoryGraphics={item.inventoryGraphics} />
+        ),
+        uiSchema: {
+          'ui:order': [
+            ...baseItemProps,
+            'ammoType',
+            'calibre',
+            'capacity',
+            'standardReplacement',
+            'dontUseAsDefaultMagazine',
+            ...baseItemFlags,
+          ],
+          ammoType: {
+            'ui:widget': stringReferenceToAmmoTypes,
+          },
+          calibre: {
+            'ui:widget': stringReferenceToCalibres,
+          },
+          standardReplacement: {
+            'ui:widget': stringReferenceToMagazines,
+          },
+        },
+      }),
+      makeFileItem(
+        'tactical-map-item-replacements.json',
+        'Tactical Map Item Replacements',
+        JsonItemsForm,
+        {
+          name: (item: any) => `${item.from} to ${item.to}`,
+          uiSchema: {
+            from: {
+              oneOf: [
+                {
+                  'ui:widget': stringReferenceToItems,
+                },
+                {},
               ],
-              sound: {
-                'ui:widget': resourceReferenceToSound,
-              },
-              silencedSound: {
-                'ui:widget': resourceReferenceToSound,
-              },
-            }),
-            [],
-          );
+            },
+          },
+        },
+      ),
+      makeFileItem('weapons.json', 'Weapons', JsonItemsForm, {
+        name: 'internalName',
+        preview: (item: any) => (
+          <ItemPreview inventoryGraphics={item.inventoryGraphics} />
+        ),
+        uiSchema: {
+          'ui:order': [
+            ...baseItemProps,
 
-          return (
-            <JsonItemsForm
-              file="calibres.json"
-              name="internalName"
-              uiSchema={uiSchema}
-            />
-          );
-        },
-      },
-      {
-        type: 'Item',
-        id: 'explosive-calibres',
-        label: 'Explosive Calibres',
-        file: 'explosive-calibres.json',
-        component: function ExplosiveCalibres() {
-          return (
-            <JsonItemsForm file="explosive-calibres.json" name="internalName" />
-          );
-        },
-      },
-      {
-        type: 'Item',
-        id: 'explosives',
-        label: 'Explosives',
-        file: 'explosives.json',
-        component: function Explosives() {
-          const preview = useCallback(
-            (item: any) => (
-              <ItemPreview inventoryGraphics={item.inventoryGraphics} />
-            ),
-            [],
-          );
-          return (
-            <JsonItemsForm
-              file="explosives.json"
-              name="internalName"
-              preview={preview}
-              uiSchema={{
-                'ui:order': [
-                  ...baseItemProps,
-                  'itemClass',
-                  'noise',
-                  'volatility',
-                  'calibre',
-                  'cursor',
-                  'animation',
-                  'blastEffect',
-                  'stunEffect',
-                  'smokeEffect',
-                  'lightEffect',
-                  'isPressureTriggered',
-                  ...baseItemFlags,
-                ],
-                calibre: {
-                  'ui:widget': stringReferenceToExplosiveCalibres,
-                },
-                animation: {
-                  'ui:widget': stringReferenceToExplosionAnimations,
-                },
-              }}
-            />
-          );
-        },
-      },
-      {
-        type: 'Item',
-        id: 'items',
-        label: 'Items',
-        file: 'items.json',
-        component: function Items() {
-          const preview = useCallback(
-            (item: any) => (
-              <ItemPreview inventoryGraphics={item.inventoryGraphics} />
-            ),
-            [],
-          );
-          return (
-            <JsonItemsForm
-              file="items.json"
-              name="internalName"
-              preview={preview}
-              uiSchema={{
-                'ui:order': [
-                  'usItemClass',
-                  ...baseItemProps,
-                  'ubCursor',
-                  'ubClassIndex',
-                  ...baseItemFlags,
-                ],
-              }}
-            />
-          );
-        },
-      },
-      {
-        type: 'Item',
-        id: 'magazines',
-        label: 'Magazines',
-        file: 'magazines.json',
-        component: function Magazines() {
-          const preview = useCallback(
-            (item: any) => (
-              <ItemPreview inventoryGraphics={item.inventoryGraphics} />
-            ),
-            [],
-          );
-          return (
-            <JsonItemsForm
-              file="magazines.json"
-              name="internalName"
-              preview={preview}
-              uiSchema={{
-                'ui:order': [
-                  ...baseItemProps,
-                  'ammoType',
-                  'calibre',
-                  'capacity',
-                  'standardReplacement',
-                  'dontUseAsDefaultMagazine',
-                  ...baseItemFlags,
-                ],
-                ammoType: {
-                  'ui:widget': stringReferenceToAmmoTypes,
-                },
-                calibre: {
-                  'ui:widget': stringReferenceToCalibres,
-                },
-                standardReplacement: {
-                  'ui:widget': stringReferenceToMagazines,
-                },
-              }}
-            />
-          );
-        },
-      },
-      {
-        type: 'Item',
-        id: 'tactical-map-item-replacements',
-        label: 'Tactical Map Item Replacements',
-        file: 'tactical-map-item-replacements.json',
-        component: function TacticalMapItemReplacements() {
-          const getItemReplacementName = useCallback((item: any) => {
-            return `${item.from} to ${item.to}`;
-          }, []);
-          return (
-            <JsonItemsForm
-              file="tactical-map-item-replacements.json"
-              name={getItemReplacementName}
-              uiSchema={{
-                from: {
-                  oneOf: [
-                    {
-                      'ui:widget': stringReferenceToItems,
-                    },
-                    {},
-                  ],
-                },
-              }}
-            />
-          );
-        },
-      },
-      {
-        type: 'Item',
-        id: 'weapons',
-        label: 'Weapons',
-        file: 'weapons.json',
-        component: function Weapons() {
-          const preview = useCallback(
-            (item: any) => (
-              <ItemPreview inventoryGraphics={item.inventoryGraphics} />
-            ),
-            [],
-          );
-          const uiSchema = useMemo(
-            () => ({
-              'ui:order': [
-                ...baseItemProps,
+            'internalType',
+            'calibre',
+            'rateOfFire',
+            'ubAttackVolume',
+            'ubBulletSpeed',
+            'ubBurstPenalty',
+            'ubDeadliness',
+            'ubHitVolume',
+            'ubMagSize',
+            'ubReadyTime',
+            'ubShotsPer4Turns',
+            'ubShotsPerBurst',
+            'usRange',
+            'ubImpact',
+            'usSmokeEffect',
 
-                'internalType',
-                'calibre',
-                'rateOfFire',
-                'ubAttackVolume',
-                'ubBulletSpeed',
-                'ubBurstPenalty',
-                'ubDeadliness',
-                'ubHitVolume',
-                'ubMagSize',
-                'ubReadyTime',
-                'ubShotsPer4Turns',
-                'ubShotsPerBurst',
-                'usRange',
-                'ubImpact',
-                'usSmokeEffect',
+            'sound',
+            'silencedSound',
+            'burstSound',
+            'silencedBurstSound',
 
-                'sound',
-                'silencedSound',
-                'burstSound',
-                'silencedBurstSound',
+            'standardReplacement',
 
-                'standardReplacement',
-
-                'attachment_Bipod',
-                'attachment_Duckbill',
-                'attachment_GunBarrelExtender',
-                'attachment_LaserScope',
-                'attachment_Silencer',
-                'attachment_SniperScope',
-                'attachment_SpringAndBoltUpgrade',
-                'attachment_UnderGLauncher',
-                ...baseItemFlags,
-              ],
-              calibre: {
-                'ui:widget': stringReferenceToCalibres,
-              },
-              standardReplacement: {
-                'ui:widget': stringReferenceToWeapons,
-              },
-              sound: {
-                'ui:widget': resourceReferenceToSound,
-              },
-              silencedSound: {
-                'ui:widget': resourceReferenceToSound,
-              },
-            }),
-            [],
-          );
-
-          return (
-            <JsonItemsForm
-              file="weapons.json"
-              name="internalName"
-              preview={preview}
-              uiSchema={uiSchema}
-            />
-          );
+            'attachment_Bipod',
+            'attachment_Duckbill',
+            'attachment_GunBarrelExtender',
+            'attachment_LaserScope',
+            'attachment_Silencer',
+            'attachment_SniperScope',
+            'attachment_SpringAndBoltUpgrade',
+            'attachment_UnderGLauncher',
+            ...baseItemFlags,
+          ],
+          calibre: {
+            'ui:widget': stringReferenceToCalibres,
+          },
+          standardReplacement: {
+            'ui:widget': stringReferenceToWeapons,
+          },
+          sound: {
+            'ui:widget': resourceReferenceToSound,
+          },
+          silencedSound: {
+            'ui:widget': resourceReferenceToSound,
+          },
         },
-      },
+      }),
     ],
   },
-  {
-    type: 'Item',
-    id: 'loading-screens',
-    label: 'Loading Screens',
-    file: 'loading-screens.json',
-    component: function LoadingScreens() {
-      return (
-        <JsonItemsForm
-          file="loading-screens.json"
-          name="internalName"
-          uiSchema={{ 'ui:order': ['internalName', 'filename'] }}
-        />
-      );
+  makeFileItem('loading-screens.json', 'Loading Screens', JsonItemsForm, {
+    name: 'internalName',
+    uiSchema: { 'ui:order': ['internalName', 'filename'] },
+  }),
+  makeFileItem(
+    'loading-screens-mapping.json',
+    'Loading Screens Mapping',
+    JsonStrategicMapForm,
+    {
+      uiSchema: {
+        'ui:order': ['sector', 'sectorLevel', 'day', 'night'],
+        sector: { 'ui:disabled': true },
+        sectorLevel: { 'ui:disabled': true },
+        day: { 'ui:widget': stringReferenceToLoadingScreens },
+        night: { 'ui:widget': stringReferenceToLoadingScreens },
+      },
     },
-  },
-  {
-    type: 'Item',
-    id: 'loading-screens-mapping',
-    label: 'Loading Screens Mapping',
-    file: 'loading-screens-mapping.json',
-    component: function LoadingScreensMapping() {
-      return (
-        <JsonStrategicMapForm
-          file="loading-screens-mapping.json"
-          uiSchema={{
-            'ui:order': ['sector', 'sectorLevel', 'day', 'night'],
-            sector: { 'ui:disabled': true },
-            sectorLevel: { 'ui:disabled': true },
-            day: { 'ui:widget': stringReferenceToLoadingScreens },
-            night: { 'ui:widget': stringReferenceToLoadingScreens },
-          }}
-        />
-      );
-    },
-  },
+  ),
   {
     type: 'Submenu',
     id: 'mercs',
     label: 'Mercs',
     children: [
-      {
-        type: 'Item',
-        id: 'merc-listings',
-        label: 'M.E.R.C. Listings',
-        file: 'mercs-MERC-listings.json',
-        component: function MercsMERCListings() {
-          const preview = useCallback(
-            (item: any) => <MercPreview profile={item.profile} />,
-            [],
-          );
-          return (
-            <JsonItemsForm
-              file="mercs-MERC-listings.json"
-              name="profile"
-              preview={preview}
-              uiSchema={{
-                'ui:order': [
-                  'profile',
-                  'bioIndex',
-                  'minDays',
-                  'minTotalSpending',
-                  'quotes',
-                ],
+      makeFileItem(
+        'mercs-MERC-listings.json',
+        'M.E.R.C. Listings',
+        JsonItemsForm,
+        {
+          name: 'profile',
+          preview: (item: any) => <MercPreview profile={item.profile} />,
+          uiSchema: {
+            'ui:order': [
+              'profile',
+              'bioIndex',
+              'minDays',
+              'minTotalSpending',
+              'quotes',
+            ],
+            profile: {
+              'ui:widget': stringReferenceToMercProfiles,
+            },
+            quotes: {
+              items: {
+                'ui:order': ['type', 'quoteID', 'profile'],
                 profile: {
                   'ui:widget': stringReferenceToMercProfiles,
-                },
-                quotes: {
-                  items: {
-                    'ui:order': ['type', 'quoteID', 'profile'],
-                    profile: {
-                      'ui:widget': stringReferenceToMercProfiles,
-                    },
-                  },
-                },
-              }}
-            />
-          );
-        },
-      },
-      {
-        type: 'Item',
-        id: 'relations',
-        label: 'Opinions',
-        file: 'mercs-relations.json',
-        component: function MercsRelations() {
-          return (
-            <JsonItemsForm file="mercs-relations.json" name="internalName" />
-          );
-        },
-      },
-      {
-        type: 'Item',
-        id: 'profiles',
-        label: 'Profiles',
-        file: 'mercs-profile-info.json',
-        component: function MercsProfileInfo() {
-          const preview = useCallback(
-            (item: any) => <MercPreview profile={item.internalName} />,
-            [],
-          );
-          return (
-            <JsonItemsForm
-              file="mercs-profile-info.json"
-              name="internalName"
-              preview={preview}
-              uiSchema={{
-                'ui:order': [
-                  'profileID',
-                  'internalName',
-                  'type',
-                  'nickname',
-                  'fullName',
-                  'sex',
-                  'bodyType',
-                  'bodyTypeSubstitution',
-                  'face',
-                  'skinColor',
-                  'hairColor',
-                  'vestColor',
-                  'pantsColor',
-                  'personalityTrait',
-                  'skillTrait',
-                  'skillTrait2',
-                  'stats',
-                  'attitude',
-                  'toleranceForPlayersDeathRate',
-                  'toleranceForPlayersReputation',
-                  'sexismMode',
-                  'contract',
-                  'inventory',
-                  'dialogue',
-                  'money',
-                  'weaponSaleModifier',
-                  'civilianGroup',
-                  'sector',
-                  'town',
-                  'townAttachment',
-                  'ownedRooms',
-                  'isGoodGuy',
-                  'isTownIndifferentIfDead',
-                ],
-                inventory: {
-                  items: {
-                    'ui:order': [
-                      'item',
-                      'quantity',
-                      'status',
-                      'slot',
-                      'isUndroppable',
-                    ],
-                    item: {
-                      'ui:widget': stringReferenceToItems,
-                    },
-                  },
-                },
-              }}
-            />
-          );
-        },
-      },
-      {
-        type: 'Item',
-        id: 'rpc-small-faces',
-        label: 'RPC Small Faces',
-        file: 'mercs-rpc-small-faces.json',
-        component: function MercsRpcSmallFaces() {
-          const preview = useCallback(
-            (item: any) => <MercPreview profile={item.profile} />,
-            [],
-          );
-          return (
-            <JsonItemsForm
-              file="mercs-rpc-small-faces.json"
-              name="profile"
-              preview={preview}
-              uiSchema={{
-                'ui:order': ['profile', 'eyesXY', 'mouthXY'],
-                profile: {
-                  'ui:widget': stringReferenceToMercProfiles,
-                },
-              }}
-            />
-          );
-        },
-      },
-    ],
-  },
-  {
-    type: 'Item',
-    id: 'music',
-    label: 'Music',
-    file: 'music.json',
-    component: function Music() {
-      const uiSchema = useMemo(
-        () =>
-          Object.fromEntries(
-            [
-              'main_menu',
-              'laptop',
-              'tactical',
-              'tactical_enemypresent',
-              'tactical_battle',
-              'tactical_creature',
-              'tactical_creature_enemypresent',
-              'tactical_creature_battle',
-              'tactical_victory',
-              'tactical_defeat',
-            ].map((k) => [
-              k,
-              {
-                items: {
-                  'ui:widget': resourceReferenceToSound,
                 },
               },
-            ]),
-          ),
-        [],
-      );
-
-      return <JsonForm file="music.json" uiSchema={uiSchema} />;
-    },
+            },
+          },
+        },
+      ),
+      makeFileItem('mercs-relations.json', 'Relations', JsonItemsForm, {
+        name: 'internalName',
+      }),
+      makeFileItem('mercs-profile-info.json', 'Profiles', JsonItemsForm, {
+        name: 'internalName',
+        preview: (item: any) => <MercPreview profile={item.internalName} />,
+        uiSchema: {
+          'ui:order': [
+            'profileID',
+            'internalName',
+            'type',
+            'nickname',
+            'fullName',
+            'sex',
+            'bodyType',
+            'bodyTypeSubstitution',
+            'face',
+            'skinColor',
+            'hairColor',
+            'vestColor',
+            'pantsColor',
+            'personalityTrait',
+            'skillTrait',
+            'skillTrait2',
+            'stats',
+            'attitude',
+            'toleranceForPlayersDeathRate',
+            'toleranceForPlayersReputation',
+            'sexismMode',
+            'contract',
+            'inventory',
+            'dialogue',
+            'money',
+            'weaponSaleModifier',
+            'civilianGroup',
+            'sector',
+            'town',
+            'townAttachment',
+            'ownedRooms',
+            'isGoodGuy',
+            'isTownIndifferentIfDead',
+          ],
+          inventory: {
+            items: {
+              'ui:order': [
+                'item',
+                'quantity',
+                'status',
+                'slot',
+                'isUndroppable',
+              ],
+              item: {
+                'ui:widget': stringReferenceToItems,
+              },
+            },
+          },
+        },
+      }),
+      makeFileItem(
+        'mercs-rpc-small-faces.json',
+        'RPC Small Faces',
+        JsonItemsForm,
+        {
+          name: 'profile',
+          preview: (item: any) => <MercPreview profile={item.profile} />,
+          uiSchema: {
+            'ui:order': ['profile', 'eyesXY', 'mouthXY'],
+            profile: {
+              'ui:widget': stringReferenceToMercProfiles,
+            },
+          },
+        },
+      ),
+    ],
   },
+  makeFileItem('music.json', 'Music', JsonForm, {
+    uiSchema: Object.fromEntries(
+      [
+        'main_menu',
+        'laptop',
+        'tactical',
+        'tactical_enemypresent',
+        'tactical_battle',
+        'tactical_creature',
+        'tactical_creature_enemypresent',
+        'tactical_creature_battle',
+        'tactical_victory',
+        'tactical_defeat',
+      ].map((k) => [
+        k,
+        {
+          items: {
+            'ui:widget': resourceReferenceToSound,
+          },
+        },
+      ]),
+    ),
+  }),
   {
     type: 'Submenu',
     id: 'scripts',
     label: 'Scripts',
     children: [
-      {
-        type: 'Item',
-        id: 'records',
-        label: 'NPC Records',
-        file: 'script-records-NPCs.json',
-        component: function Records() {
-          const preview = useCallback(
-            (item: any) => <MercPreview profile={item.profile} />,
-            [],
-          );
-
-          return (
-            <JsonItemsForm
-              file="script-records-NPCs.json"
-              name="profile"
-              preview={preview}
-              uiSchema={{
-                'ui:order': ['profile', 'meanwhileIndex', 'records'],
-                profile: {
-                  'ui:widget': stringReferenceToMercProfiles,
-                },
-                records: {
-                  items: {
-                    'ui:order': [
-                      'index',
-                      'quoteNum',
-                      'numQuotes',
-                      'firstDay',
-                      'lastDay',
-                      'factMustBeTrue',
-                      'factMustBeFalse',
-                      'requiredAnyItem',
-                      'requiredItem',
-                      'requiredAnyRifle',
-                      'requiredApproach',
-                      'requiredGridNo',
-                      'requiredOpinion',
-                      'sayOncePerConvo',
-                      'userInterface',
-                      'startQuest',
-                      'endQuest',
-                      'quest',
-                      'setFactTrue',
-                      'triggerClosestMerc',
-                      'triggerNPC',
-                      'triggerRecord',
-                      'triggerSelf',
-                      'eraseOnceSaid',
-                      'alreadySaid',
-                      'giftItem',
-                      'goToGridno',
-                      'actionData',
-                    ],
-                    requiredItem: {
-                      'ui:widget': stringReferenceToItems,
-                    },
-                    triggerNPC: {
-                      'ui:widget': stringReferenceToMercProfiles,
-                    },
-                    giftItem: {
-                      'ui:widget': stringReferenceToItems,
-                    },
+      makeFileItem('script-records-NPCs.json', 'NPC Records', JsonItemsForm, {
+        name: 'profile',
+        preview: (item: any) => <MercPreview profile={item.profile} />,
+        uiSchema: {
+          'ui:order': ['profile', 'meanwhileIndex', 'records'],
+          profile: {
+            'ui:widget': stringReferenceToMercProfiles,
+          },
+          records: {
+            items: {
+              'ui:order': [
+                'index',
+                'quoteNum',
+                'numQuotes',
+                'firstDay',
+                'lastDay',
+                'factMustBeTrue',
+                'factMustBeFalse',
+                'requiredAnyItem',
+                'requiredItem',
+                'requiredAnyRifle',
+                'requiredApproach',
+                'requiredGridNo',
+                'requiredOpinion',
+                'sayOncePerConvo',
+                'userInterface',
+                'startQuest',
+                'endQuest',
+                'quest',
+                'setFactTrue',
+                'triggerClosestMerc',
+                'triggerNPC',
+                'triggerRecord',
+                'triggerSelf',
+                'eraseOnceSaid',
+                'alreadySaid',
+                'giftItem',
+                'goToGridno',
+                'actionData',
+              ],
+              requiredItem: {
+                'ui:widget': stringReferenceToItems,
+              },
+              triggerNPC: {
+                'ui:widget': stringReferenceToMercProfiles,
+              },
+              giftItem: {
+                'ui:widget': stringReferenceToItems,
+              },
+            },
+          },
+        },
+      }),
+      makeFileItem('script-records-control.json', 'Records Control', JsonForm, {
+        uiSchema: {
+          'ui:order': ['fileNameForScriptControlledPCs', 'meanwhiles'],
+          meanwhiles: {
+            items: {
+              'ui:order': ['id', 'internalName', 'chars'],
+              chars: {
+                items: {
+                  'ui:order': ['id', 'name', 'fileName'],
+                  name: {
+                    'ui:widget': stringReferenceToMercProfiles,
                   },
                 },
-              }}
-            />
-          );
+              },
+            },
+          },
         },
-      },
-      {
-        type: 'Item',
-        id: 'records-control',
-        label: 'Records Control',
-        file: 'script-records-control.json',
-        component: function RecordsControl() {
-          return (
-            <JsonForm
-              file="script-records-control.json"
-              uiSchema={{
-                'ui:order': ['fileNameForScriptControlledPCs', 'meanwhiles'],
-                meanwhiles: {
-                  items: {
-                    'ui:order': ['id', 'internalName', 'chars'],
-                    chars: {
-                      items: {
-                        'ui:order': ['id', 'name', 'fileName'],
-                        name: {
-                          'ui:widget': stringReferenceToMercProfiles,
-                        },
-                      },
-                    },
-                  },
-                },
-              }}
-            />
-          );
-        },
-      },
+      }),
     ],
   },
-  {
-    type: 'Item',
-    id: 'shipping-destinations',
-    label: 'Shipping Destinations',
-    file: 'shipping-destinations.json',
-    component: function ShippingDestinations() {
-      return (
-        <JsonItemsForm
-          file="shipping-destinations.json"
-          name="locationId"
-          uiSchema={{
-            'ui:order': [
-              'locationId',
-              'deliverySector',
-              'deliverySectorZ',
-              'deliverySectorGridNo',
-              'chargeRateStandard',
-              'chargeRate2Days',
-              'chargeRateOverNight',
-              'flowersNextDayDeliveryCost',
-              'flowersWhenItGetsThereCost',
-              'emailOffset',
-              'emailLength',
-              'canDeliver',
-              'isPrimary',
-            ],
-          }}
-        />
-      );
+  makeFileItem(
+    'shipping-destinations.json',
+    'Shipping Destinations',
+    JsonItemsForm,
+    {
+      name: 'locationId',
+      uiSchema: {
+        'ui:order': [
+          'locationId',
+          'deliverySector',
+          'deliverySectorZ',
+          'deliverySectorGridNo',
+          'chargeRateStandard',
+          'chargeRate2Days',
+          'chargeRateOverNight',
+          'flowersNextDayDeliveryCost',
+          'flowersWhenItGetsThereCost',
+          'emailOffset',
+          'emailLength',
+          'canDeliver',
+          'isPrimary',
+        ],
+      },
     },
-  },
+  ),
   {
     type: 'Submenu',
     id: 'strategic-map',
     label: 'Strategic Map',
     children: [
-      {
-        type: 'Item',
-        id: 'bloodcat-placements',
-        label: 'Bloodcat Placements',
-        file: 'strategic-bloodcat-placements.json',
-        component: function StrategicBloodcatPlacements() {
-          return (
-            <JsonStrategicMapForm
-              file="strategic-bloodcat-placements.json"
-              uiSchema={{
-                'ui:order': ['sector', 'bloodCatPlacements'],
-                sector: { 'ui:disabled': true },
-              }}
-            />
-          );
+      makeFileItem(
+        'strategic-bloodcat-placements.json',
+        'Bloodcat Placements',
+        JsonStrategicMapForm,
+        {
+          uiSchema: {
+            'ui:order': ['sector', 'bloodCatPlacements'],
+            sector: { 'ui:disabled': true },
+          },
         },
-      },
-      {
-        type: 'Item',
-        id: 'bloodcat-spawns',
-        label: 'Bloodcat Spawns',
-        file: 'strategic-bloodcat-spawns.json',
-        component: function StrategicBloodcatSpawns() {
-          return (
-            <JsonStrategicMapForm
-              file="strategic-bloodcat-spawns.json"
-              uiSchema={{
-                'ui:order': [
-                  'sector',
-                  'bloodCatsSpawnsEasy',
-                  'bloodCatsSpawnsMedium',
-                  'bloodCatsSpawnsHard',
-                  'isArena',
-                  'isLair',
-                ],
-                sector: { 'ui:disabled': true },
-              }}
-            />
-          );
+      ),
+      makeFileItem(
+        'strategic-bloodcat-spawns.json',
+        'Bloodcat Spawns',
+        JsonStrategicMapForm,
+        {
+          uiSchema: {
+            'ui:order': [
+              'sector',
+              'bloodCatsSpawnsEasy',
+              'bloodCatsSpawnsMedium',
+              'bloodCatsSpawnsHard',
+              'isArena',
+              'isLair',
+            ],
+            sector: { 'ui:disabled': true },
+          },
         },
-      },
-      {
-        type: 'Item',
-        id: 'fact-params',
-        label: 'Fact Params',
-        file: 'strategic-fact-params.json',
-        component: function StrategicFactParams() {
-          return (
-            <JsonItemsForm file="strategic-fact-params.json" name="fact" />
-          );
+      ),
+      makeFileItem('strategic-fact-params.json', 'Fact Params', JsonItemsForm, {
+        name: 'fact',
+      }),
+      makeFileItem(
+        'strategic-map-cache-sectors.json',
+        'Weapon Cache Sectors',
+        JsonForm,
+        {},
+      ),
+      makeFileItem(
+        'strategic-map-creature-lairs.json',
+        'Creature Lairs',
+        JsonItemsForm,
+        {
+          name: (item: any) => item.entranceSector[0],
+          uiSchema: {
+            'ui:order': [
+              'lairId',
+              'associatedMineId',
+              'entranceSector',
+              'warpExit',
+              'sectors',
+              'attackSectors',
+            ],
+          },
         },
-      },
-      {
-        type: 'Item',
-        id: 'cache-sectors',
-        label: 'Weapon Cache Sectors',
-        file: 'strategic-map-cache-sectors.json',
-        component: function StrategicMapCacheSectors() {
-          return <JsonForm file="strategic-map-cache-sectors.json" />;
-        },
-      },
-      {
-        type: 'Item',
-        id: 'creature-lairs',
-        label: 'Creature Lairs',
-        file: 'strategic-map-creature-lairs.json',
-        component: function StrategicMapCreatureLairs() {
-          const getCreatureLairName = useCallback((item: any) => {
-            return item.entranceSector[0];
-          }, []);
-          return (
-            <JsonItemsForm
-              file="strategic-map-creature-lairs.json"
-              name={getCreatureLairName}
-              uiSchema={{
-                'ui:order': [
-                  'lairId',
-                  'associatedMineId',
-                  'entranceSector',
-                  'warpExit',
-                  'sectors',
-                  'attackSectors',
-                ],
-              }}
-            />
-          );
-        },
-      },
-      {
-        type: 'Item',
-        id: 'movement-costs',
-        label: 'Movement Costs',
-        file: 'strategic-map-movement-costs.json',
-        component: function StrategicMapMovementCosts() {
-          return <JsonForm file="strategic-map-movement-costs.json" />;
-        },
-      },
-      {
-        type: 'Item',
-        id: 'npc-placements',
-        label: 'NPC Placements',
-        file: 'strategic-map-npc-placements.json',
-        component: function StrategicMapNpcPlacements() {
-          const preview = useCallback(
-            (item: any) => <MercPreview profile={item.profile} />,
-            [],
-          );
-          return (
-            <JsonItemsForm
-              file="strategic-map-npc-placements.json"
-              name="profile"
-              preview={preview}
-              uiSchema={{
-                'ui:order': [
-                  'profile',
-                  'sectors',
-                  'placedAtStart',
-                  'useAlternateMap',
-                  'sciFiOnly',
-                ],
-                profile: {
-                  'ui:widget': stringReferenceToMercProfiles,
-                },
-              }}
-            />
-          );
-        },
-      },
-      {
-        type: 'Item',
-        id: 'sam-sites-air-control',
-        label: 'Sam Sites Air Control',
-        file: 'strategic-map-sam-sites-air-control.json',
-        component: function StrategicMapSamSitesAirControl() {
-          return <JsonForm file="strategic-map-sam-sites-air-control.json" />;
-        },
-      },
-      {
-        type: 'Item',
-        id: 'sam-sites',
-        label: 'Sam Sites',
-        file: 'strategic-map-sam-sites.json',
-        component: function StrategicMapSamSites() {
-          return (
-            <JsonStrategicMapForm
-              file="strategic-map-sam-sites.json"
-              uiSchema={{
-                'ui:order': ['sector', 'gridNos'],
-                sector: { 'ui:disabled': true },
-              }}
-            />
-          );
-        },
-      },
-      {
-        type: 'Item',
-        id: 'secrets',
-        label: 'Secrets',
-        file: 'strategic-map-secrets.json',
-        component: function StrategicMapSecrets() {
-          return (
-            <JsonStrategicMapForm
-              file="strategic-map-secrets.json"
-              uiSchema={{
-                'ui:order': [
-                  'sector',
-                  'secretLandType',
-                  'foundLandType',
-                  'secretMapIcon',
-                  'isSAMSite',
-                ],
-                sector: { 'ui:disabled': true },
-              }}
-            />
-          );
-        },
-      },
-      {
-        type: 'Item',
-        id: 'sectors-descriptions',
-        label: 'Sector Descriptions',
-        file: 'strategic-map-sectors-descriptions.json',
-        component: function StrategicMapSectorsDescriptions() {
-          return (
-            <JsonStrategicMapForm
-              file="strategic-map-sectors-descriptions.json"
-              uiSchema={{
-                'ui:order': ['sector', 'sectorLevel', 'landType'],
-                sector: { 'ui:disabled': true },
-                sectorLevel: { 'ui:disabled': true },
-              }}
-            />
-          );
-        },
-      },
-      {
-        type: 'Item',
-        id: 'towns',
-        label: 'Towns',
-        file: 'strategic-map-towns.json',
-        component: function StrategicMapTowns() {
-          return (
-            <JsonItemsForm
-              file="strategic-map-towns.json"
-              name="townId"
-              uiSchema={{
-                'ui:order': [
-                  'townId',
-                  'internalName',
-                  'sectors',
-                  'townPoint',
-                  'isMilitiaTrainingAllowed',
-                ],
-              }}
-            />
-          );
-        },
-      },
-      {
-        type: 'Item',
-        id: 'traversibility-ratings',
-        label: 'Traversibility Ratings',
-        file: 'strategic-map-traversibility-ratings.json',
-        component: function StrategicMapTraversibilityRatings() {
-          return <JsonForm file="strategic-map-traversibility-ratings.json" />;
-        },
-      },
-      {
-        type: 'Item',
-        id: 'underground-sectors',
-        label: 'Underground Sectors',
-        file: 'strategic-map-underground-sectors.json',
-        component: function StrategicMapUndergroundSectors() {
-          return (
-            <JsonStrategicMapForm
-              file="strategic-map-underground-sectors.json"
-              uiSchema={{
-                'ui:order': [
-                  'sector',
-                  'sectorLevel',
-                  'adjacentSectors',
-                  'numTroops',
-                  'numTroopsVariance',
-                  'numElites',
-                  'numElitesVariance',
-                  'numCreatures',
-                  'numCreaturesVariance',
-                ],
-                sector: { 'ui:disabled': true },
-                sectorLevel: { 'ui:disabled': true },
-              }}
-            />
-          );
-        },
-      },
-      {
-        type: 'Item',
-        id: 'mines',
-        label: 'Mines',
-        file: 'strategic-mines.json',
-        component: function StrategicMines() {
-          return (
-            <JsonStrategicMapForm
-              file="strategic-mines.json"
-              property="entranceSector"
-              uiSchema={{
-                'ui:order': [
-                  'entranceSector',
-                  'associatedTownId',
-                  'associatedTown',
-                  'mineType',
-                  'minimumMineProduction',
-                  'noDepletion',
-                  'delayDepletion',
-                  'headMinerAssigned',
-                  'faceDisplayYOffset',
-                  'mineSectors',
-                ],
-                entranceSector: { 'ui:disabled': true },
-                associatedTown: { 'ui:widget': stringReferenceToTowns },
-              }}
-            />
-          );
-        },
-      },
-    ],
-  },
-  {
-    type: 'Item',
-    id: 'tactical-npc-action-params',
-    label: 'Tactical Npc Action Params',
-    file: 'tactical-npc-action-params.json',
-    component: function TacticalNpcActionParams() {
-      return (
-        <JsonItemsForm
-          file="tactical-npc-action-params.json"
-          name="actionCode"
-        />
-      );
-    },
-  },
-  {
-    type: 'Item',
-    id: 'vehicles',
-    label: 'Vehicles',
-    file: 'vehicles.json',
-    component: function Vehicles() {
-      const preview = useCallback(
-        (item: any) => <MercPreview profile={item.profile} />,
-        [],
-      );
-      return (
-        <JsonItemsForm
-          file="vehicles.json"
-          name="profile"
-          preview={preview}
-          uiSchema={{
+      ),
+      makeFileItem(
+        'strategic-map-movement-costs.json',
+        'Movement Costs',
+        JsonForm,
+        {},
+      ),
+      makeFileItem(
+        'strategic-map-npc-placements.json',
+        'NPC Placements',
+        JsonItemsForm,
+        {
+          name: 'profile',
+          preview: (item: any) => <MercPreview profile={item.profile} />,
+          uiSchema: {
             'ui:order': [
               'profile',
-              'movementType',
-              'seats',
-              'armourType',
-              'enterSound',
-              'moveSound',
+              'sectors',
+              'placedAtStart',
+              'useAlternateMap',
+              'sciFiOnly',
             ],
-            profile: { 'ui:widget': stringReferenceToMercProfiles },
-            armourType: { 'ui:widget': stringReferenceToArmours },
-          }}
-        />
-      );
-    },
+            profile: {
+              'ui:widget': stringReferenceToMercProfiles,
+            },
+          },
+        },
+      ),
+      makeFileItem(
+        'strategic-map-sam-sites-air-control.json',
+        'Sam Sites Air Control',
+        JsonForm,
+        {},
+      ),
+      makeFileItem(
+        'strategic-map-sam-sites.json',
+        'Sam Sites',
+        JsonStrategicMapForm,
+        {
+          uiSchema: {
+            'ui:order': ['sector', 'gridNos'],
+            sector: { 'ui:disabled': true },
+          },
+        },
+      ),
+      makeFileItem(
+        'strategic-map-secrets.json',
+        'Secrets',
+        JsonStrategicMapForm,
+        {
+          uiSchema: {
+            'ui:order': [
+              'sector',
+              'secretLandType',
+              'foundLandType',
+              'secretMapIcon',
+              'isSAMSite',
+            ],
+            sector: { 'ui:disabled': true },
+          },
+        },
+      ),
+      makeFileItem(
+        'strategic-map-sectors-descriptions.json',
+        'Sector Descriptions',
+        JsonStrategicMapForm,
+        {
+          uiSchema: {
+            'ui:order': ['sector', 'sectorLevel', 'landType'],
+            sector: { 'ui:disabled': true },
+            sectorLevel: { 'ui:disabled': true },
+          },
+        },
+      ),
+      makeFileItem('strategic-map-towns.json', 'Towns', JsonItemsForm, {
+        name: 'townId',
+        uiSchema: {
+          'ui:order': [
+            'townId',
+            'internalName',
+            'sectors',
+            'townPoint',
+            'isMilitiaTrainingAllowed',
+          ],
+        },
+      }),
+      makeFileItem(
+        'strategic-map-traversibility-ratings.json',
+        'Traversibility Ratings',
+        JsonForm,
+        {},
+      ),
+      makeFileItem(
+        'strategic-map-underground-sectors.json',
+        'Underground Sectors',
+        JsonStrategicMapForm,
+        {
+          uiSchema: {
+            'ui:order': [
+              'sector',
+              'sectorLevel',
+              'adjacentSectors',
+              'numTroops',
+              'numTroopsVariance',
+              'numElites',
+              'numElitesVariance',
+              'numCreatures',
+              'numCreaturesVariance',
+            ],
+            sector: { 'ui:disabled': true },
+            sectorLevel: { 'ui:disabled': true },
+          },
+        },
+      ),
+      makeFileItem('strategic-mines.json', 'Mines', JsonStrategicMapForm, {
+        property: 'entranceSector',
+        uiSchema: {
+          'ui:order': [
+            'entranceSector',
+            'associatedTownId',
+            'associatedTown',
+            'mineType',
+            'minimumMineProduction',
+            'noDepletion',
+            'delayDepletion',
+            'headMinerAssigned',
+            'faceDisplayYOffset',
+            'mineSectors',
+          ],
+          entranceSector: { 'ui:disabled': true },
+          associatedTown: { 'ui:widget': stringReferenceToTowns },
+        },
+      }),
+    ],
   },
+  makeFileItem(
+    'tactical-npc-action-params.json',
+    'Tactical Npc Action Params',
+    JsonItemsForm,
+    {
+      name: 'actionCode',
+    },
+  ),
+  makeFileItem('vehicles.json', 'Vehicles', JsonItemsForm, {
+    name: 'profile',
+    preview: (item: any) => <MercPreview profile={item.profile} />,
+    uiSchema: {
+      'ui:order': [
+        'profile',
+        'movementType',
+        'seats',
+        'armourType',
+        'enterSound',
+        'moveSound',
+      ],
+      profile: { 'ui:widget': stringReferenceToMercProfiles },
+      armourType: { 'ui:widget': stringReferenceToArmours },
+    },
+  }),
 ];
 
 const menuItemToRoutes =
