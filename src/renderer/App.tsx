@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import 'antd/dist/reset.css';
+import '@ant-design/v5-patch-for-react-19';
 import { useMemo } from 'react';
 import { ROUTES } from './EditorRoutes';
 import './App.css';
