@@ -1,4 +1,8 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import {
+  createAsyncThunk,
+  createSelector,
+  createSlice,
+} from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { z } from 'zod';
 import { applyReducer, Operation, compare } from 'fast-json-patch';
@@ -211,9 +215,20 @@ const filesSlice = createSlice({
       },
     );
   },
+  selectors: {
+    selectModifiedFiles: createSelector(
+      (state) => state.modified,
+      (modified: FilesState['modified']) =>
+        Object.entries(modified).flatMap(([filename, modified]) =>
+          modified ? [filename] : [],
+        ),
+    ),
+  },
 });
 
 export const files = filesSlice.reducer;
 
 export const { changeJson, changeJsonItem, changeSaveMode } =
   filesSlice.actions;
+
+export const { selectModifiedFiles } = filesSlice.selectors;

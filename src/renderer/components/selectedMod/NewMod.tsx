@@ -1,14 +1,15 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Button, Typography } from 'antd';
 import { IChangeEvent } from '@rjsf/core';
-import { JsonSchemaForm } from './JsonSchemaForm';
-import { useAppSelector } from '../hooks/state';
-import { Mod } from '../state/mods';
-import { FullSizeDialogLayout } from './FullSizeDialogLayout';
+import { JsonSchemaForm } from '../JsonSchemaForm';
+import { useAppSelector } from '../../hooks/state';
+import { Mod } from '../../state/mods';
+import { FullSizeDialogLayout } from '../FullSizeDialogLayout';
 import { Space } from 'antd/lib';
-import { ErrorAlert } from './ErrorAlert';
-import { useSelectedMod } from '../hooks/useSelectedMod';
-import { MOD_JSON_SCHEMA } from '../state/mods';
+import { ErrorAlert } from '../ErrorAlert';
+import { useSelectedMod } from '../../hooks/useSelectedMod';
+import { MOD_JSON_SCHEMA } from '../../state/mods';
+import { selectStracciatellaHome } from '../../state/selectors';
 
 export function NewMod({ onCancel }: { onCancel: () => void }) {
   const {
@@ -16,9 +17,7 @@ export function NewMod({ onCancel }: { onCancel: () => void }) {
     persistingError: error,
     create,
   } = useSelectedMod();
-  const stracciatellaHome = useAppSelector(
-    (s) => s.toolset.data?.config.stracciatellaHome,
-  );
+  const stracciatellaHome = useAppSelector(selectStracciatellaHome);
   const [formData, setFormData] = useState<Mod>({
     id: '',
     name: '',

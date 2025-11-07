@@ -10,8 +10,8 @@ import {
 
 export function useToolsetConfig() {
   const dispatch = useAppDispatch();
-  const loadable = useLoadable((state) => state.toolset);
-  const persistable = usePersistable((state) => state.toolset);
+  const loadable = useLoadable((state) => state.toolset.config);
+  const persistable = usePersistable((state) => state.toolset.config);
   const refresh = useCallback(() => {
     dispatch(readToolsetConfig());
   }, [dispatch]);

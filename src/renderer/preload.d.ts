@@ -5,6 +5,7 @@ declare global {
         func: string;
         params: Record<string, unknown> | null;
       }) => Promise<unknown>;
+      onMainAction: (callback: (data: any) => void) => void;
     };
   }
 }
