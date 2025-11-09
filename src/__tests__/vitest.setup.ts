@@ -15,4 +15,11 @@ beforeAll(() => {
       dispatchEvent: vi.fn(),
     })),
   });
+  Object.defineProperty(window, 'electronAPI', {
+    writable: false,
+    value: {
+      invoke: vi.fn(),
+      onMainAction: vi.fn(),
+    },
+  });
 });
