@@ -1,16 +1,10 @@
 import { useCallback, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from './state';
-import {
-  changeJson,
-  changeJsonItem,
-  JsonRoot,
-  JsonSchema,
-  loadJSON,
-  SaveMode,
-} from '../state/files';
+import { changeJson, changeJsonItem, loadJSON, SaveMode } from '../state/files';
 import { SerializedError } from '@reduxjs/toolkit';
 import { AppState } from '../state/store';
 import { memoize } from 'proxy-memoize';
+import { JsonRoot, JsonSchema } from '../../common/invokables/jsons';
 
 type UseFilesRequest = { [key: PropertyKey]: string };
 

@@ -12,8 +12,7 @@ import { appStore } from './state/store';
 import { setCloseRequested } from './state/toolset';
 import { useAppDispatch } from './hooks/state';
 import { useSelectedMod } from './hooks/useSelectedMod';
-import { invokeWithSchema } from './lib/invoke';
-import z from 'zod';
+import { invoke } from './lib/invoke';
 
 function MainActionsHandler() {
   const dispatch = useAppDispatch();
@@ -24,7 +23,7 @@ function MainActionsHandler() {
       console.log('Toolset close confirm', payload);
       if (payload.type === 'toolset_close_requested') {
         if (!selectedMod) {
-          invokeWithSchema(z.unknown(), 'toolset_close_confirm');
+          invoke('toolset/closeWindow', null);
         } else {
           dispatch(setCloseRequested(true));
         }

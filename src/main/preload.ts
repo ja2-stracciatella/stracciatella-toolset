@@ -4,10 +4,10 @@ const invokeChannel = 'invoke';
 const actionsChannel = 'actions';
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  invoke: ({ func, params }: { func: string; params: unknown }) =>
+  invoke: ({ name, input }: { name: string; input: unknown }) =>
     ipcRenderer.invoke(invokeChannel, {
-      func,
-      params,
+      name,
+      input,
     }),
   onMainAction: (callback: (data: any) => void) => {
     ipcRenderer.removeAllListeners(actionsChannel);

@@ -4,9 +4,8 @@ import {
   createSlice,
 } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import { z } from 'zod';
 import { applyReducer, Operation, compare } from 'fast-json-patch';
-import { invokeWithSchema } from '../lib/invoke';
+import { invoke } from '../lib/invoke';
 import { deepEquals } from '@rjsf/utils';
 import {
   buildLoadableMapping,
@@ -14,26 +13,14 @@ import {
   makePersistable,
   Persistable,
 } from './types';
+import {
+  JsonReadInvokable,
+  JsonRoot,
+  JsonSchema,
+} from '../../common/invokables/jsons';
+import { InvokableOutput } from 'src/common/invokables';
 
-const anyJsonObjectSchema = z.object().catchall(z.any());
-const jsonRootSchema = z.union([
-  anyJsonObjectSchema,
-  z.array(anyJsonObjectSchema),
-  z.array(z.array(z.any())),
-]);
-export type JsonRoot = z.infer<typeof jsonRootSchema>;
-const jsonPatchSchema = z.array(
-  z.object({ op: z.any(), path: z.any(), value: z.optional(z.any()) }),
-);
 export type JsonPatch = Array<Operation>;
-const jsonSchemaSchema = z
-  .object({
-    title: z.optional(z.string()),
-    description: z.optional(z.string()),
-    items: z.optional(anyJsonObjectSchema),
-  })
-  .catchall(z.any());
-export type JsonSchema = z.infer<typeof jsonSchemaSchema>;
 
 export type SaveMode = 'patch' | 'replace';
 
@@ -60,20 +47,11 @@ const initialState: FilesState = {
   modified: {},
 };
 
-const invokeResultSchema = z.object({
-  schema: jsonSchemaSchema,
-  vanilla: jsonRootSchema,
-  value: z.union([jsonRootSchema, z.null()]),
-  patch: z.union([jsonPatchSchema, z.null()]),
-});
-
-type InvokeResult = z.infer<typeof invokeResultSchema>;
-
 export const loadJSON = createAsyncThunk(
   'files/load-json',
   async (filename: string) => {
-    return invokeWithSchema(invokeResultSchema, 'open_json_with_schema', {
-      filename,
+    return invoke('json/read', {
+      file: filename,
     });
   },
 );
@@ -95,11 +73,11 @@ export const persistJSON = createAsyncThunk(
     }
 
     const toSynchronize: {
-      filename: string;
+      file: string;
       value: JsonRoot | null;
       patch: JsonPatch | null;
     } = {
-      filename,
+      file: filename,
       value: editorValue,
       patch: null,
     };
@@ -108,11 +86,7 @@ export const persistJSON = createAsyncThunk(
       toSynchronize.patch = compare(vanillaValue, editorValue);
     }
 
-    return await invokeWithSchema(
-      invokeResultSchema,
-      'persist_json',
-      toSynchronize,
-    );
+    return invoke('json/persist', toSynchronize);
   },
 );
 
@@ -170,7 +144,7 @@ const filesSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    const transform = (data: InvokeResult) => {
+    const transform = (data: InvokableOutput<JsonReadInvokable>) => {
       const saveMode: SaveMode = data.value ? 'replace' : 'patch';
       const applied = (data.patch ?? []).reduce(
         applyReducer,

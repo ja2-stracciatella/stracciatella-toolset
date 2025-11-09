@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { List, Button, Typography } from 'antd';
-import { EditableMod } from '../../state/mods';
 import { NewMod } from './NewMod';
 import { FullSizeDialogLayout } from '../FullSizeDialogLayout';
 import { ErrorAlert } from '../ErrorAlert';
 import { useMods } from '../../hooks/useMods';
 import { useSelectedMod } from '../../hooks/useSelectedMod';
 import { FullSizeLoader } from '../FullSizeLoader';
+import { EditableMod } from '../../../common/invokables/mods';
 
 export function SelectMod() {
   const { loading, error: modsError, data, refresh } = useMods();

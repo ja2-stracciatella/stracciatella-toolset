@@ -1,42 +1,25 @@
-import z from 'zod';
 import { ResourceType } from '../lib/resourceType';
-import { invokeWithSchema } from '../lib/invoke';
+import { invoke } from '../lib/invoke';
 import { useCallback, useState } from 'react';
-
-const dirEntrySchema = z.union([
-  z.object({
-    type: z.literal('File'),
-    path: z.string(),
-  }),
-  z.object({
-    type: z.literal('Dir'),
-    path: z.string(),
-  }),
-]);
-
-export type DirEntry = z.infer<typeof dirEntrySchema>;
+import { ResourceEntry } from '../../common/invokables/resources';
 
 const filterFunctions = {
   [ResourceType.Any]: () => true,
-  [ResourceType.Sound]: (e: DirEntry) =>
+  [ResourceType.Sound]: (e: ResourceEntry) =>
     e.path.endsWith('.ogg') || e.path.endsWith('.wav'),
-  [ResourceType.Graphics]: (e: DirEntry) => e.path.endsWith('.sti'),
+  [ResourceType.Graphics]: (e: ResourceEntry) => e.path.endsWith('.sti'),
 };
 
 export function useDirEntries(dir: string, resourceType: ResourceType) {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-  const [data, setData] = useState<DirEntry[] | null>(null);
+  const [data, setData] = useState<ResourceEntry[] | null>(null);
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await invokeWithSchema(
-        z.array(dirEntrySchema),
-        'list_resources',
-        {
-          dir,
-        },
-      );
+      const result = await invoke('resources/list', {
+        path: dir,
+      });
       const filterFn = filterFunctions[resourceType];
       const entries = result.filter((e) => {
         // Always show directories

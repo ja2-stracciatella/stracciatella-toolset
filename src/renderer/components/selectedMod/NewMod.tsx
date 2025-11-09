@@ -3,13 +3,15 @@ import { Button, Typography } from 'antd';
 import { IChangeEvent } from '@rjsf/core';
 import { JsonSchemaForm } from '../JsonSchemaForm';
 import { useAppSelector } from '../../hooks/state';
-import { Mod } from '../../state/mods';
 import { FullSizeDialogLayout } from '../FullSizeDialogLayout';
 import { Space } from 'antd/lib';
 import { ErrorAlert } from '../ErrorAlert';
 import { useSelectedMod } from '../../hooks/useSelectedMod';
-import { MOD_JSON_SCHEMA } from '../../state/mods';
 import { selectStracciatellaHome } from '../../state/selectors';
+import { toJSONSchema } from 'zod';
+import { MOD_SCHEMA, Mod } from '../../../common/invokables/mods';
+
+const MOD_JSON_SCHEMA = toJSONSchema(MOD_SCHEMA);
 
 export function NewMod({ onCancel }: { onCancel: () => void }) {
   const {

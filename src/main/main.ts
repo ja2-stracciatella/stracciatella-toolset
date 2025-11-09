@@ -22,41 +22,29 @@ import {
   REACT_DEVELOPER_TOOLS,
   REDUX_DEVTOOLS,
 } from 'electron-devtools-installer';
-import * as z from 'zod';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import rustInterface from './rust';
 import debug from 'electron-debug';
-import { invokables } from './invokables';
-import { canClose } from './invokables/toolset';
+import { handleInvoke } from './invokables';
+import { toolsetWindowCloseConfirmed } from './invokables/toolset';
 
 rustInterface.initLogger();
 
 const state = rustInterface.newAppState();
-const invokeSchema = z.object({
-  func: z.string(),
-  params: z.union([z.record(z.string(), z.any()), z.null()]),
-});
-const handleInvoke = async (event: IpcMainInvokeEvent, payload: unknown) => {
-  const { func, params } = await invokeSchema.parseAsync(payload);
-  if (invokables[func]) {
-    const p = await invokables[func].params.parseAsync(params);
-    const result = await invokables[func].fn(p);
-    return result;
-  }
-  const result = await rustInterface.invoke(
-    state,
-    JSON.stringify({ func, params }),
-  );
-  return JSON.parse(result);
-};
+
 const sendMainAction = (data: any) => {
   mainWindow?.webContents.send('actions', data);
 };
 
 let mainWindow: BrowserWindow | null = null;
 
-ipcMain.handle('invoke', handleInvoke);
+ipcMain.handle(
+  'invoke',
+  async (event: IpcMainInvokeEvent, payload: unknown) => {
+    return await handleInvoke(state, event, payload);
+  },
+);
 
 if (process.env.NODE_ENV === 'production') {
   sourceMapSupport.install();
@@ -117,7 +105,7 @@ const createWindow = async () => {
   });
 
   mainWindow.on('close', (e) => {
-    if (canClose()) {
+    if (toolsetWindowCloseConfirmed()) {
       return;
     }
     sendMainAction({ type: 'toolset_close_requested' });

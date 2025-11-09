@@ -1,14 +1,13 @@
 import { useCallback } from 'react';
 import {
   createNewMod,
-  EditableMod,
   readSelectedMod,
-  Mod,
   updateSelectedMod,
 } from '../state/mods';
 import { useAppDispatch } from './state';
 import { usePersistable } from './usePersistable';
 import { useLoadable } from './useLoadable';
+import { EditableMod, Mod } from '../../common/invokables/mods';
 
 export function useSelectedMod() {
   const dispatch = useAppDispatch();

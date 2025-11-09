@@ -40,16 +40,16 @@ impl Serialize for Base64Image {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RenderImageFile {
+pub struct Render {
     file: String,
     subimage: Option<usize>,
 }
 
-impl Invokable for RenderImageFile {
+impl Invokable for Render {
     type Output = Base64Image;
 
     fn name() -> &'static str {
-        "render_image_file"
+        "image/render"
     }
 
     fn validate(&self) -> Result<()> {
@@ -136,7 +136,7 @@ impl Invokable for RenderImageFile {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ReadImageMetadata {
+pub struct ReadMetadata {
     file: String,
 }
 
@@ -153,11 +153,11 @@ pub struct ImageFileMetadata {
     images: Vec<SubImageMetadata>,
 }
 
-impl Invokable for ReadImageMetadata {
+impl Invokable for ReadMetadata {
     type Output = ImageFileMetadata;
 
     fn name() -> &'static str {
-        "read_image_metadata"
+        "image/readMetadata"
     }
 
     fn invoke(&self, state: &AppState) -> Result<Self::Output> {
