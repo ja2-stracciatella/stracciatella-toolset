@@ -23,6 +23,8 @@ import {
 import { resourcesListInvokableDefinition } from './resources';
 import { soundReadInvokableDefinition } from './sounds';
 
+export const INVOKE_CHANNEL = 'invoke';
+
 export type InvokableDefinition<
   Category extends string,
   Name extends string,

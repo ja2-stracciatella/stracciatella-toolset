@@ -28,14 +28,11 @@ import rustInterface from './rust';
 import debug from 'electron-debug';
 import { handleInvoke } from './invokables';
 import { toolsetWindowCloseConfirmed } from './invokables/toolset';
+import { sendEventToRenderer } from './events';
 
 rustInterface.initLogger();
 
 const state = rustInterface.newAppState();
-
-const sendMainAction = (data: any) => {
-  mainWindow?.webContents.send('actions', data);
-};
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -108,7 +105,10 @@ const createWindow = async () => {
     if (toolsetWindowCloseConfirmed()) {
       return;
     }
-    sendMainAction({ type: 'toolset_close_requested' });
+    if (!mainWindow) {
+      return;
+    }
+    sendEventToRenderer(mainWindow, 'toolset/closeWindowRequested', null);
     e.preventDefault();
   });
   mainWindow.on('closed', () => {
