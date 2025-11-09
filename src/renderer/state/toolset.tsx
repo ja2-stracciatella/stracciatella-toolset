@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { toJSONSchema, z } from 'zod';
 import { invokeWithSchema } from '../lib/invoke';
 import {
@@ -58,9 +58,15 @@ const toolsetConfigSchema = z.union([
 
 export type ToolsetConfig = z.infer<typeof toolsetConfigSchema>;
 
-type ToolsetState = Persistable<ToolsetConfig>;
+type ToolsetState = {
+  config: Persistable<ToolsetConfig>;
+  closeRequested: boolean;
+};
 
-const initialState: ToolsetState = makePersistable<ToolsetConfig>(null);
+const initialState: ToolsetState = {
+  config: makePersistable<ToolsetConfig>(null),
+  closeRequested: false,
+};
 
 export const readToolsetConfig = createAsyncThunk(
   'toolset-config/read',
@@ -85,21 +91,27 @@ export const updateToolsetConfig = createAsyncThunk(
 const toolsetSlice = createSlice({
   name: 'toolset-config',
   initialState,
-  reducers: {},
+  reducers: {
+    setCloseRequested: (state, action: PayloadAction<boolean>) => {
+      state.closeRequested = action.payload;
+    },
+  },
   extraReducers: (builder) => {
     buildLoadableMapping(
       builder,
       readToolsetConfig,
-      (state) => state,
+      (state) => state.config,
       (config) => config,
     );
     buildPersistableMapping(
       builder,
       updateToolsetConfig,
-      (state) => state,
+      (state) => state.config,
       (config) => config,
     );
   },
 });
 
 export const toolset = toolsetSlice.reducer;
+
+export const { setCloseRequested } = toolsetSlice.actions;

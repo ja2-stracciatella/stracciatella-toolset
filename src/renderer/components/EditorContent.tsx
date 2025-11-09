@@ -2,6 +2,7 @@ import { ExclamationCircleOutlined, SaveOutlined } from '@ant-design/icons';
 import { Button, Flex, Select, Space, Typography } from 'antd';
 import { ReactNode, memo, useCallback, useMemo } from 'react';
 import './EditorContent.css';
+import { useHotkeys } from 'react-hotkeys-hook';
 import { useAppDispatch } from '../hooks/state';
 import { changeSaveMode, persistJSON, SaveMode } from '../state/files';
 import {
@@ -42,7 +43,7 @@ const EditorContentHeader = memo(function EditorContentHeader({
   const saveMode = useFileSaveMode(path);
   const error = useFileError(path);
   const errorStyle = useMemo(() => ({ color: '#9d1e1c' }), []);
-  const saveFileToPath = useCallback(() => {
+  const saveFile = useCallback(() => {
     dispatch(persistJSON(path));
   }, [dispatch, path]);
   const setSaveMode = useCallback(
@@ -57,11 +58,16 @@ const EditorContentHeader = memo(function EditorContentHeader({
     [dispatch, path],
   );
 
+  useHotkeys('ctrl+s', saveFile, {
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
   return (
     <Flex justify="space-between">
       <Space>
         <Button disabled={!modified || !!saving}>
-          <SaveOutlined onClick={saveFileToPath} />
+          <SaveOutlined onClick={saveFile} />
         </Button>
         {error ? (
           <ExclamationCircleOutlined title={error.message} style={errorStyle} />

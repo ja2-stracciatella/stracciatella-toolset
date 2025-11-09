@@ -1,10 +1,11 @@
 import { ReactNode, useMemo } from 'react';
 import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
-import { Layout, Menu, MenuProps, Typography } from 'antd';
+import { Badge, Layout, Menu, MenuProps, Space, Typography } from 'antd';
 
 import './EditorLayout.css';
-import { MENU, MenuItem } from '../EditorRoutes';
+import { Item, MENU, MenuItem } from '../EditorRoutes';
 import { useAppSelector } from '../hooks/state';
+import { useFileModified } from '../hooks/files';
 
 type ItemType = NonNullable<MenuProps['items']>[number];
 
@@ -12,6 +13,20 @@ const { Header, Sider } = Layout;
 
 interface LayoutProps {
   children: ReactNode;
+}
+
+function MenuItemLabel({ item }: { item: Item }) {
+  const modified = useFileModified(item.file ?? '');
+  if (modified) {
+    return (
+      <Space size="small">
+        {item.label}
+        <Badge dot color="rgba(255,255,255,0.65)" />
+      </Space>
+    );
+  }
+
+  return item.label;
 }
 
 function routeToItem(
@@ -23,7 +38,7 @@ function routeToItem(
   if (menuItem.type === 'Item') {
     return {
       key: path,
-      label: menuItem.label,
+      label: <MenuItemLabel item={menuItem} />,
       onClick: () => navigate(path),
     };
   }

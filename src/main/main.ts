@@ -28,6 +28,7 @@ import { resolveHtmlPath } from './util';
 import rustInterface from './rust';
 import debug from 'electron-debug';
 import { invokables } from './invokables';
+import { canClose } from './invokables/toolset';
 
 rustInterface.initLogger();
 
@@ -48,6 +49,9 @@ const handleInvoke = async (event: IpcMainInvokeEvent, payload: unknown) => {
     JSON.stringify({ func, params }),
   );
   return JSON.parse(result);
+};
+const sendMainAction = (data: any) => {
+  mainWindow?.webContents.send('actions', data);
 };
 
 let mainWindow: BrowserWindow | null = null;
@@ -112,6 +116,13 @@ const createWindow = async () => {
     }
   });
 
+  mainWindow.on('close', (e) => {
+    if (canClose()) {
+      return;
+    }
+    sendMainAction({ type: 'toolset_close_requested' });
+    e.preventDefault();
+  });
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
