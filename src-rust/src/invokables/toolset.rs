@@ -1,4 +1,4 @@
-use crate::{config::PartialToolsetConfig, invokables::Invokable, state};
+use crate::{cache, config::PartialToolsetConfig, invokables::Invokable, state};
 use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
 use stracciatella::{mods::ModManager, vfs::Vfs};
@@ -21,7 +21,7 @@ impl Invokable for ToolsetReadConfig {
 
     fn invoke(&self, state: &state::AppState) -> Result<Self::Output> {
         let state = state.read();
-        Ok(match *state {
+        let mut config = match *state {
             state::ToolsetState::Configured { ref config, .. } => SerializableToolsetConfig {
                 partial: false,
                 config: config.clone().into(),
@@ -30,14 +30,29 @@ impl Invokable for ToolsetReadConfig {
                 partial: true,
                 config: config.clone(),
             },
-        })
+        };
+
+        // Update JSON cache if necessary
+        let json_cache_dir = cache::get_json_cache_dir()
+            .map(|v| v.to_string_lossy().to_string())
+            .context("failed to determine JSON cache dir")?;
+        let uses_json_cache = config.config.stracciatella_install_dir.is_none()
+            || config.config.stracciatella_install_dir.as_ref() == Some(&json_cache_dir);
+
+        if uses_json_cache {
+            cache::update_json_cache().context("failed to update JSON cache")?;
+        }
+        // Set default vanilla game directory to JSON cache directory
+        if uses_json_cache {
+            config.config.stracciatella_install_dir = Some(json_cache_dir);
+        }
+
+        Ok(config)
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolsetUpdateConfig {
-    config: PartialToolsetConfig,
-}
+pub struct ToolsetUpdateConfig(PartialToolsetConfig);
 
 impl Invokable for ToolsetUpdateConfig {
     type Output = SerializableToolsetConfig;
@@ -48,7 +63,7 @@ impl Invokable for ToolsetUpdateConfig {
 
     fn invoke(&self, state: &state::AppState) -> Result<Self::Output> {
         {
-            if let Some(config) = self.config.to_full_config() {
+            if let Some(config) = self.0.to_full_config() {
                 // Test toolset config for errors
                 let engine_options = config.to_engine_options();
                 let mod_manager = ModManager::new_unchecked(&engine_options);
@@ -65,7 +80,7 @@ impl Invokable for ToolsetUpdateConfig {
                 }
             } else {
                 let mut state = state.write();
-                *state = state::ToolsetState::not_configured(self.config.clone());
+                *state = state::ToolsetState::not_configured(self.0.clone());
             }
         }
 

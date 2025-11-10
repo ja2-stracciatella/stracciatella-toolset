@@ -4,7 +4,9 @@ use invokables::Invokables;
 use neon::prelude::*;
 use simplelog::*;
 
+mod cache;
 mod config;
+mod dirs;
 mod invokables;
 mod state;
 
