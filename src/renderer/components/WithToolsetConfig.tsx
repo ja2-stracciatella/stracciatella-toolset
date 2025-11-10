@@ -12,6 +12,7 @@ import {
   FULL_TOOLSET_CONFIG_SCHEMA,
   PartialToolsetConfig,
 } from '../../common/invokables/toolset';
+import jsonSchemaValidator from '@rjsf/validator-ajv8';
 
 const CONFIG_JSON_SCHEMA = toJSONSchema(FULL_TOOLSET_CONFIG_SCHEMA);
 const CONFIG_UI_SCHEMA = {
@@ -50,7 +51,16 @@ function Configure() {
 
   useEffect(() => {
     if (data) {
-      setImmediate(() => setState(data.config));
+      setTimeout(() => {
+        setState(data.config);
+
+        setValid(
+          !jsonSchemaValidator.rawValidation(
+            CONFIG_JSON_SCHEMA as any,
+            data.config,
+          ).validationError,
+        );
+      }, 0);
     }
   }, [data]);
 

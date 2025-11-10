@@ -1,6 +1,7 @@
 {
   "description": "A foundation for scalable desktop apps",
   "license": "MIT",
+  "version": "0.22.0",
   "main": "./.erb/dll/main.bundle.dev.js",
   "scripts": {
     "build": "concurrently \"npm run build:main\" \"npm run build:renderer\"",

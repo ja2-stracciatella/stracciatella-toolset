@@ -3,13 +3,15 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use stracciatella::config::{find_stracciatella_home, EngineOptions};
 
+use crate::dirs::project_dirs;
+
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PartialToolsetConfig {
-    stracciatella_home: Option<String>,
-    vanilla_game_dir: Option<String>,
-    stracciatella_install_dir: Option<String>,
-    last_selected_mod: Option<String>,
+    pub stracciatella_home: Option<String>,
+    pub vanilla_game_dir: Option<String>,
+    pub stracciatella_install_dir: Option<String>,
+    pub last_selected_mod: Option<String>,
 }
 
 impl PartialToolsetConfig {
@@ -54,9 +56,7 @@ pub struct ToolsetConfig {
 
 impl ToolsetConfig {
     pub fn path() -> Result<PathBuf> {
-        let project_dirs =
-            directories::ProjectDirs::from("io", "ja2-stracciatella", "stracciatella-toolset")
-                .ok_or_else(|| anyhow!("could not determine toolset config directory"))?;
+        let project_dirs = project_dirs()?;
         let config_dir = project_dirs.config_dir();
 
         Ok(config_dir.join("toolset-config.json"))

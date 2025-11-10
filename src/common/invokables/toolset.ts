@@ -26,7 +26,7 @@ export const FULL_TOOLSET_CONFIG_SCHEMA = z.object({
   stracciatellaInstallDir: z.string().min(1).meta({
     title: 'JA2 Stracciatella Directory',
     description:
-      'This should point at your JA2 Straccciatella install directory. It is used to read the JSON files included with the game.',
+      'This should be auto-populated to point at a downloaded version of the JA2 Stracciatella JSON files. It only needs to be changed if you want to use a different version of the JSON files, e.g. for development.',
   }),
   lastSelectedMod: z.nullable(z.string().min(1)).meta({
     title: 'Last Selected Mod',
