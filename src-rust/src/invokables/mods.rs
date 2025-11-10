@@ -41,7 +41,7 @@ impl ModSettings {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EditableMod {
     #[serde(flatten)]
     m: Mod,
@@ -49,13 +49,13 @@ pub struct EditableMod {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ReadAvailableMods;
+pub struct ListAvailable;
 
-impl Invokable for ReadAvailableMods {
+impl Invokable for ListAvailable {
     type Output = Vec<Mod>;
 
     fn name() -> &'static str {
-        "read_available_mods"
+        "mods/listAvailable"
     }
 
     fn invoke(&self, state: &state::AppState) -> anyhow::Result<Self::Output> {
@@ -72,17 +72,17 @@ impl Invokable for ReadAvailableMods {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ReadEditableMods;
+pub struct ListEditable;
 
-impl Invokable for ReadEditableMods {
+impl Invokable for ListEditable {
     type Output = Vec<EditableMod>;
 
     fn name() -> &'static str {
-        "read_editable_mods"
+        "mods/listEditable"
     }
 
     fn invoke(&self, state: &state::AppState) -> anyhow::Result<Self::Output> {
-        let available_mods = (ReadAvailableMods {})
+        let available_mods = (ListAvailable {})
             .invoke(state)
             .context("failed to get available mods")?;
         let state = state.read();
@@ -112,13 +112,13 @@ impl Invokable for ReadEditableMods {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ReadSelectedMod;
+pub struct ReadSelected;
 
-impl Invokable for ReadSelectedMod {
+impl Invokable for ReadSelected {
     type Output = Option<Mod>;
 
     fn name() -> &'static str {
-        "read_selected_mod"
+        "mod/readSelected"
     }
 
     fn invoke(&self, state: &state::AppState) -> anyhow::Result<Self::Output> {
@@ -131,15 +131,13 @@ impl Invokable for ReadSelectedMod {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UpdateSelectedMod {
-    mod_id: String,
-}
+pub struct UpdateSelected(EditableMod);
 
-impl Invokable for UpdateSelectedMod {
+impl Invokable for UpdateSelected {
     type Output = Mod;
 
     fn name() -> &'static str {
-        "update_selected_mod"
+        "mod/updateSelected"
     }
 
     fn invoke(&self, state: &state::AppState) -> anyhow::Result<Self::Output> {
@@ -152,7 +150,7 @@ impl Invokable for UpdateSelectedMod {
                 ref mut opened_mod,
                 ..
             } => {
-                let mod_to_open = state::OpenedMod::new(config, mod_manager, &self.mod_id)
+                let mod_to_open = state::OpenedMod::new(config, mod_manager, &self.0.m.id)
                     .context("failed to initialize open mod")?;
                 let m = Mod::from_stracciatella(&mod_to_open.m);
                 *opened_mod = Some(mod_to_open);
@@ -164,18 +162,18 @@ impl Invokable for UpdateSelectedMod {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct CreateNewMod {
+pub struct Create {
     pub id: String,
     pub name: String,
     pub description: Option<String>,
     pub version: String,
 }
 
-impl Invokable for CreateNewMod {
+impl Invokable for Create {
     type Output = Mod;
 
     fn name() -> &'static str {
-        "create_new_mod"
+        "mod/create"
     }
 
     fn invoke(&self, state: &state::AppState) -> Result<Self::Output> {

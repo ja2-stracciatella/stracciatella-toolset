@@ -54,26 +54,26 @@ pub struct JsonFileWithSchema {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OpenJsonWithSchema {
-    filename: Filename,
+pub struct Read {
+    file: Filename,
 }
 
-impl Invokable for OpenJsonWithSchema {
+impl Invokable for Read {
     type Output = JsonFileWithSchema;
 
     fn name() -> &'static str {
-        return "open_json_with_schema";
+        return "json/read";
     }
 
     fn validate(&self) -> Result<()> {
-        self.filename
+        self.file
             .validate()
             .context("failed to validate filename")?;
         Ok(())
     }
 
     fn invoke(&self, state: &state::AppState) -> Result<Self::Output> {
-        let filename = &self.filename;
+        let filename = &self.file;
         let state = state.read();
         let schema_manager = state
             .try_schema_manager()
@@ -118,28 +118,28 @@ impl Invokable for OpenJsonWithSchema {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PersistJson {
-    filename: Filename,
+pub struct Persist {
+    file: Filename,
     #[serde(flatten)]
     values: Persisted,
 }
 
-impl Invokable for PersistJson {
+impl Invokable for Persist {
     type Output = JsonFileWithSchema;
 
     fn name() -> &'static str {
-        "persist_json"
+        "json/persist"
     }
 
     fn validate(&self) -> Result<()> {
-        self.filename
+        self.file
             .validate()
             .context("failed to validate filename")?;
         Ok(())
     }
 
     fn invoke(&self, app_state: &state::AppState) -> Result<Self::Output> {
-        let filename = &self.filename;
+        let filename = &self.file;
         let state = app_state.read();
         let selected_mod = state
             .try_selected_mod()
@@ -167,8 +167,8 @@ impl Invokable for PersistJson {
             delete_file(&path).context("failed to delete patch value")?;
         }
 
-        Ok(OpenJsonWithSchema {
-            filename: self.filename.clone(),
+        Ok(Read {
+            file: self.file.clone(),
         }
         .invoke(app_state)
         .context("failed to get value after update")?)

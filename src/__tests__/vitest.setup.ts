@@ -19,7 +19,7 @@ beforeAll(() => {
     writable: false,
     value: {
       invoke: vi.fn(),
-      onMainAction: vi.fn(),
+      onMainEvent: vi.fn(),
     },
   });
 });

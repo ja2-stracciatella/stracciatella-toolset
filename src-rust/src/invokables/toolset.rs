@@ -10,13 +10,13 @@ pub struct SerializableToolsetConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ReadToolsetConfig;
+pub struct ToolsetReadConfig;
 
-impl Invokable for ReadToolsetConfig {
+impl Invokable for ToolsetReadConfig {
     type Output = SerializableToolsetConfig;
 
     fn name() -> &'static str {
-        "read_toolset_config"
+        "toolset/readConfig"
     }
 
     fn invoke(&self, state: &state::AppState) -> Result<Self::Output> {
@@ -35,15 +35,15 @@ impl Invokable for ReadToolsetConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UpdateToolsetConfig {
+pub struct ToolsetUpdateConfig {
     config: PartialToolsetConfig,
 }
 
-impl Invokable for UpdateToolsetConfig {
+impl Invokable for ToolsetUpdateConfig {
     type Output = SerializableToolsetConfig;
 
     fn name() -> &'static str {
-        "update_toolset_config"
+        "toolset/updateConfig"
     }
 
     fn invoke(&self, state: &state::AppState) -> Result<Self::Output> {
@@ -69,7 +69,7 @@ impl Invokable for UpdateToolsetConfig {
             }
         }
 
-        (ReadToolsetConfig {})
+        (ToolsetReadConfig {})
             .invoke(state)
             .context("failed to get toolset config after update")
     }

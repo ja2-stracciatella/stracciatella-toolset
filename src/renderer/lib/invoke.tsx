@@ -1,22 +1,26 @@
-// import { invoke, InvokeArgs } from '@tauri-apps/api/tauri';
+import {
+  AnyInvokableName,
+  getInvokableDefinitionByName,
+  InvokableFromName,
+  InvokableInput,
+  InvokableOutput,
+} from '../../common/invokables';
 import { z } from 'zod';
 
-function invoke(func: string, params: Record<string, unknown> | null): unknown {
-  return window.electronAPI.invoke({ func, params });
-}
-
-export async function invokeWithSchema<T>(
-  schema: z.ZodType<T>,
-  func: string,
-  params: Record<string, unknown> | null = null,
-): Promise<T> {
+export async function invoke<Name extends AnyInvokableName>(
+  name: Name,
+  input: InvokableInput<InvokableFromName<Name>>,
+): Promise<InvokableOutput<InvokableFromName<Name>>> {
   try {
-    const res = await invoke(func, params);
-    return schema.parse(res);
+    const res = await window.electronAPI.invoke({ name, input });
+    const definition = getInvokableDefinitionByName(name);
+    const schema = definition.outputSchema;
+    const output = await schema.parseAsync(res);
+    return output as InvokableOutput<InvokableFromName<Name>>;
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new Error(
-        `failed to parse response from invoke ${func} with params ${JSON.stringify(params)}: ${error.message}`,
+        `failed to parse response from invoke ${name} with input ${JSON.stringify(input)}: ${error.message}`,
       );
     }
     throw error;

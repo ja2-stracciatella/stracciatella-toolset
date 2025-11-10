@@ -1,14 +1,16 @@
 import { PauseCircleOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import { Button } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
-import { readSound } from '../../lib/readSound';
+import { invoke } from '../../lib/invoke';
 
 export function SoundPreview({ path }: { path: string }) {
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
   const togglePlay = useCallback(async () => {
     if (!audio) {
       // load audio
-      const src = await readSound(path);
+      const src = await invoke('sound/read', {
+        file: path,
+      });
       const a = new Audio(src);
 
       a.onpause = () => setAudio(null);

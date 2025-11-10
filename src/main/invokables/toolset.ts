@@ -1,17 +1,21 @@
 import { app } from 'electron';
 import z from 'zod';
+import { MainJsInvokable } from '.';
+import { toolsetCloseWindowInvokableDefinition } from '../../common/invokables/toolset';
 
-let closeConfirmed = false;
+let windowCloseConfirmed = false;
 
-export const confirmCloseSchema = z.unknown();
+export const toolsetCloseWindowMainJsInvokable: MainJsInvokable<
+  typeof toolsetCloseWindowInvokableDefinition
+> = {
+  name: 'toolset/closeWindow',
+  inputSchema: z.null(),
+  func: async () => {
+    windowCloseConfirmed = true;
+    app.quit();
+  },
+};
 
-export type ConfirmCloseParams = z.infer<typeof confirmClose>;
-
-export async function confirmClose(): Promise<void> {
-  closeConfirmed = true;
-  app.quit();
-}
-
-export function canClose() {
-  return closeConfirmed;
+export function toolsetWindowCloseConfirmed() {
+  return windowCloseConfirmed;
 }

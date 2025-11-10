@@ -7,25 +7,25 @@ use stracciatella::{unicode::Nfc, vfs::VfsLayer};
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Hash)]
 #[serde(tag = "type")]
-pub enum DirEntry {
+pub enum ResourceEntry {
     Dir { path: String },
     File { path: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ListResources {
-    dir: String,
+pub struct List {
+    path: String,
 }
 
-impl Invokable for ListResources {
-    type Output = HashSet<DirEntry>;
+impl Invokable for List {
+    type Output = HashSet<ResourceEntry>;
 
     fn name() -> &'static str {
-        "list_resources"
+        "resources/list"
     }
 
     fn validate(&self) -> anyhow::Result<()> {
-        if self.dir.contains("..") {
+        if self.path.contains("..") {
             return Err(anyhow!("must not contain `..`"));
         }
         Ok(())
@@ -36,21 +36,21 @@ impl Invokable for ListResources {
         let selected_mod = state.try_selected_mod()?;
         let mut result = HashSet::new();
 
-        let candidates = selected_mod.vfs.read_dir(&Nfc::caseless(&self.dir)).ok();
+        let candidates = selected_mod.vfs.read_dir(&Nfc::caseless(&self.path)).ok();
         for candidate in candidates.iter().flatten() {
-            let path = if self.dir.is_empty() {
+            let path = if self.path.is_empty() {
                 candidate.clone()
             } else {
-                Nfc::caseless(&format!("{}/{}", self.dir, candidate))
+                Nfc::caseless(&format!("{}/{}", self.path, candidate))
             };
             // Workaround to determine whether the candidate is a file
             let is_file = selected_mod.vfs.open(&path).is_ok();
             let entry = if is_file {
-                DirEntry::File {
+                ResourceEntry::File {
                     path: candidate.to_string().to_lowercase(),
                 }
             } else {
-                DirEntry::Dir {
+                ResourceEntry::Dir {
                     path: candidate.to_string().to_lowercase(),
                 }
             };
@@ -58,17 +58,17 @@ impl Invokable for ListResources {
             result.insert(entry);
         }
 
-        let dir = selected_mod.data_path(&self.dir);
+        let dir = selected_mod.data_path(&self.path);
         for entry in fs::read_dir(&dir).into_iter().flatten() {
             let entry = entry.context("failed to read dir entry")?;
             let candidate = Nfc::from(entry.file_name().to_string_lossy().into_owned());
 
             let entry = if entry.path().is_file() {
-                DirEntry::File {
+                ResourceEntry::File {
                     path: candidate.to_string().to_lowercase(),
                 }
             } else {
-                DirEntry::Dir {
+                ResourceEntry::Dir {
                     path: candidate.to_string().to_lowercase(),
                 }
             };

@@ -1,22 +1,15 @@
 import { WidgetProps } from '@rjsf/utils';
 import { Button, Col, Input, Row, Space } from 'antd';
 import { useCallback, useState } from 'react';
-import { invokeWithSchema } from '../../lib/invoke';
-import z from 'zod';
+import { invoke } from '../../lib/invoke';
 
 export function HostPathWidget({ value, onChange }: WidgetProps) {
   const [modalIsOpen, setModalOpen] = useState(false);
   const openModal = useCallback(async () => {
     setModalOpen(true);
-    const s = await invokeWithSchema(
-      z.object({
-        path: z.union([z.string(), z.null()]),
-      }),
-      'show_open_dialog',
-      {
-        type: 'open-directory',
-      },
-    );
+    const s = await invoke('dialog/showOpenDialog', {
+      type: 'open-directory',
+    });
     if (s.path) {
       onChange(s.path);
     }

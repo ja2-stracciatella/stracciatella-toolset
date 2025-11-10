@@ -18,8 +18,9 @@ import { ErrorAlert } from '../ErrorAlert';
 import { SoundPreview } from './SoundPreview';
 import { useImageMetadata } from '../../hooks/useImageMetadata';
 import { StiPreview } from './StiPreview';
-import { DirEntry, useDirEntries } from '../../hooks/useDirEntries';
+import { useDirEntries } from '../../hooks/useDirEntries';
 import { ResourceType, resourceTypeFromFilename } from '../../lib/resourceType';
+import { ResourceEntry } from '../../../common/invokables/resources';
 
 const Breadcrumbs = memo(function Breadcrumbs({
   currentDir,
@@ -117,7 +118,7 @@ const Preview = memo(function Preview({
   entry,
 }: {
   dir: string;
-  entry: DirEntry | null;
+  entry: ResourceEntry | null;
 }) {
   if (!entry || entry.type !== 'File') {
     return <span>Select file for preview</span>;
@@ -145,7 +146,9 @@ export function ResourceSelectorModal({
   onCancel: () => unknown;
 }) {
   const [currentDir, setCurrentDir] = useState(initialDir ?? []);
-  const [selectedEntry, setSelectedEntry] = useState<DirEntry | null>(null);
+  const [selectedEntry, setSelectedEntry] = useState<ResourceEntry | null>(
+    null,
+  );
   const switchDir = useCallback((dir: string[]) => {
     setCurrentDir(dir);
     setSelectedEntry(null);
@@ -170,7 +173,7 @@ export function ResourceSelectorModal({
     onCancel();
   }, [onCancel]);
   const onItemClick = useCallback(
-    (entry: DirEntry) => {
+    (entry: ResourceEntry) => {
       const newDir = [...currentDir, entry.path];
 
       if (entry.type === 'Dir') {
@@ -187,7 +190,7 @@ export function ResourceSelectorModal({
     [currentDir, onSelect, selectedEntry, switchDir],
   );
   const renderItem = useCallback(
-    (entry: DirEntry) => {
+    (entry: ResourceEntry) => {
       return (
         <List.Item>
           <Button

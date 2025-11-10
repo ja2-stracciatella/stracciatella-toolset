@@ -1,7 +1,6 @@
 use crate::{invokables::Invokable, state};
 use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
-use std::io::Read;
 
 #[derive(Debug)]
 pub enum Base64Sound {
@@ -28,15 +27,15 @@ impl Serialize for Base64Sound {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ReadSound {
+pub struct Read {
     file: String,
 }
 
-impl Invokable for ReadSound {
+impl Invokable for Read {
     type Output = Base64Sound;
 
     fn name() -> &'static str {
-        "read_sound"
+        "sound/read"
     }
 
     fn validate(&self) -> Result<()> {

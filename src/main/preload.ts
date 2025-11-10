@@ -1,16 +1,18 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 const invokeChannel = 'invoke';
-const actionsChannel = 'actions';
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  invoke: ({ func, params }: { func: string; params: unknown }) =>
+  invoke: ({ name, input }: { name: string; input: unknown }) =>
     ipcRenderer.invoke(invokeChannel, {
-      func,
-      params,
+      name,
+      input,
     }),
-  onMainAction: (callback: (data: any) => void) => {
-    ipcRenderer.removeAllListeners(actionsChannel);
-    ipcRenderer.on(actionsChannel, (_, data) => callback(data));
+  onMainEvent: (
+    channel: `event/${string}`,
+    callback: (data: unknown) => void,
+  ) => {
+    ipcRenderer.removeAllListeners(channel);
+    ipcRenderer.on(channel, (_, data) => callback(data));
   },
 });

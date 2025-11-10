@@ -4,12 +4,12 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
-mod images;
+mod image;
 mod json;
 mod mods;
 mod resources;
 mod sounds;
-mod toolset_config;
+mod toolset;
 
 pub trait Invokable: DeserializeOwned {
     type Output: Serialize;
@@ -37,19 +37,19 @@ impl Invokables {
             executable: HashMap::new(),
         };
         // All invokables must be registered here
-        new.register::<images::RenderImageFile>();
-        new.register::<images::ReadImageMetadata>();
-        new.register::<json::OpenJsonWithSchema>();
-        new.register::<json::PersistJson>();
-        new.register::<mods::ReadAvailableMods>();
-        new.register::<mods::ReadEditableMods>();
-        new.register::<mods::ReadSelectedMod>();
-        new.register::<mods::UpdateSelectedMod>();
-        new.register::<mods::CreateNewMod>();
-        new.register::<resources::ListResources>();
-        new.register::<sounds::ReadSound>();
-        new.register::<toolset_config::ReadToolsetConfig>();
-        new.register::<toolset_config::UpdateToolsetConfig>();
+        new.register::<image::Render>();
+        new.register::<image::ReadMetadata>();
+        new.register::<json::Read>();
+        new.register::<json::Persist>();
+        new.register::<mods::ListAvailable>();
+        new.register::<mods::ListEditable>();
+        new.register::<mods::ReadSelected>();
+        new.register::<mods::UpdateSelected>();
+        new.register::<mods::Create>();
+        new.register::<resources::List>();
+        new.register::<sounds::Read>();
+        new.register::<toolset::ToolsetReadConfig>();
+        new.register::<toolset::ToolsetUpdateConfig>();
 
         new
     }

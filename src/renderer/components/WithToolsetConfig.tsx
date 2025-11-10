@@ -1,17 +1,19 @@
 import { PropsWithChildren, useCallback, useEffect, useState } from 'react';
 import { Button, Typography } from 'antd';
 import { IChangeEvent } from '@rjsf/core';
-import {
-  PartialToolsetConfig,
-  FULL_TOOLSET_CONFIG_JSON_SCHEMA,
-} from '../state/toolset';
 import { FullSizeLoader } from './FullSizeLoader';
 import { JsonSchemaForm } from './JsonSchemaForm';
 import { FullSizeDialogLayout } from './FullSizeDialogLayout';
 import { ErrorAlert } from './ErrorAlert';
 import { HostPathWidget } from './form/HostPathWidget';
 import { useToolsetConfig } from '../hooks/useToolsetConfig';
+import { toJSONSchema } from 'zod';
+import {
+  FULL_TOOLSET_CONFIG_SCHEMA,
+  PartialToolsetConfig,
+} from '../../common/invokables/toolset';
 
+const CONFIG_JSON_SCHEMA = toJSONSchema(FULL_TOOLSET_CONFIG_SCHEMA);
 const CONFIG_UI_SCHEMA = {
   stracciatellaHome: {
     'ui:widget': HostPathWidget,
@@ -63,7 +65,7 @@ function Configure() {
       </Typography.Paragraph>
       <ErrorAlert error={persistingError} />
       <JsonSchemaForm
-        schema={FULL_TOOLSET_CONFIG_JSON_SCHEMA}
+        schema={CONFIG_JSON_SCHEMA}
         content={state}
         onChange={change}
         onSubmit={submit}

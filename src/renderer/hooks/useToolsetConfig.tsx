@@ -2,11 +2,8 @@ import { useCallback } from 'react';
 import { useAppDispatch } from './state';
 import { useLoadable } from './useLoadable';
 import { usePersistable } from './usePersistable';
-import {
-  readToolsetConfig,
-  PartialToolsetConfig,
-  updateToolsetConfig,
-} from '../state/toolset';
+import { readToolsetConfig, updateToolsetConfig } from '../state/toolset';
+import { PartialToolsetConfig } from '../../common/invokables/toolset';
 
 export function useToolsetConfig() {
   const dispatch = useAppDispatch();

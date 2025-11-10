@@ -1,18 +1,6 @@
 import { useCallback, useState } from 'react';
-import { z } from 'zod';
-import { invokeWithSchema } from '../lib/invoke';
-
-const subImageSchema = z.object({
-  width: z.number(),
-  height: z.number(),
-  offset_x: z.number(),
-  offset_y: z.number(),
-});
-const imageMetadataSchema = z.object({
-  images: z.array(subImageSchema),
-});
-
-type ImageMetadata = z.infer<typeof imageMetadataSchema>;
+import { invoke } from '../lib/invoke';
+import { ImageMetadata } from '../../common/invokables/images';
 
 export function useImageMetadata(file: string | null) {
   const [loading, setLoading] = useState<boolean>(false);
@@ -24,13 +12,9 @@ export function useImageMetadata(file: string | null) {
     }
     setLoading(true);
     try {
-      const m = await invokeWithSchema(
-        imageMetadataSchema,
-        'read_image_metadata',
-        {
-          file,
-        },
-      );
+      const m = await invoke('image/readMetadata', {
+        file,
+      });
       setData(m);
     } catch (e: any) {
       setError(e);
