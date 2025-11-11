@@ -72,23 +72,6 @@ export function useFilesSchema<R extends UseFilesRequest>(
   return schemas;
 }
 
-export function useFilesModified<R extends UseFilesRequest>(
-  files: R,
-): UseFilesResult<R, boolean | null> {
-  const modified = useAppFilesProxySelector(
-    function selectFilesModified(s) {
-      const modified: { [key in keyof R]: boolean | null } = {} as any;
-      for (const key in files) {
-        modified[key] = s.files.modified[files[key]] ?? null;
-      }
-      return modified;
-    },
-    [files],
-  );
-
-  return modified;
-}
-
 export function useFilesJson<R extends UseFilesRequest>(
   files: R,
 ): {
@@ -101,7 +84,7 @@ export function useFilesJson<R extends UseFilesRequest>(
     function selectFilesJson(s) {
       const values: { [key in keyof R]: JsonRoot | null } = {} as any;
       for (const key in files) {
-        values[key] = s.files.open[files[key]] ?? null;
+        values[key] = s.files.open[files[key]]?.value ?? null;
       }
       return values;
     },
@@ -147,7 +130,7 @@ export function useFileSaving(filename: string): boolean | null {
 
 export function useFileSaveMode(filename: string): SaveMode | null {
   return useAppSelector(function selectFileSaveMode(s) {
-    return s.files.saveMode[filename] ?? null;
+    return s.files.open[filename]?.saveMode ?? null;
   });
 }
 
@@ -165,7 +148,7 @@ export function useFileSchema(filename: string): JsonSchema | null {
 
 export function useFileModified(filename: string): boolean | null {
   return useAppSelector(function selectFileModified(s) {
-    return s.files.modified[filename] ?? null;
+    return s.files.open[filename]?.modified ?? null;
   });
 }
 
@@ -194,7 +177,7 @@ export function useFileJson(
 
   return [
     useAppSelector((s) => {
-      return s.files.open[filename] ?? null;
+      return s.files.open[filename]?.value ?? null;
     }),
     update,
   ];
@@ -208,12 +191,20 @@ export function useFileJsonItemSchema(
   return schema.items ?? null;
 }
 
+export function useFileJsonNumberOfItems(filename: string): number | null {
+  const [arr] = useFileJson(filename);
+  if (!arr) return null;
+  if (!Array.isArray(arr)) return null;
+
+  return arr.length;
+}
+
 export function useFileJsonItem(
   filename: string,
   index: number,
 ): [Record<string, any> | null, (value: Record<string, any>) => void] {
   const dispatch = useAppDispatch();
-  const { values } = useFilesJson({ f: filename });
+  const [arr] = useFileJson(filename);
   const update = useCallback(
     (value: Record<string, any>) => {
       dispatch(
@@ -226,8 +217,8 @@ export function useFileJsonItem(
     },
     [dispatch, filename, index],
   );
-  if (!values.f) return [null, update];
-  if (!Array.isArray(values.f)) return [null, update];
+  if (!arr) return [null, update];
+  if (!Array.isArray(arr)) return [null, update];
 
-  return [values.f[index] ?? null, update];
+  return [arr[index] ?? null, update];
 }

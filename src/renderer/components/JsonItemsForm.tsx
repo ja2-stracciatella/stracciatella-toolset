@@ -13,7 +13,7 @@ import {
   useFileError,
   useFileJsonItem,
   useFileJsonItemSchema,
-  useFileJson,
+  useFileJsonNumberOfItems,
 } from '../hooks/files';
 import { ErrorAlert } from './ErrorAlert';
 
@@ -155,8 +155,7 @@ export const JsonItemsForm = memo(function JsonItemsForm({
 }: JsonItemsFormProps) {
   const loading = useFileLoading(file);
   const error = useFileError(file);
-  const [content] = useFileJson(file);
-  const numItems = useMemo(() => content?.length ?? null, [content]);
+  const numItems = useFileJsonNumberOfItems(file);
 
   if (error) {
     return <ErrorAlert error={error} />;

@@ -53,6 +53,8 @@ export const jsonReadInvokableDefinition: JsonReadInvokable = {
 
 const PERSIST_INPUT_SCHEMA = z.object({
   file: z.string(),
+  value: z.nullable(JSON_ROOT_SCHEMA),
+  patch: z.nullable(JSON_PATCH_SCHEMA),
 });
 
 export type JsonPersistInvokable = InvokableDefinition<

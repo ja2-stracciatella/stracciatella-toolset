@@ -33,18 +33,20 @@ interface JsonFile {
   applied: JsonRoot | null;
 }
 
+interface Open {
+  modified: boolean;
+  saveMode: SaveMode;
+  value: JsonRoot;
+}
+
 interface FilesState {
-  disk: Record<string, Persistable<JsonFile>>;
-  open: Record<string, JsonRoot>;
-  saveMode: Record<string, SaveMode>;
-  modified: Record<string, boolean>;
+  disk: Record<string, Persistable<JsonFile> | undefined>;
+  open: Record<string, Open | undefined>;
 }
 
 const initialState: FilesState = {
   disk: {},
-  saveMode: {},
   open: {},
-  modified: {},
 };
 
 export const loadJSON = createAsyncThunk(
@@ -60,17 +62,18 @@ export const persistJSON = createAsyncThunk(
   'files/persist-json',
   async (filename: string, { getState }) => {
     const { files } = getState() as { files: FilesState };
-
-    const editorValue = files.open[filename] ?? null;
-    const mode = files.saveMode[filename] ?? null;
-    if (editorValue === null || mode === null) {
+    const open = files.open[filename];
+    if (!open) {
       throw new Error('tried to save a non-open file');
     }
-
-    const vanillaValue = files.disk[filename]?.data?.vanilla ?? null;
-    if (vanillaValue === null) {
+    const disk = files.disk[filename]?.data ?? null;
+    if (!disk) {
       throw new Error('tried to save a non-loaded file');
     }
+
+    const editorValue = open.value;
+    const mode = open.saveMode;
+    const vanillaValue = disk.vanilla ?? null;
 
     const toSynchronize: {
       file: string;
@@ -78,12 +81,13 @@ export const persistJSON = createAsyncThunk(
       patch: JsonPatch | null;
     } = {
       file: filename,
-      value: editorValue,
+      value: null,
       patch: null,
     };
     if (mode == 'patch') {
-      toSynchronize.value = null;
       toSynchronize.patch = compare(vanillaValue, editorValue);
+    } else {
+      toSynchronize.value = editorValue;
     }
 
     return invoke('json/persist', toSynchronize);
@@ -101,12 +105,15 @@ function getDiskState(
 }
 
 function isModified(files: FilesState, filename: string) {
-  const diskSaveMode = files.disk[filename]?.data?.saveMode ?? null;
-  const diskValue = files.disk[filename]?.data?.applied ?? null;
-  const value = files.open[filename] ?? null;
-  const saveMode = files.saveMode[filename] ?? null;
+  const open = files.open[filename];
+  const disk = files.disk[filename]?.data;
+  if (!open || !disk) {
+    return false;
+  }
 
-  return diskSaveMode != saveMode || !deepEquals(diskValue, value);
+  return (
+    disk.saveMode != open.saveMode || !deepEquals(disk.applied, open.value)
+  );
 }
 
 const filesSlice = createSlice({
@@ -118,29 +125,40 @@ const filesSlice = createSlice({
       action: PayloadAction<{ filename: string; value: JsonRoot }>,
     ) => {
       const { filename, value } = action.payload;
+      const open = state.open[filename];
+      if (!open) {
+        throw new Error(`file ${filename} not open`);
+      }
 
-      state.open[filename] = value;
-      state.modified[filename] = isModified(state, filename);
+      open.value = value;
+      open.modified = isModified(state, filename);
     },
     changeJsonItem: (
       state,
       action: PayloadAction<{ filename: string; index: number; value: any }>,
     ) => {
       const { filename, index, value } = action.payload;
-      const o = state.open[filename];
-      if (!Array.isArray(o)) {
+      const open = state.open[filename];
+      if (!open) {
+        throw new Error(`file ${filename} not open`);
+      }
+      if (!Array.isArray(open.value)) {
         throw new Error('tried to change item of a non-array file');
       }
-      (o as Array<any>)[index] = value;
-      state.modified[filename] = isModified(state, filename);
+      (open.value as Array<any>)[index] = value;
+      open.modified = isModified(state, filename);
     },
     changeSaveMode(
       state,
       action: PayloadAction<{ filename: string; saveMode: SaveMode }>,
     ) {
       const { filename, saveMode } = action.payload;
-      state.saveMode[filename] = saveMode;
-      state.modified[filename] = isModified(state, filename);
+      const open = state.open[filename];
+      if (!open) {
+        throw new Error(`file ${filename} not open`);
+      }
+      open.saveMode = saveMode;
+      open.modified = isModified(state, filename);
     },
   },
   extraReducers: (builder) => {
@@ -167,14 +185,14 @@ const filesSlice = createSlice({
       transform,
       (state, payload) => {
         const filename = payload.meta.arg;
-        if (!state.saveMode[filename]) {
-          state.saveMode[filename] = payload.payload.value
-            ? 'replace'
-            : 'patch';
-        }
         if (!state.open[filename]) {
-          state.open[filename] =
-            getDiskState(state, filename).data?.applied ?? {};
+          state.open[filename] = {
+            saveMode: payload.payload.value ? 'replace' : 'patch',
+            modified: false,
+            value: getDiskState(state, filename).data?.applied ?? {},
+          };
+        } else {
+          state.open[filename].modified = isModified(state, filename);
         }
       },
     );
@@ -185,16 +203,18 @@ const filesSlice = createSlice({
       transform,
       (state, payload) => {
         const filename = payload.meta.arg;
-        state.modified[filename] = isModified(state, filename);
+        if (state.open[filename]) {
+          state.open[filename].modified = isModified(state, filename);
+        }
       },
     );
   },
   selectors: {
     selectModifiedFiles: createSelector(
-      (state) => state.modified,
-      (modified: FilesState['modified']) =>
-        Object.entries(modified).flatMap(([filename, modified]) =>
-          modified ? [filename] : [],
+      (state) => state.open,
+      (open: FilesState['open']) =>
+        Object.entries(open).flatMap(([filename, open]) =>
+          open?.modified ? [filename] : [],
         ),
     ),
   },
