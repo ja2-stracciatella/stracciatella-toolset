@@ -13,7 +13,7 @@ const JSON_ROOT_SCHEMA = z.union([
 
 export type JsonRoot = z.infer<typeof JSON_ROOT_SCHEMA>;
 
-const JSON_PATCH_SCHEMA = z.array(
+export const JSON_PATCH_SCHEMA = z.array(
   z.object({ op: z.any(), path: z.any(), value: z.optional(z.any()) }),
 );
 

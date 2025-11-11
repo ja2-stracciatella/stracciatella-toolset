@@ -94,7 +94,7 @@ function makeFileItem<Props extends { file: string }>(
   const props = { file, ...extraProps } as Props;
   return {
     type: 'Item',
-    id: file,
+    id: file.replaceAll('.', '-'),
     label,
     file,
     component: function () {

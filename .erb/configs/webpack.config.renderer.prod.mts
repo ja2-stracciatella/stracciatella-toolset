@@ -14,6 +14,7 @@ import baseConfig from './webpack.config.base.mts';
 import webpackPaths from './webpack.paths.mts';
 import checkNodeEnv from '../scripts/check-node-env.mts';
 import deleteSourceMaps from '../scripts/delete-source-maps.mts';
+import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
 
 checkNodeEnv('production');
 await deleteSourceMaps();
@@ -139,6 +140,8 @@ const configuration: webpack.Configuration = {
     new webpack.DefinePlugin({
       'process.type': '"renderer"',
     }),
+
+    new MonacoWebpackPlugin(),
   ],
 };
 

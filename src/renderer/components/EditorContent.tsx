@@ -1,7 +1,6 @@
 import { ExclamationCircleOutlined, SaveOutlined } from '@ant-design/icons';
 import { Button, Flex, Select, Typography } from 'antd';
 import { ReactNode, memo, useCallback, useMemo } from 'react';
-import './EditorContent.css';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useAppDispatch } from '../hooks/state';
 import {
@@ -134,11 +133,30 @@ export const EditorContent = memo(function EditorContent({
   children,
 }: ContentProps) {
   return (
-    <div className="editor-content">
-      <div className="editor-content-header">
+    <Flex vertical style={{ height: '100%' }}>
+      <div
+        style={{
+          paddingTop: '10px',
+          paddingLeft: '10px',
+          paddingRight: '10px',
+        }}
+      >
         <EditorContentHeader path={path} />
       </div>
-      <div className="editor-content-content">{children}</div>
-    </div>
+      <div
+        style={{
+          position: 'relative',
+          margin: '10px',
+          padding: '20px',
+          flexGrow: 1,
+          background: 'white',
+          overflowY: 'auto',
+        }}
+      >
+        <div style={{ position: 'relative', height: '1px', minHeight: '100%' }}>
+          {children}
+        </div>
+      </div>
+    </Flex>
   );
 });

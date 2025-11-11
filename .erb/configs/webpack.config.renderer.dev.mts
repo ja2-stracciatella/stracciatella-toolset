@@ -11,6 +11,7 @@ import baseConfig from './webpack.config.base.mts';
 import webpackPaths from './webpack.paths.mts';
 import checkNodeEnv from '../scripts/check-node-env.mts';
 import rendererModuleConfig from './webpack.module.renderer.mts';
+import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
 
 // When an ESLint server is running, we can't set the NODE_ENV so we'll check if it's
 // at the dev webpack config is not accidentally run in a production environment
@@ -100,6 +101,8 @@ const configuration: webpack.Configuration = {
       isDevelopment: process.env.NODE_ENV !== 'production',
       nodeModules: webpackPaths.appNodeModulesPath,
     }),
+
+    new MonacoWebpackPlugin(),
   ],
 
   node: {

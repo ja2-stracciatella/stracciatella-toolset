@@ -136,7 +136,7 @@ function isModified(files: FilesState, filename: string) {
     return false;
   }
   if (open.saveMode !== disk.saveMode) {
-    return false;
+    return true;
   }
 
   let value = open.value;
@@ -159,6 +159,22 @@ const filesSlice = createSlice({
   name: 'files',
   initialState,
   reducers: {
+    changeText: (
+      state,
+      action: PayloadAction<{ filename: string; value: string }>,
+    ) => {
+      const { filename, value } = action.payload;
+      const open = state.open[filename];
+      if (!open) {
+        throw new Error(`file ${filename} not open`);
+      }
+      if (open.editMode !== 'text') {
+        throw new Error(`file ${filename} is not in text edit mode`);
+      }
+
+      open.value = value;
+      open.modified = isModified(state, filename);
+    },
     changeJson: (
       state,
       action: PayloadAction<{ filename: string; value: JsonRoot }>,
@@ -167,6 +183,9 @@ const filesSlice = createSlice({
       const open = state.open[filename];
       if (!open) {
         throw new Error(`file ${filename} not open`);
+      }
+      if (open.editMode !== 'visual') {
+        throw new Error(`file ${filename} is not in visual edit mode`);
       }
 
       open.value = value;
@@ -180,6 +199,9 @@ const filesSlice = createSlice({
       const open = state.open[filename];
       if (!open) {
         throw new Error(`file ${filename} not open`);
+      }
+      if (open.editMode !== 'visual') {
+        throw new Error(`file ${filename} is not in visual edit mode`);
       }
       if (!Array.isArray(open.value)) {
         throw new Error('tried to change item of a non-array file');
@@ -207,7 +229,7 @@ const filesSlice = createSlice({
       if (open.editMode === 'text') {
         if (open.saveMode === 'patch') {
           const value = JSON.parse(open.value);
-          open.value = jsonToString(generatePatch(disk.applied, value));
+          open.value = jsonToString(generatePatch(disk.vanilla, value));
         } else {
           const patch = JSON.parse(open.value);
           open.value = jsonToString(applyPatch(disk.applied, patch));
@@ -325,7 +347,12 @@ const filesSlice = createSlice({
 
 export const files = filesSlice.reducer;
 
-export const { changeJson, changeJsonItem, changeSaveMode, changeEditMode } =
-  filesSlice.actions;
+export const {
+  changeText,
+  changeJson,
+  changeJsonItem,
+  changeSaveMode,
+  changeEditMode,
+} = filesSlice.actions;
 
 export const { selectModifiedFiles } = filesSlice.selectors;
