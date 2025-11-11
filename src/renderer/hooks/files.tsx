@@ -1,6 +1,12 @@
 import { useCallback, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from './state';
-import { changeJson, changeJsonItem, loadJSON, SaveMode } from '../state/files';
+import {
+  changeJson,
+  changeJsonItem,
+  EditMode,
+  loadJSON,
+  SaveMode,
+} from '../state/files';
 import { SerializedError } from '@reduxjs/toolkit';
 import { AppState } from '../state/store';
 import { memoize } from 'proxy-memoize';
@@ -84,7 +90,12 @@ export function useFilesJson<R extends UseFilesRequest>(
     function selectFilesJson(s) {
       const values: { [key in keyof R]: JsonRoot | null } = {} as any;
       for (const key in files) {
-        values[key] = s.files.open[files[key]]?.value ?? null;
+        const open = s.files.open[files[key]];
+        if (!open || open.editMode === 'text') {
+          values[key] = null;
+        } else {
+          values[key] = open.value;
+        }
       }
       return values;
     },
@@ -129,8 +140,14 @@ export function useFileSaving(filename: string): boolean | null {
 }
 
 export function useFileSaveMode(filename: string): SaveMode | null {
-  return useAppSelector(function selectFileSaveMode(s) {
+  return useAppSelector((s) => {
     return s.files.open[filename]?.saveMode ?? null;
+  });
+}
+
+export function useFileEditMode(filename: string): EditMode | null {
+  return useAppSelector((s) => {
+    return s.files.open[filename]?.editMode ?? null;
   });
 }
 
@@ -177,7 +194,38 @@ export function useFileJson(
 
   return [
     useAppSelector((s) => {
-      return s.files.open[filename]?.value ?? null;
+      const open = s.files.open[filename];
+      if (!open || open.editMode === 'text') {
+        return null;
+      }
+      return open.value;
+    }),
+    update,
+  ];
+}
+
+export function useFileText(
+  filename: string,
+): [string | null, (value: string) => void] {
+  const dispatch = useAppDispatch();
+  const loading = useFileLoading(filename);
+  const update = useCallback(() => {
+    throw new Error('not implemented');
+  }, []);
+
+  useEffect(() => {
+    if (loading === null) {
+      dispatch(loadJSON(filename));
+    }
+  }, [dispatch, filename, loading]);
+
+  return [
+    useAppSelector((s) => {
+      const open = s.files.open[filename];
+      if (!open || open.editMode === 'visual') {
+        return null;
+      }
+      return open.value;
     }),
     update,
   ];

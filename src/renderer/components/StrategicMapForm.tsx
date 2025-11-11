@@ -16,6 +16,7 @@ import {
 } from '../hooks/files';
 import { IChangeEvent } from '@rjsf/core';
 import { ErrorAlert } from './ErrorAlert';
+import { TextEditorOr } from './TextEditor';
 
 interface ItemFormProps {
   file: string;
@@ -74,19 +75,11 @@ export function JsonStrategicMapForm({
     },
     [sectorsWithContent, value],
   );
-
-  if (loading) {
-    return <FullSizeLoader />;
-  }
-  if (error) {
-    return <ErrorAlert error={error} />;
-  }
-  if (!value) {
-    return <ErrorAlert error={{ message: 'No items after loading' }} />;
-  }
-
-  return (
-    <EditorContent path={file}>
+  const contents = useMemo(() => {
+    if (!value) {
+      return <ErrorAlert error={{ message: 'No items after loading' }} />;
+    }
+    return (
       <Space direction="horizontal" align="start" size="large">
         <StrategicMap
           highlightedSectorIds={sectorsWithContent}
@@ -97,6 +90,19 @@ export function JsonStrategicMapForm({
           <ItemForm file={file} index={selectedItem} uiSchema={uiSchema} />
         </div>
       </Space>
+    );
+  }, [file, onSectorClick, sectorsWithContent, selectedItem, uiSchema, value]);
+
+  if (loading) {
+    return <FullSizeLoader />;
+  }
+  if (error) {
+    return <ErrorAlert error={error} />;
+  }
+
+  return (
+    <EditorContent path={file}>
+      <TextEditorOr file={file}>{contents}</TextEditorOr>
     </EditorContent>
   );
 }
