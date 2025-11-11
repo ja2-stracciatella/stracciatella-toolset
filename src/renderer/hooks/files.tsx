@@ -151,9 +151,17 @@ export function useFileEditMode(filename: string): EditMode | null {
   });
 }
 
-export function useFileError(filename: string): SerializedError | null {
+export function useFileLoadingError(filename: string): SerializedError | null {
   return useAppSelector(function selectFileError(s) {
     return s.files.disk[filename]?.loadingError ?? null;
+  });
+}
+
+export function useFilePersistingError(
+  filename: string,
+): SerializedError | null {
+  return useAppSelector(function selectFileError(s) {
+    return s.files.disk[filename]?.persistingError ?? null;
   });
 }
 

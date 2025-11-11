@@ -10,7 +10,7 @@ import { EditorContent } from './EditorContent';
 import { JsonFormHeader } from './form/JsonFormHeader';
 import {
   useFileLoading,
-  useFileError,
+  useFileLoadingError,
   useFileJsonItem,
   useFileJsonItemSchema,
   useFileJsonNumberOfItems,
@@ -155,7 +155,7 @@ export const JsonItemsForm = memo(function JsonItemsForm({
   uiSchema,
 }: JsonItemsFormProps) {
   const loading = useFileLoading(file);
-  const error = useFileError(file);
+  const error = useFileLoadingError(file);
   const numItems = useFileJsonNumberOfItems(file);
   const content = useMemo(() => {
     if (numItems == null) {

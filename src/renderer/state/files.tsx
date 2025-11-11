@@ -4,7 +4,7 @@ import {
   createSlice,
 } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import { applyReducer, Operation, compare } from 'fast-json-patch';
+import { applyReducer, compare } from 'fast-json-patch';
 import { invoke } from '../lib/invoke';
 import { deepEquals } from '@rjsf/utils';
 import {
@@ -14,13 +14,14 @@ import {
   Persistable,
 } from './types';
 import {
+  JSON_PATCH_SCHEMA,
+  JSON_ROOT_SCHEMA,
+  JsonPatch,
   JsonReadInvokable,
   JsonRoot,
   JsonSchema,
 } from '../../common/invokables/jsons';
 import { InvokableOutput } from 'src/common/invokables';
-
-export type JsonPatch = Array<Operation>;
 
 export type SaveMode = 'patch' | 'replace';
 
@@ -118,7 +119,7 @@ function getDiskState(
 }
 
 function generatePatch(value: JsonRoot, applied: JsonRoot): JsonPatch {
-  return compare(value, applied);
+  return compare(value, applied) as JsonPatch;
 }
 
 function applyPatch(value: JsonRoot, patch: JsonPatch): JsonRoot {
@@ -165,11 +166,8 @@ const filesSlice = createSlice({
     ) => {
       const { filename, value } = action.payload;
       const open = state.open[filename];
-      if (!open) {
-        throw new Error(`file ${filename} not open`);
-      }
-      if (open.editMode !== 'text') {
-        throw new Error(`file ${filename} is not in text edit mode`);
+      if (!open || open.editMode !== 'text') {
+        return;
       }
 
       open.value = value;
@@ -181,11 +179,8 @@ const filesSlice = createSlice({
     ) => {
       const { filename, value } = action.payload;
       const open = state.open[filename];
-      if (!open) {
-        throw new Error(`file ${filename} not open`);
-      }
-      if (open.editMode !== 'visual') {
-        throw new Error(`file ${filename} is not in visual edit mode`);
+      if (!open || open.editMode !== 'visual') {
+        return;
       }
 
       open.value = value;
@@ -197,14 +192,8 @@ const filesSlice = createSlice({
     ) => {
       const { filename, index, value } = action.payload;
       const open = state.open[filename];
-      if (!open) {
-        throw new Error(`file ${filename} not open`);
-      }
-      if (open.editMode !== 'visual') {
-        throw new Error(`file ${filename} is not in visual edit mode`);
-      }
-      if (!Array.isArray(open.value)) {
-        throw new Error('tried to change item of a non-array file');
+      if (!open || open.editMode !== 'visual' || !Array.isArray(open.value)) {
+        return;
       }
       (open.value as Array<any>)[index] = value;
       open.modified = isModified(state, filename);
@@ -216,25 +205,33 @@ const filesSlice = createSlice({
       const { filename, saveMode } = action.payload;
       const open = state.open[filename];
       const disk = state.disk[filename]?.data;
-      if (!open) {
-        throw new Error(`file ${filename} not open`);
+      if (!open || !disk || open.saveMode === saveMode) {
+        return;
       }
-      if (!disk) {
-        throw new Error(`file ${filename} not loaded`);
-      }
-      if (open.saveMode === saveMode) return;
-
-      open.saveMode = saveMode;
-      open.modified = isModified(state, filename);
       if (open.editMode === 'text') {
-        if (open.saveMode === 'patch') {
-          const value = JSON.parse(open.value);
-          open.value = jsonToString(generatePatch(disk.vanilla, value));
-        } else {
-          const patch = JSON.parse(open.value);
-          open.value = jsonToString(applyPatch(disk.applied, patch));
+        try {
+          if (open.saveMode === 'patch') {
+            JSON_PATCH_SCHEMA.parse(JSON.parse(open.value));
+          }
+        } catch {
+          return;
         }
       }
+      try {
+        if (open.editMode === 'text') {
+          if (open.saveMode === 'patch') {
+            const value = JSON_ROOT_SCHEMA.parse(JSON.parse(open.value));
+            open.value = jsonToString(generatePatch(disk.vanilla, value));
+          } else {
+            const patch = JSON_PATCH_SCHEMA.parse(JSON.parse(open.value));
+            open.value = jsonToString(applyPatch(disk.applied, patch));
+          }
+        }
+      } catch {
+        return;
+      }
+      open.saveMode = saveMode;
+      open.modified = isModified(state, filename);
     },
     changeEditMode(
       state,
@@ -243,30 +240,30 @@ const filesSlice = createSlice({
       const { filename, editMode } = action.payload;
       const open = state.open[filename];
       const disk = state.disk[filename]?.data;
-      if (!open) {
-        throw new Error(`file ${filename} not open`);
+      if (!open || !disk || open.editMode === editMode) {
+        return;
       }
-      if (!disk) {
-        throw new Error(`file ${filename} not loaded`);
-      }
-      if (open.editMode === editMode) return;
 
       if (open.editMode === 'text') {
-        if (open.saveMode === 'patch') {
-          const patch = JSON.parse(open.value);
-          const applied = applyPatch(disk.applied, patch);
-          state.open[filename] = {
-            ...open,
-            editMode: editMode as 'visual',
-            value: applied,
-          };
-        } else {
-          const value = JSON.parse(open.value);
-          state.open[filename] = {
-            ...open,
-            editMode: editMode as 'visual',
-            value: value,
-          };
+        try {
+          if (open.saveMode === 'patch') {
+            const patch = JSON.parse(open.value);
+            const applied = applyPatch(disk.applied, patch);
+            state.open[filename] = {
+              ...open,
+              editMode: editMode as 'visual',
+              value: applied,
+            };
+          } else {
+            const value = JSON.parse(open.value);
+            state.open[filename] = {
+              ...open,
+              editMode: editMode as 'visual',
+              value: value,
+            };
+          }
+        } catch {
+          return;
         }
       } else {
         if (open.saveMode === 'patch') {
@@ -297,7 +294,7 @@ const filesSlice = createSlice({
         schema: data.schema,
         vanilla: data.vanilla,
         mod: data.value,
-        patch: data.patch as Array<Operation> | null,
+        patch: data.patch,
         applied,
         saveMode,
       };

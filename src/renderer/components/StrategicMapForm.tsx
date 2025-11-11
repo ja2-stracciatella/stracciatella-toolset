@@ -8,7 +8,7 @@ import { JsonSchemaForm } from './JsonSchemaForm';
 import { EditorContent } from './EditorContent';
 import { JsonFormHeader } from './form/JsonFormHeader';
 import {
-  useFileError,
+  useFileLoadingError,
   useFileJson,
   useFileJsonItem,
   useFileJsonItemSchema,
@@ -58,7 +58,7 @@ export function JsonStrategicMapForm({
   uiSchema,
 }: StrategicMapFormProps) {
   const loading = useFileLoading(file);
-  const error = useFileError(file);
+  const error = useFileLoadingError(file);
   const [selectedItem, setSelectedItem] = useState(-1);
   const [value] = useFileJson(file);
   const sectorsWithContent = useMemo(

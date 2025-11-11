@@ -6,7 +6,7 @@ import { FullSizeLoader } from './FullSizeLoader';
 import { EditorContent } from './EditorContent';
 import { JsonFormHeader } from './form/JsonFormHeader';
 import { useFileLoading, useFileSchema } from '../hooks/files';
-import { useFileError } from '../hooks/files';
+import { useFileLoadingError } from '../hooks/files';
 import { useFileJson } from '../hooks/files';
 import { ErrorAlert } from './ErrorAlert';
 import { miniSerializeError } from '@reduxjs/toolkit';
@@ -19,7 +19,7 @@ export interface JsonFormProps {
 
 export function JsonForm({ file, uiSchema }: JsonFormProps) {
   const loading = useFileLoading(file);
-  const error = useFileError(file);
+  const error = useFileLoadingError(file);
   const [value, update] = useFileJson(file);
   const baseSchema = useFileSchema(file);
   const schema = useMemo(() => {

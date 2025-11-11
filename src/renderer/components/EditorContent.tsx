@@ -12,8 +12,8 @@ import {
 } from '../state/files';
 import {
   useFileEditMode,
-  useFileError,
   useFileModified,
+  useFilePersistingError,
   useFileSaveMode,
   useFileSaving,
 } from '../hooks/files';
@@ -61,7 +61,7 @@ const EditorContentHeader = memo(function EditorContentHeader({
   const saving = useFileSaving(path);
   const saveMode = useFileSaveMode(path);
   const editMode = useFileEditMode(path);
-  const error = useFileError(path);
+  const error = useFilePersistingError(path);
   const errorStyle = useMemo(() => ({ color: '#9d1e1c' }), []);
   const saveFile = useCallback(() => {
     dispatch(persistJSON(path));
