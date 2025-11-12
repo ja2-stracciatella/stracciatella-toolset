@@ -6,6 +6,13 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/__tests__/vitest.setup.ts'],
+    alias: [
+      {
+        find: /^monaco-editor$/,
+        replacement:
+          __dirname + '/node_modules/monaco-editor/esm/vs/editor/editor.api',
+      },
+    ],
   },
   plugins: [react()],
 });
