@@ -6,10 +6,11 @@ import { FullSizeLoader } from './FullSizeLoader';
 import { EditorContent } from './EditorContent';
 import { JsonFormHeader } from './form/JsonFormHeader';
 import { useFileLoading, useFileSchema } from '../hooks/files';
-import { useFileError } from '../hooks/files';
+import { useFileLoadingError } from '../hooks/files';
 import { useFileJson } from '../hooks/files';
 import { ErrorAlert } from './ErrorAlert';
 import { miniSerializeError } from '@reduxjs/toolkit';
+import { TextEditorOr } from './TextEditor';
 
 export interface JsonFormProps {
   file: string;
@@ -18,7 +19,7 @@ export interface JsonFormProps {
 
 export function JsonForm({ file, uiSchema }: JsonFormProps) {
   const loading = useFileLoading(file);
-  const error = useFileError(file);
+  const error = useFileLoadingError(file);
   const [value, update] = useFileJson(file);
   const baseSchema = useFileSchema(file);
   const schema = useMemo(() => {
@@ -35,6 +36,26 @@ export function JsonForm({ file, uiSchema }: JsonFormProps) {
     (value: IChangeEvent<any>) => update(value.formData),
     [update],
   );
+  const contents = useMemo(() => {
+    if (!schema || !value) {
+      return (
+        <ErrorAlert
+          error={miniSerializeError(new Error('No schema or value'))}
+        />
+      );
+    }
+    return (
+      <>
+        <JsonFormHeader file={file} />
+        <JsonSchemaForm
+          schema={schema}
+          content={value}
+          uiSchema={uiSchema}
+          onChange={onFormChange}
+        />
+      </>
+    );
+  }, [file, onFormChange, schema, uiSchema, value]);
 
   if (error) {
     return <ErrorAlert error={error} />;
@@ -42,21 +63,10 @@ export function JsonForm({ file, uiSchema }: JsonFormProps) {
   if (loading == null || loading) {
     return <FullSizeLoader />;
   }
-  if (!schema || !value) {
-    return (
-      <ErrorAlert error={miniSerializeError(new Error('No schema or value'))} />
-    );
-  }
 
   return (
     <EditorContent path={file}>
-      <JsonFormHeader file={file} />
-      <JsonSchemaForm
-        schema={schema}
-        content={value}
-        uiSchema={uiSchema}
-        onChange={onFormChange}
-      />
+      <TextEditorOr file={file}> {contents}</TextEditorOr>
     </EditorContent>
   );
 }

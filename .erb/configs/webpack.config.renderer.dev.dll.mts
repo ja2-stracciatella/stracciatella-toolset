@@ -33,7 +33,10 @@ const configuration: webpack.Configuration = {
   module: rendererModuleConfig,
 
   entry: {
-    renderer: Object.keys(dependencies || {}),
+    // Not sure why we need to exclude the plugin here but it causes ts errors otherwise
+    renderer: Object.keys(dependencies).filter(
+      (v) => !['monaco-editor-webpack-plugin'].includes(v),
+    ),
   },
 
   output: {

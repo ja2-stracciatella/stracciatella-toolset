@@ -5,7 +5,7 @@ type Category = 'json';
 
 const ANY_JSON_OBJECT_SCHEMA = z.object().catchall(z.any());
 
-const JSON_ROOT_SCHEMA = z.union([
+export const JSON_ROOT_SCHEMA = z.union([
   ANY_JSON_OBJECT_SCHEMA,
   z.array(ANY_JSON_OBJECT_SCHEMA),
   z.array(z.array(z.any())),
@@ -13,15 +13,52 @@ const JSON_ROOT_SCHEMA = z.union([
 
 export type JsonRoot = z.infer<typeof JSON_ROOT_SCHEMA>;
 
-const JSON_PATCH_SCHEMA = z.array(
-  z.object({ op: z.any(), path: z.any(), value: z.optional(z.any()) }),
+export const JSON_PATCH_SCHEMA = z.array(
+  z.union([
+    z.object({
+      op: z.literal('add'),
+      path: z.string(),
+      value: z.any(),
+    }),
+    z.object({
+      op: z.literal('remove'),
+      path: z.string(),
+    }),
+    z.object({
+      op: z.literal('replace'),
+      path: z.string(),
+      value: z.any(),
+    }),
+    z.object({
+      op: z.literal('copy'),
+      from: z.string(),
+      path: z.string(),
+    }),
+    z.object({
+      op: z.literal('move'),
+      from: z.string(),
+      path: z.string(),
+    }),
+    z.object({
+      op: z.literal('test'),
+      path: z.string(),
+      value: z.any(),
+    }),
+  ]),
 );
+
+export type JsonPatch = z.infer<typeof JSON_PATCH_SCHEMA>;
 
 const JSON_SCHEMA_SCHEMA = z
   .object({
     title: z.optional(z.string()),
     description: z.optional(z.string()),
-    items: z.optional(ANY_JSON_OBJECT_SCHEMA),
+    items: z
+      .object({
+        title: z.optional(z.string()),
+        description: z.optional(z.string()),
+      })
+      .catchall(z.any()),
   })
   .catchall(z.any());
 
@@ -53,6 +90,8 @@ export const jsonReadInvokableDefinition: JsonReadInvokable = {
 
 const PERSIST_INPUT_SCHEMA = z.object({
   file: z.string(),
+  value: z.nullable(JSON_ROOT_SCHEMA),
+  patch: z.nullable(JSON_PATCH_SCHEMA),
 });
 
 export type JsonPersistInvokable = InvokableDefinition<

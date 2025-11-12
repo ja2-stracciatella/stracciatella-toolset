@@ -1,13 +1,19 @@
 import { ExclamationCircleOutlined, SaveOutlined } from '@ant-design/icons';
-import { Button, Flex, Select, Space, Typography } from 'antd';
+import { Button, Flex, Select, Typography } from 'antd';
 import { ReactNode, memo, useCallback, useMemo } from 'react';
-import './EditorContent.css';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useAppDispatch } from '../hooks/state';
-import { changeSaveMode, persistJSON, SaveMode } from '../state/files';
 import {
-  useFileError,
+  changeSaveMode,
+  changeEditMode,
+  EditMode,
+  persistJSON,
+  SaveMode,
+} from '../state/files';
+import {
+  useFileEditMode,
   useFileModified,
+  useFilePersistingError,
   useFileSaveMode,
   useFileSaving,
 } from '../hooks/files';
@@ -27,6 +33,19 @@ const SAVE_MODE_SELECT_OPTIONS = [
   },
 ];
 
+const EDIT_MODE_SELECT_OPTIONS = [
+  {
+    label: 'Visual',
+    title: 'Use a visual editor to edit the file',
+    value: 'visual',
+  },
+  {
+    label: 'Text',
+    title: 'Use a text editor to edit the file',
+    value: 'text',
+  },
+];
+
 interface ContentProps {
   path: string;
   children: ReactNode;
@@ -41,7 +60,8 @@ const EditorContentHeader = memo(function EditorContentHeader({
   const modified = useFileModified(path);
   const saving = useFileSaving(path);
   const saveMode = useFileSaveMode(path);
-  const error = useFileError(path);
+  const editMode = useFileEditMode(path);
+  const error = useFilePersistingError(path);
   const errorStyle = useMemo(() => ({ color: '#9d1e1c' }), []);
   const saveFile = useCallback(() => {
     dispatch(persistJSON(path));
@@ -57,6 +77,17 @@ const EditorContentHeader = memo(function EditorContentHeader({
     },
     [dispatch, path],
   );
+  const setEditMode = useCallback(
+    (editMode: EditMode) => {
+      dispatch(
+        changeEditMode({
+          filename: path,
+          editMode,
+        }),
+      );
+    },
+    [dispatch, path],
+  );
 
   useHotkeys('ctrl+s', saveFile, {
     enableOnFormTags: true,
@@ -65,23 +96,34 @@ const EditorContentHeader = memo(function EditorContentHeader({
 
   return (
     <Flex justify="space-between">
-      <Space>
+      <Flex gap="small">
         <Button disabled={!modified || !!saving}>
           <SaveOutlined onClick={saveFile} />
         </Button>
         {error ? (
           <ExclamationCircleOutlined title={error.message} style={errorStyle} />
         ) : null}
-      </Space>
-      <Space>
-        <Typography>Save Mode</Typography>
-        <Select
-          style={{ minWidth: '150px' }}
-          options={SAVE_MODE_SELECT_OPTIONS}
-          value={saveMode}
-          onChange={setSaveMode}
-        />
-      </Space>
+      </Flex>
+      <Flex gap="middle">
+        <Flex gap="small" align="center">
+          <Typography>Edit Mode</Typography>
+          <Select
+            style={{ minWidth: '150px' }}
+            options={EDIT_MODE_SELECT_OPTIONS}
+            value={editMode}
+            onChange={setEditMode}
+          />
+        </Flex>
+        <Flex gap="small" align="center">
+          <Typography>Save Mode</Typography>
+          <Select
+            style={{ minWidth: '150px' }}
+            options={SAVE_MODE_SELECT_OPTIONS}
+            value={saveMode}
+            onChange={setSaveMode}
+          />
+        </Flex>
+      </Flex>
     </Flex>
   );
 });
@@ -91,11 +133,30 @@ export const EditorContent = memo(function EditorContent({
   children,
 }: ContentProps) {
   return (
-    <div className="editor-content">
-      <div className="editor-content-header">
+    <Flex vertical style={{ height: '100%' }}>
+      <div
+        style={{
+          paddingTop: '10px',
+          paddingLeft: '10px',
+          paddingRight: '10px',
+        }}
+      >
         <EditorContentHeader path={path} />
       </div>
-      <div className="editor-content-content">{children}</div>
-    </div>
+      <div
+        style={{
+          position: 'relative',
+          margin: '10px',
+          padding: '20px',
+          flexGrow: 1,
+          background: 'white',
+          overflowY: 'auto',
+        }}
+      >
+        <div style={{ position: 'relative', height: '1px', minHeight: '100%' }}>
+          {children}
+        </div>
+      </div>
+    </Flex>
   );
 });

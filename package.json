@@ -39,6 +39,7 @@
   "dependencies": {
     "@ant-design/icons": "^5.6.1",
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
+    "@monaco-editor/react": "^4.7.0",
     "@reduxjs/toolkit": "^2.8.2",
     "@rjsf/antd": "^5.24.13",
     "@rjsf/core": "^5.24.13",
@@ -47,6 +48,7 @@
     "antd": "^5.25.2",
     "electron-debug": "^4.0.0",
     "fast-json-patch": "^3.1.1",
+    "monaco-editor-webpack-plugin": "^7.1.1",
     "proxy-memoize": "^3.0.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

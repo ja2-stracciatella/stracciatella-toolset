@@ -1,6 +1,12 @@
 import { useCallback, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from './state';
-import { changeJson, changeJsonItem, loadJSON, SaveMode } from '../state/files';
+import {
+  changeJson,
+  changeJsonItem,
+  EditMode,
+  loadJSON,
+  SaveMode,
+} from '../state/files';
 import { SerializedError } from '@reduxjs/toolkit';
 import { AppState } from '../state/store';
 import { memoize } from 'proxy-memoize';
@@ -72,23 +78,6 @@ export function useFilesSchema<R extends UseFilesRequest>(
   return schemas;
 }
 
-export function useFilesModified<R extends UseFilesRequest>(
-  files: R,
-): UseFilesResult<R, boolean | null> {
-  const modified = useAppFilesProxySelector(
-    function selectFilesModified(s) {
-      const modified: { [key in keyof R]: boolean | null } = {} as any;
-      for (const key in files) {
-        modified[key] = s.files.modified[files[key]] ?? null;
-      }
-      return modified;
-    },
-    [files],
-  );
-
-  return modified;
-}
-
 export function useFilesJson<R extends UseFilesRequest>(
   files: R,
 ): {
@@ -101,7 +90,12 @@ export function useFilesJson<R extends UseFilesRequest>(
     function selectFilesJson(s) {
       const values: { [key in keyof R]: JsonRoot | null } = {} as any;
       for (const key in files) {
-        values[key] = s.files.open[files[key]] ?? null;
+        const open = s.files.open[files[key]];
+        if (!open || open.editMode === 'text') {
+          values[key] = null;
+        } else {
+          values[key] = open.value;
+        }
       }
       return values;
     },
@@ -146,14 +140,28 @@ export function useFileSaving(filename: string): boolean | null {
 }
 
 export function useFileSaveMode(filename: string): SaveMode | null {
-  return useAppSelector(function selectFileSaveMode(s) {
-    return s.files.saveMode[filename] ?? null;
+  return useAppSelector((s) => {
+    return s.files.open[filename]?.saveMode ?? null;
   });
 }
 
-export function useFileError(filename: string): SerializedError | null {
+export function useFileEditMode(filename: string): EditMode | null {
+  return useAppSelector((s) => {
+    return s.files.open[filename]?.editMode ?? null;
+  });
+}
+
+export function useFileLoadingError(filename: string): SerializedError | null {
   return useAppSelector(function selectFileError(s) {
     return s.files.disk[filename]?.loadingError ?? null;
+  });
+}
+
+export function useFilePersistingError(
+  filename: string,
+): SerializedError | null {
+  return useAppSelector(function selectFileError(s) {
+    return s.files.disk[filename]?.persistingError ?? null;
   });
 }
 
@@ -165,7 +173,7 @@ export function useFileSchema(filename: string): JsonSchema | null {
 
 export function useFileModified(filename: string): boolean | null {
   return useAppSelector(function selectFileModified(s) {
-    return s.files.modified[filename] ?? null;
+    return s.files.open[filename]?.modified ?? null;
   });
 }
 
@@ -194,7 +202,38 @@ export function useFileJson(
 
   return [
     useAppSelector((s) => {
-      return s.files.open[filename] ?? null;
+      const open = s.files.open[filename];
+      if (!open || open.editMode === 'text') {
+        return null;
+      }
+      return open.value;
+    }),
+    update,
+  ];
+}
+
+export function useFileText(
+  filename: string,
+): [string | null, (value: string) => void] {
+  const dispatch = useAppDispatch();
+  const loading = useFileLoading(filename);
+  const update = useCallback(() => {
+    throw new Error('not implemented');
+  }, []);
+
+  useEffect(() => {
+    if (loading === null) {
+      dispatch(loadJSON(filename));
+    }
+  }, [dispatch, filename, loading]);
+
+  return [
+    useAppSelector((s) => {
+      const open = s.files.open[filename];
+      if (!open || open.editMode === 'visual') {
+        return null;
+      }
+      return open.value;
     }),
     update,
   ];
@@ -208,12 +247,20 @@ export function useFileJsonItemSchema(
   return schema.items ?? null;
 }
 
+export function useFileJsonNumberOfItems(filename: string): number | null {
+  const [arr] = useFileJson(filename);
+  if (!arr) return null;
+  if (!Array.isArray(arr)) return null;
+
+  return arr.length;
+}
+
 export function useFileJsonItem(
   filename: string,
   index: number,
 ): [Record<string, any> | null, (value: Record<string, any>) => void] {
   const dispatch = useAppDispatch();
-  const { values } = useFilesJson({ f: filename });
+  const [arr] = useFileJson(filename);
   const update = useCallback(
     (value: Record<string, any>) => {
       dispatch(
@@ -226,8 +273,8 @@ export function useFileJsonItem(
     },
     [dispatch, filename, index],
   );
-  if (!values.f) return [null, update];
-  if (!Array.isArray(values.f)) return [null, update];
+  if (!arr) return [null, update];
+  if (!Array.isArray(arr)) return [null, update];
 
-  return [values.f[index] ?? null, update];
+  return [arr[index] ?? null, update];
 }

@@ -10,12 +10,13 @@ import { EditorContent } from './EditorContent';
 import { JsonFormHeader } from './form/JsonFormHeader';
 import {
   useFileLoading,
-  useFileError,
+  useFileLoadingError,
   useFileJsonItem,
   useFileJsonItemSchema,
-  useFileJson,
+  useFileJsonNumberOfItems,
 } from '../hooks/files';
 import { ErrorAlert } from './ErrorAlert';
+import { TextEditorOr } from './TextEditor';
 
 type PreviewFn = (item: any) => JSX.Element | string | null;
 
@@ -154,9 +155,25 @@ export const JsonItemsForm = memo(function JsonItemsForm({
   uiSchema,
 }: JsonItemsFormProps) {
   const loading = useFileLoading(file);
-  const error = useFileError(file);
-  const [content] = useFileJson(file);
-  const numItems = useMemo(() => content?.length ?? null, [content]);
+  const error = useFileLoadingError(file);
+  const numItems = useFileJsonNumberOfItems(file);
+  const content = useMemo(() => {
+    if (numItems == null) {
+      return <ErrorAlert error={{ message: 'No items after loading' }} />;
+    }
+    return (
+      <>
+        <JsonFormHeader file={file} />
+        <FormItems
+          file={file}
+          name={name}
+          preview={preview}
+          numItems={numItems}
+          uiSchema={uiSchema}
+        />
+      </>
+    );
+  }, [file, name, numItems, preview, uiSchema]);
 
   if (error) {
     return <ErrorAlert error={error} />;
@@ -164,20 +181,9 @@ export const JsonItemsForm = memo(function JsonItemsForm({
   if (loading) {
     return <FullSizeLoader />;
   }
-  if (numItems == null) {
-    return <ErrorAlert error={{ message: 'No items after loading' }} />;
-  }
-
   return (
     <EditorContent path={file}>
-      <JsonFormHeader file={file} />
-      <FormItems
-        file={file}
-        name={name}
-        preview={preview}
-        numItems={numItems}
-        uiSchema={uiSchema}
-      />
+      <TextEditorOr file={file}>{content}</TextEditorOr>
     </EditorContent>
   );
 });
