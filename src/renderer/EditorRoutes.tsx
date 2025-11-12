@@ -551,8 +551,35 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
           },
         },
       ),
-      makeFileItem('mercs-relations.json', 'Relations', JsonItemsForm, {
-        name: 'internalName',
+      makeFileItem('mercs-relations.json', 'Opinions', JsonItemsForm, {
+        name: 'profile',
+        preview: (item: any) => <MercPreview profile={item.profile} />,
+        uiSchema: {
+          'ui:order': ['profile', 'relations'],
+          profile: {
+            'ui:widget': stringReferenceToMercProfiles,
+          },
+          relations: {
+            items: {
+              'ui:order': [
+                'target',
+                'opinion',
+                'friend1',
+                'friend2',
+                'enemy1',
+                'enemy2',
+                'eventualFriend',
+                'resistanceToBefriending',
+                'eventualEnemy',
+                'resistanceToMakingEnemy',
+                'tolerance',
+              ],
+              target: {
+                'ui:widget': stringReferenceToMercProfiles,
+              },
+            },
+          },
+        },
       }),
       makeFileItem('mercs-profile-info.json', 'Profiles', JsonItemsForm, {
         name: 'internalName',
