@@ -239,12 +239,10 @@ export function useFileText(
   ];
 }
 
-export function useFileJsonItemSchema(
-  filename: string,
-): Record<string, any> | null {
-  const schema = useFileSchema(filename);
-  if (!schema) return null;
-  return schema.items ?? null;
+export function useFileJsonItemSchema(filename: string): JsonSchema | null {
+  return useAppSelector(function selectFileSchema(s) {
+    return s.files.disk[filename]?.data?.itemSchema ?? null;
+  });
 }
 
 export function useFileJsonNumberOfItems(filename: string): number | null {

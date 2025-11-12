@@ -22,6 +22,7 @@ import {
   JsonSchema,
 } from '../../common/invokables/jsons';
 import { InvokableOutput } from 'src/common/invokables';
+import { omit } from 'remeda';
 
 export type SaveMode = 'patch' | 'replace';
 
@@ -30,6 +31,7 @@ export type EditMode = 'visual' | 'text';
 interface JsonFile {
   saveMode: SaveMode;
   schema: JsonSchema;
+  itemSchema: JsonSchema | null;
   vanilla: JsonRoot;
   mod: JsonRoot | null;
   patch: JsonPatch | null;
@@ -298,12 +300,15 @@ const filesSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    const transform = (data: InvokableOutput<JsonReadInvokable>) => {
+    const transform = (data: InvokableOutput<JsonReadInvokable>): JsonFile => {
       const saveMode: SaveMode = data.value ? 'replace' : 'patch';
       const applied = applyPatch(data.value ?? data.vanilla, data.patch ?? []);
 
       return {
         schema: data.schema,
+        itemSchema: data.schema.items
+          ? omit(data.schema.items, ['title', 'description'])
+          : null,
         vanilla: data.vanilla,
         mod: data.value,
         patch: data.patch,
