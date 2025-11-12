@@ -2,11 +2,17 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useImageFile } from '../../hooks/useImage';
 
 import './StrategicMap.css';
+import { Button, Flex } from 'antd';
+import { MinusOutlined, PlusOutlined } from '@ant-design/icons';
+
+export type NormalizedSectorId = [string, number];
 
 export interface StrategicMapProps {
-  selectedSectorId?: string | null;
-  highlightedSectorIds: string[];
-  onSectorClick?: (sectorId: string) => unknown;
+  level?: number;
+  selectedSectorId?: NormalizedSectorId | null;
+  highlightedSectorIds: NormalizedSectorId[];
+  onSectorClick?: (sectorId: NormalizedSectorId) => unknown;
+  onLevelChange?: (level: number) => unknown;
 }
 
 interface TilePrefab {
@@ -28,15 +34,17 @@ for (let y = 0; y < 16; y++) {
 }
 
 interface TileProps extends TilePrefab {
+  level: number;
   selected: boolean;
   highlighted: boolean;
-  onSectorClick?: (sectorId: string) => unknown;
+  onSectorClick?: (sectorId: NormalizedSectorId) => unknown;
 }
 
 function Tile({
   x,
   y,
   sectorId,
+  level,
   selected,
   highlighted,
   onSectorClick,
@@ -51,9 +59,9 @@ function Tile({
   }, [highlighted]);
   const onClick = useCallback(() => {
     if (onSectorClick) {
-      return onSectorClick(sectorId);
+      return onSectorClick([sectorId, level]);
     }
-  }, [onSectorClick, sectorId]);
+  }, [level, onSectorClick, sectorId]);
   return (
     <div className={className} onClick={onClick}>
       {content}
@@ -61,12 +69,48 @@ function Tile({
   );
 }
 
+function LevelControls({
+  level,
+  onLevelChange,
+}: {
+  level: NonNullable<StrategicMapProps['level']>;
+  onLevelChange: NonNullable<StrategicMapProps['onLevelChange']>;
+}) {
+  const levelUp = useCallback(() => {
+    if (level === 0) return;
+    onLevelChange(level - 1);
+  }, [level, onLevelChange]);
+  const levelDown = useCallback(() => {
+    if (level === 3) return;
+    onLevelChange(level + 1);
+  }, [level, onLevelChange]);
+
+  return (
+    <Flex gap="small">
+      <Button onClick={levelDown} disabled={level === 3}>
+        <MinusOutlined />
+      </Button>
+      <Button onClick={levelUp} disabled={level === 0}>
+        <PlusOutlined />
+      </Button>
+    </Flex>
+  );
+}
+
 export function StrategicMap({
   selectedSectorId,
   highlightedSectorIds,
   onSectorClick,
+  level = 0,
+  onLevelChange,
 }: StrategicMapProps) {
-  const { data: image, error, refresh } = useImageFile('interface/map_1.sti');
+  const imageFile = useMemo(() => {
+    if (level === 0) {
+      return 'interface/map_1.sti';
+    }
+    return `interface/mine_${level}.sti`;
+  }, [level]);
+  const { data: image, error, refresh } = useImageFile(imageFile);
   const imageStyle = useMemo(() => {
     if (!image) {
       return {};
@@ -77,20 +121,29 @@ export function StrategicMap({
   }, [image]);
   const tiles = useMemo(() => {
     return tilePrefabs.map((p) => {
-      const highlighted = highlightedSectorIds
-        .map((id) => id.toUpperCase())
-        .includes(p.sectorId.toUpperCase());
+      const highlighted: boolean = !!highlightedSectorIds.find(
+        ([sectorId, l]) => sectorId === p.sectorId && l === level,
+      );
+      const selected =
+        p.sectorId === selectedSectorId?.[0] && level === selectedSectorId?.[1];
       return (
         <Tile
           key={`${p.x}-${p.y}`}
           {...p}
-          selected={p.sectorId === selectedSectorId}
+          level={level}
+          selected={selected}
           highlighted={highlighted}
           onSectorClick={onSectorClick}
         />
       );
     });
-  }, [highlightedSectorIds, selectedSectorId, onSectorClick]);
+  }, [highlightedSectorIds, level, selectedSectorId, onSectorClick]);
+  const levelControls = useMemo(() => {
+    if (!onLevelChange) {
+      return null;
+    }
+    return <LevelControls level={level} onLevelChange={onLevelChange} />;
+  }, [level, onLevelChange]);
 
   useEffect(() => {
     refresh();
@@ -101,8 +154,11 @@ export function StrategicMap({
   }
 
   return (
-    <div className="strategic-map" style={imageStyle}>
-      {tiles}
-    </div>
+    <Flex vertical gap="small">
+      <div className="strategic-map" style={imageStyle}>
+        {tiles}
+      </div>
+      {levelControls}
+    </Flex>
   );
 }

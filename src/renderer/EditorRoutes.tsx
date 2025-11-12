@@ -15,7 +15,11 @@ import {
 } from './components/form/StringReferenceWidget';
 import { JsonForm } from './components/JsonForm';
 import { JsonItemsForm } from './components/JsonItemsForm';
-import { JsonStrategicMapForm } from './components/StrategicMapForm';
+import {
+  JsonStrategicMapForm,
+  makeStrategicMapFormPropsForProperties,
+  makeStrategicMapFormPropsForProperty,
+} from './components/StrategicMapForm';
 import { Dashboard } from './components/Dashboard';
 import { MercPreview } from './components/content/MercPreview';
 import { ItemPreview } from './components/content/ItemPreview';
@@ -26,6 +30,8 @@ import {
 } from './components/form/ResourceReferenceWidget';
 import { StiPreview } from './components/content/StiPreview';
 import { ResourceType } from './lib/resourceType';
+import { makeMultiSectorSelectorWidget } from './components/form/MultiSectorSelectorWidget';
+import { mergeDeep } from 'remeda';
 
 const baseItemProps = [
   'itemIndex',
@@ -136,15 +142,14 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         'army-garrison-groups.json',
         'Garrison Groups',
         JsonStrategicMapForm,
-        {
+        mergeDeep(makeStrategicMapFormPropsForProperty('sector'), {
           uiSchema: {
             'ui:order': ['sector', 'composition'],
-            sector: { 'ui:disabled': true },
             composition: {
               'ui:widget': stringReferenceToArmyCompositions,
             },
           },
-        },
+        }),
       ),
       makeFileItem(
         'army-gun-choice-normal.json',
@@ -528,15 +533,13 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     'loading-screens-mapping.json',
     'Loading Screens Mapping',
     JsonStrategicMapForm,
-    {
+    mergeDeep(makeStrategicMapFormPropsForProperties('sector', 'sectorLevel'), {
       uiSchema: {
         'ui:order': ['sector', 'sectorLevel', 'day', 'night'],
-        sector: { 'ui:disabled': true },
-        sectorLevel: { 'ui:disabled': true },
         day: { 'ui:widget': stringReferenceToLoadingScreens },
         night: { 'ui:widget': stringReferenceToLoadingScreens },
       },
-    },
+    }),
   ),
   {
     type: 'Submenu',
@@ -809,18 +812,17 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         'strategic-bloodcat-placements.json',
         'Bloodcat Placements',
         JsonStrategicMapForm,
-        {
+        mergeDeep(makeStrategicMapFormPropsForProperty('sector'), {
           uiSchema: {
             'ui:order': ['sector', 'bloodCatPlacements'],
-            sector: { 'ui:disabled': true },
           },
-        },
+        }),
       ),
       makeFileItem(
         'strategic-bloodcat-spawns.json',
         'Bloodcat Spawns',
         JsonStrategicMapForm,
-        {
+        mergeDeep(makeStrategicMapFormPropsForProperty('sector'), {
           uiSchema: {
             'ui:order': [
               'sector',
@@ -830,9 +832,8 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               'isArena',
               'isLair',
             ],
-            sector: { 'ui:disabled': true },
           },
-        },
+        }),
       ),
       makeFileItem('strategic-fact-params.json', 'Fact Params', JsonItemsForm, {
         name: (item) => item.fact.toString(),
@@ -844,7 +845,12 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         {
           uiSchema: {
             'ui:order': ['sectors', 'numTroops', 'numTroopsVariance'],
-            sector: { 'ui:disabled': true },
+            sectors: {
+              'ui:widget': makeMultiSectorSelectorWidget({
+                extractSectorFromItem: (value: string) => [value, 0],
+                transformSectorToItem: (value) => value[0],
+              }),
+            },
           },
         },
       ),
@@ -903,18 +909,17 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         'strategic-map-sam-sites.json',
         'Sam Sites',
         JsonStrategicMapForm,
-        {
+        mergeDeep(makeStrategicMapFormPropsForProperty('sector'), {
           uiSchema: {
             'ui:order': ['sector', 'gridNos'],
-            sector: { 'ui:disabled': true },
           },
-        },
+        }),
       ),
       makeFileItem(
         'strategic-map-secrets.json',
         'Secrets',
         JsonStrategicMapForm,
-        {
+        mergeDeep(makeStrategicMapFormPropsForProperty('sector'), {
           uiSchema: {
             'ui:order': [
               'sector',
@@ -923,24 +928,24 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               'secretMapIcon',
               'isSAMSite',
             ],
-            sector: { 'ui:disabled': true },
             secretMapIcon: {
               'ui:widget': resourceReferenceToGraphics,
             },
           },
-        },
+        }),
       ),
       makeFileItem(
         'strategic-map-sectors-descriptions.json',
         'Sector Descriptions',
         JsonStrategicMapForm,
-        {
-          uiSchema: {
-            'ui:order': ['sector', 'sectorLevel', 'landType'],
-            sector: { 'ui:disabled': true },
-            sectorLevel: { 'ui:disabled': true },
+        mergeDeep(
+          makeStrategicMapFormPropsForProperties('sector', 'sectorLevel'),
+          {
+            uiSchema: {
+              'ui:order': ['sector', 'sectorLevel', 'landType'],
+            },
           },
-        },
+        ),
       ),
       makeFileItem('strategic-map-towns.json', 'Towns', JsonItemsForm, {
         name: 'internalName',
@@ -952,6 +957,12 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             'townPoint',
             'isMilitiaTrainingAllowed',
           ],
+          sectors: {
+            'ui:widget': makeMultiSectorSelectorWidget({
+              extractSectorFromItem: (sector: string) => [sector, 0],
+              transformSectorToItem: (sector) => sector[0],
+            }),
+          },
         },
       }),
       makeFileItem(
@@ -964,43 +975,56 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         'strategic-map-underground-sectors.json',
         'Underground Sectors',
         JsonStrategicMapForm,
-        {
+        mergeDeep(
+          makeStrategicMapFormPropsForProperties('sector', 'sectorLevel'),
+          {
+            initialLevel: 1,
+            uiSchema: {
+              'ui:order': [
+                'sector',
+                'sectorLevel',
+                'adjacentSectors',
+                'numTroops',
+                'numTroopsVariance',
+                'numElites',
+                'numElitesVariance',
+                'numCreatures',
+                'numCreaturesVariance',
+              ],
+            },
+          },
+        ),
+      ),
+      makeFileItem(
+        'strategic-mines.json',
+        'Mines',
+        JsonStrategicMapForm,
+        mergeDeep(makeStrategicMapFormPropsForProperty('entranceSector'), {
           uiSchema: {
             'ui:order': [
-              'sector',
-              'sectorLevel',
-              'adjacentSectors',
-              'numTroops',
-              'numTroopsVariance',
-              'numElites',
-              'numElitesVariance',
-              'numCreatures',
-              'numCreaturesVariance',
+              'entranceSector',
+              'associatedTownId',
+              'associatedTown',
+              'mineType',
+              'minimumMineProduction',
+              'noDepletion',
+              'delayDepletion',
+              'headMinerAssigned',
+              'faceDisplayYOffset',
+              'mineSectors',
             ],
-            sector: { 'ui:disabled': true },
-            sectorLevel: { 'ui:disabled': true },
+            associatedTown: { 'ui:widget': stringReferenceToTowns },
+            mineSectors: {
+              'ui:widget': makeMultiSectorSelectorWidget({
+                initialLevel: 1,
+                canChangeLevel: true,
+                extractSectorFromItem: (sector: string) => [sector, 0],
+                transformSectorToItem: (sector) => sector[0],
+              }),
+            },
           },
-        },
+        }),
       ),
-      makeFileItem('strategic-mines.json', 'Mines', JsonStrategicMapForm, {
-        property: 'entranceSector',
-        uiSchema: {
-          'ui:order': [
-            'entranceSector',
-            'associatedTownId',
-            'associatedTown',
-            'mineType',
-            'minimumMineProduction',
-            'noDepletion',
-            'delayDepletion',
-            'headMinerAssigned',
-            'faceDisplayYOffset',
-            'mineSectors',
-          ],
-          entranceSector: { 'ui:disabled': true },
-          associatedTown: { 'ui:widget': stringReferenceToTowns },
-        },
-      }),
     ],
   },
   makeFileItem(

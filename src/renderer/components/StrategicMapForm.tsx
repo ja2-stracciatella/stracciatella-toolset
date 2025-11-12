@@ -3,7 +3,7 @@ import { Space } from 'antd';
 
 import { UiSchema } from '@rjsf/utils';
 import { FullSizeLoader } from './FullSizeLoader';
-import { StrategicMap } from './content/StrategicMap';
+import { NormalizedSectorId, StrategicMap } from './content/StrategicMap';
 import { JsonSchemaForm } from './JsonSchemaForm';
 import { EditorContent } from './EditorContent';
 import { JsonFormHeader } from './form/JsonFormHeader';
@@ -20,13 +20,14 @@ import { TextEditorOr } from './TextEditor';
 import { AddNewButton } from './form/AddNewButton';
 import { useAppDispatch } from '../hooks/state';
 import { addJsonItem } from '../state/files';
+import { findIndex, isDeepEqual } from 'remeda';
 
 interface ItemFormProps {
   file: string;
   index: number;
-  property: string;
+  transformSectorToItem: (sectorId: NormalizedSectorId) => any;
   uiSchema?: UiSchema;
-  sectorId?: string;
+  sectorId?: NormalizedSectorId;
   canAddNewItem?: boolean;
   getNewItem?: () => object;
 }
@@ -34,9 +35,9 @@ interface ItemFormProps {
 function ItemForm({
   file,
   index,
-  property,
   uiSchema,
   sectorId,
+  transformSectorToItem,
   canAddNewItem,
   getNewItem,
 }: ItemFormProps) {
@@ -47,19 +48,18 @@ function ItemForm({
     (ev: IChangeEvent<any>) => update(ev.formData),
     [update],
   );
-  const addNewItem = useCallback(
-    () =>
-      dispatch(
-        addJsonItem({
-          filename: file,
-          value: {
-            ...(getNewItem ? getNewItem() : {}),
-            [property]: sectorId,
-          },
-        }),
-      ),
-    [dispatch, file, getNewItem, property, sectorId],
-  );
+  const addNewItem = useCallback(() => {
+    if (!sectorId) return;
+    dispatch(
+      addJsonItem({
+        filename: file,
+        value: {
+          ...(getNewItem ? getNewItem() : {}),
+          ...transformSectorToItem(sectorId),
+        },
+      }),
+    );
+  }, [dispatch, file, getNewItem, sectorId, transformSectorToItem]);
 
   if (index === -1 || !value) {
     if (sectorId && (typeof canAddNewItem === 'undefined' || canAddNewItem)) {
@@ -81,33 +81,44 @@ function ItemForm({
 
 export interface StrategicMapFormProps {
   file: string;
-  property?: string;
   uiSchema?: UiSchema;
   canAddNewItem?: boolean;
+  initialLevel?: number;
+  canChangeLevel?: boolean;
   getNewItem?: () => object;
+  extractSectorFromItem: (value: any) => NormalizedSectorId;
+  transformSectorToItem: (sectorId: NormalizedSectorId) => any;
 }
 
 export function JsonStrategicMapForm({
   file,
-  property = 'sector',
   uiSchema,
+  extractSectorFromItem,
+  transformSectorToItem,
   canAddNewItem,
+  initialLevel = 0,
+  canChangeLevel,
   getNewItem,
 }: StrategicMapFormProps) {
+  const [level, setLevel] = useState(initialLevel);
   const loading = useFileLoading(file);
   const error = useFileLoadingError(file);
   const [value] = useFileJson(file);
-  const [selectedSector, setSelectedSector] = useState<string | undefined>();
-  const sectorsWithContent = useMemo(
-    () => (value ? value.map((d: any) => d[property]) : []),
-    [value, property],
+  const [selectedSector, setSelectedSector] = useState<
+    NormalizedSectorId | undefined
+  >();
+  const sectorsWithContent: NormalizedSectorId[] = useMemo(
+    () => (value ?? []).map((d: any) => extractSectorFromItem(d)),
+    [value, extractSectorFromItem],
   );
   const selectedItem = useMemo(() => {
-    if (!selectedSector) return null;
-    return sectorsWithContent.indexOf(selectedSector);
+    if (!selectedSector) return -1;
+    return findIndex(sectorsWithContent, (sector) =>
+      isDeepEqual(sector, selectedSector),
+    );
   }, [sectorsWithContent, selectedSector]);
   const onSectorClick = useCallback(
-    (sectorId: string) => {
+    (sectorId: NormalizedSectorId) => {
       if (!value) {
         return;
       }
@@ -122,18 +133,20 @@ export function JsonStrategicMapForm({
     return (
       <Space direction="horizontal" align="start" size="large">
         <StrategicMap
+          level={level}
           selectedSectorId={selectedSector}
           highlightedSectorIds={sectorsWithContent}
           onSectorClick={onSectorClick}
+          onLevelChange={canChangeLevel ? setLevel : undefined}
         />
         <div>
           <JsonFormHeader file={file} />
           <ItemForm
             file={file}
             index={selectedItem}
-            property={property}
             uiSchema={uiSchema}
             sectorId={selectedSector}
+            transformSectorToItem={transformSectorToItem}
             canAddNewItem={canAddNewItem}
             getNewItem={getNewItem}
           />
@@ -142,13 +155,15 @@ export function JsonStrategicMapForm({
     );
   }, [
     canAddNewItem,
+    canChangeLevel,
     file,
     getNewItem,
+    level,
     onSectorClick,
-    property,
     sectorsWithContent,
     selectedItem,
     selectedSector,
+    transformSectorToItem,
     uiSchema,
     value,
   ]);
@@ -165,4 +180,39 @@ export function JsonStrategicMapForm({
       <TextEditorOr file={file}>{contents}</TextEditorOr>
     </EditorContent>
   );
+}
+
+export function makeStrategicMapFormPropsForProperty<S extends string>(
+  prop: S,
+) {
+  return {
+    extractSectorFromItem: (item: any): NormalizedSectorId => [item[prop], 0],
+    transformSectorToItem: (sector: NormalizedSectorId) => ({
+      [prop]: sector[0],
+    }),
+    uiSchema: {
+      [prop]: { 'ui:disabled': true },
+    },
+  };
+}
+
+export function makeStrategicMapFormPropsForProperties<
+  S extends string,
+  L extends string,
+>(sectorProp: S, levelProp: L) {
+  return {
+    extractSectorFromItem: (item: any): NormalizedSectorId => [
+      item[sectorProp],
+      item[levelProp] ?? 0,
+    ],
+    transformSectorToItem: (sector: NormalizedSectorId) => ({
+      [sectorProp]: sector[0],
+      [levelProp]: sector[1],
+    }),
+    canChangeLevel: true,
+    uiSchema: {
+      [sectorProp]: { 'ui:disabled': true },
+      [levelProp]: { 'ui:disabled': true },
+    },
+  };
 }
