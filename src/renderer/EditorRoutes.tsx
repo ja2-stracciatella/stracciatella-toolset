@@ -780,7 +780,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     'Shipping Destinations',
     JsonItemsForm,
     {
-      name: 'locationId',
+      name: (item) => item.locationId.toString(),
       uiSchema: {
         'ui:order': [
           'locationId',
@@ -835,13 +835,18 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         },
       ),
       makeFileItem('strategic-fact-params.json', 'Fact Params', JsonItemsForm, {
-        name: 'fact',
+        name: (item) => item.fact.toString(),
       }),
       makeFileItem(
         'strategic-map-cache-sectors.json',
         'Weapon Cache Sectors',
         JsonForm,
-        {},
+        {
+          uiSchema: {
+            'ui:order': ['sectors', 'numTroops', 'numTroopsVariance'],
+            sector: { 'ui:disabled': true },
+          },
+        },
       ),
       makeFileItem(
         'strategic-map-creature-lairs.json',
@@ -1003,12 +1008,11 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     'Tactical Npc Action Params',
     JsonItemsForm,
     {
-      name: 'actionCode',
+      name: (item) => item.actionCode.toString(),
     },
   ),
   makeFileItem('vehicles.json', 'Vehicles', JsonItemsForm, {
     name: 'profile',
-    preview: (item: any) => <MercPreview profile={item.profile} />,
     uiSchema: {
       'ui:order': [
         'profile',
