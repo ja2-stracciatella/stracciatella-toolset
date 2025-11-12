@@ -20,10 +20,12 @@ import { Dashboard } from './components/Dashboard';
 import { MercPreview } from './components/content/MercPreview';
 import { ItemPreview } from './components/content/ItemPreview';
 import {
+  makeResourceReference,
   resourceReferenceToGraphics,
   resourceReferenceToSound,
 } from './components/form/ResourceReferenceWidget';
 import { StiPreview } from './components/content/StiPreview';
+import { ResourceType } from './lib/resourceType';
 
 const baseItemProps = [
   'itemIndex',
@@ -262,6 +264,15 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             'affectsMonsters',
             'affectsRobot',
           ],
+          graphics: {
+            'ui:widget': resourceReferenceToGraphics,
+          },
+          staticGraphics: {
+            'ui:widget': resourceReferenceToGraphics,
+          },
+          dissipatingGraphics: {
+            'ui:widget': resourceReferenceToGraphics,
+          },
         },
       }),
     ],
@@ -501,7 +512,17 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
   },
   makeFileItem('loading-screens.json', 'Loading Screens', JsonItemsForm, {
     name: 'internalName',
-    uiSchema: { 'ui:order': ['internalName', 'filename'] },
+    preview: (item) => <StiPreview file={`loadscreens${item.filename}`} />,
+    uiSchema: {
+      'ui:order': ['internalName', 'filename'],
+      filename: {
+        'ui:widget': makeResourceReference({
+          type: ResourceType.Graphics,
+          prefix: ['loadscreens'],
+          postProcess: (filename) => `/${filename}`,
+        }),
+      },
+    },
   }),
   makeFileItem(
     'loading-screens-mapping.json',
@@ -898,6 +919,9 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               'isSAMSite',
             ],
             sector: { 'ui:disabled': true },
+            secretMapIcon: {
+              'ui:widget': resourceReferenceToGraphics,
+            },
           },
         },
       ),
@@ -996,6 +1020,8 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
       ],
       profile: { 'ui:widget': stringReferenceToMercProfiles },
       armourType: { 'ui:widget': stringReferenceToArmours },
+      enterSound: { 'ui:widget': resourceReferenceToSound },
+      moveSound: { 'ui:widget': resourceReferenceToSound },
     },
   }),
 ];
