@@ -1,6 +1,5 @@
 import { useCallback, useMemo, JSX, memo } from 'react';
-import { Button, Collapse, Flex, Space } from 'antd';
-
+import { Collapse, Flex, Space } from 'antd';
 import { JsonSchemaForm } from './JsonSchemaForm';
 import { FullSizeLoader } from './FullSizeLoader';
 import './JsonItemsForm.css';
@@ -19,7 +18,7 @@ import { ErrorAlert } from './ErrorAlert';
 import { TextEditorOr } from './TextEditor';
 import { useAppDispatch } from '../hooks/state';
 import { addJsonItem } from '../state/files';
-import { PlusCircleOutlined } from '@ant-design/icons';
+import { AddNewButton } from './form/AddNewButton';
 
 type PreviewFn = (item: any) => JSX.Element | string | null;
 
@@ -138,9 +137,9 @@ const FormItems = memo(function FormItems({
   }, [file, name, numItems, preview, uiSchema]);
 
   return (
-    <Space direction="vertical" style={{ width: '100%' }}>
+    <Flex vertical gap="small">
       {items}
-    </Space>
+    </Flex>
   );
 });
 
@@ -150,7 +149,7 @@ export interface JsonItemsFormProps {
   preview?: PreviewFn;
   uiSchema?: UiSchema;
   canAddNewItem?: boolean;
-  getNewItem?: () => any;
+  getNewItem?: () => object;
 }
 
 export const JsonItemsForm = memo(function JsonItemsForm({
@@ -173,13 +172,7 @@ export const JsonItemsForm = memo(function JsonItemsForm({
   const addButton = useMemo(() => {
     const render = typeof canAddNewItem === 'undefined' ? true : canAddNewItem;
     if (!render) return null;
-    return (
-      <div style={{ width: '192px' }}>
-        <Button type="primary" block onClick={addNewItem}>
-          <PlusCircleOutlined />
-        </Button>
-      </div>
-    );
+    return <AddNewButton onClick={addNewItem} />;
   }, [addNewItem, canAddNewItem]);
   const content = useMemo(() => {
     if (numItems == null) {

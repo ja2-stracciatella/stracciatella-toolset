@@ -17,23 +17,56 @@ import {
 import { IChangeEvent } from '@rjsf/core';
 import { ErrorAlert } from './ErrorAlert';
 import { TextEditorOr } from './TextEditor';
+import { AddNewButton } from './form/AddNewButton';
+import { useAppDispatch } from '../hooks/state';
+import { addJsonItem } from '../state/files';
 
 interface ItemFormProps {
   file: string;
   index: number;
+  property: string;
   uiSchema?: UiSchema;
+  sectorId?: string;
+  canAddNewItem?: boolean;
+  getNewItem?: () => object;
 }
 
-function ItemForm({ file, index, uiSchema }: ItemFormProps) {
+function ItemForm({
+  file,
+  index,
+  property,
+  uiSchema,
+  sectorId,
+  canAddNewItem,
+  getNewItem,
+}: ItemFormProps) {
+  const dispatch = useAppDispatch();
   const schema = useFileJsonItemSchema(file);
   const [value, update] = useFileJsonItem(file, index);
   const onItemChange = useCallback(
     (ev: IChangeEvent<any>) => update(ev.formData),
     [update],
   );
+  const addNewItem = useCallback(
+    () =>
+      dispatch(
+        addJsonItem({
+          filename: file,
+          value: {
+            ...(getNewItem ? getNewItem() : {}),
+            [property]: sectorId,
+          },
+        }),
+      ),
+    [dispatch, file, getNewItem, property, sectorId],
+  );
 
   if (index === -1 || !value) {
-    return <div>Select a sector to the left to edit.</div>;
+    if (sectorId && (typeof canAddNewItem === 'undefined' || canAddNewItem)) {
+      return <AddNewButton onClick={addNewItem} />;
+    } else {
+      return <div>Select a sector to the left to edit.</div>;
+    }
   }
 
   return (
@@ -50,30 +83,37 @@ export interface StrategicMapFormProps {
   file: string;
   property?: string;
   uiSchema?: UiSchema;
+  canAddNewItem?: boolean;
+  getNewItem?: () => object;
 }
 
 export function JsonStrategicMapForm({
   file,
   property = 'sector',
   uiSchema,
+  canAddNewItem,
+  getNewItem,
 }: StrategicMapFormProps) {
   const loading = useFileLoading(file);
   const error = useFileLoadingError(file);
-  const [selectedItem, setSelectedItem] = useState(-1);
   const [value] = useFileJson(file);
+  const [selectedSector, setSelectedSector] = useState<string | undefined>();
   const sectorsWithContent = useMemo(
-    () => (value ? value.map((d: any) => d[property].toLowerCase()) : []),
+    () => (value ? value.map((d: any) => d[property]) : []),
     [value, property],
   );
+  const selectedItem = useMemo(() => {
+    if (!selectedSector) return null;
+    return sectorsWithContent.indexOf(selectedSector);
+  }, [sectorsWithContent, selectedSector]);
   const onSectorClick = useCallback(
     (sectorId: string) => {
       if (!value) {
         return;
       }
-      const idx = sectorsWithContent.indexOf(sectorId.toLowerCase());
-      setSelectedItem(idx);
+      setSelectedSector(sectorId);
     },
-    [sectorsWithContent, value],
+    [value],
   );
   const contents = useMemo(() => {
     if (!value) {
@@ -82,16 +122,36 @@ export function JsonStrategicMapForm({
     return (
       <Space direction="horizontal" align="start" size="large">
         <StrategicMap
+          selectedSectorId={selectedSector}
           highlightedSectorIds={sectorsWithContent}
           onSectorClick={onSectorClick}
         />
         <div>
           <JsonFormHeader file={file} />
-          <ItemForm file={file} index={selectedItem} uiSchema={uiSchema} />
+          <ItemForm
+            file={file}
+            index={selectedItem}
+            property={property}
+            uiSchema={uiSchema}
+            sectorId={selectedSector}
+            canAddNewItem={canAddNewItem}
+            getNewItem={getNewItem}
+          />
         </div>
       </Space>
     );
-  }, [file, onSectorClick, sectorsWithContent, selectedItem, uiSchema, value]);
+  }, [
+    canAddNewItem,
+    file,
+    getNewItem,
+    onSectorClick,
+    property,
+    sectorsWithContent,
+    selectedItem,
+    selectedSector,
+    uiSchema,
+    value,
+  ]);
 
   if (loading) {
     return <FullSizeLoader />;

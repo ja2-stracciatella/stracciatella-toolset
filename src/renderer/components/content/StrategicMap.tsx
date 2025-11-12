@@ -4,6 +4,7 @@ import { useImageFile } from '../../hooks/useImage';
 import './StrategicMap.css';
 
 export interface StrategicMapProps {
+  selectedSectorId?: string | null;
   highlightedSectorIds: string[];
   onSectorClick?: (sectorId: string) => unknown;
 }
@@ -20,22 +21,31 @@ for (let y = 0; y < 16; y++) {
     tilePrefabs.push({
       x,
       y,
-      sectorId: String.fromCharCode(97 + y) + (x + 1).toString(),
+      sectorId:
+        `${String.fromCharCode(97 + y)}${(x + 1).toString()}`.toUpperCase(),
     });
   }
 }
 
 interface TileProps extends TilePrefab {
+  selected: boolean;
   highlighted: boolean;
   onSectorClick?: (sectorId: string) => unknown;
 }
 
-function Tile({ x, y, sectorId, highlighted, onSectorClick }: TileProps) {
+function Tile({
+  x,
+  y,
+  sectorId,
+  selected,
+  highlighted,
+  onSectorClick,
+}: TileProps) {
   const className = useMemo(() => {
     return `strategic-map-tile row-${y} col-${x} ${sectorId} ${
       highlighted ? 'highlighted' : ''
-    }`;
-  }, [highlighted, sectorId, x, y]);
+    } ${selected ? 'selected' : ''}`;
+  }, [highlighted, selected, sectorId, x, y]);
   const content = useMemo(() => {
     return highlighted ? <div className="highlight" /> : null;
   }, [highlighted]);
@@ -52,6 +62,7 @@ function Tile({ x, y, sectorId, highlighted, onSectorClick }: TileProps) {
 }
 
 export function StrategicMap({
+  selectedSectorId,
   highlightedSectorIds,
   onSectorClick,
 }: StrategicMapProps) {
@@ -66,17 +77,20 @@ export function StrategicMap({
   }, [image]);
   const tiles = useMemo(() => {
     return tilePrefabs.map((p) => {
-      const highlighted = highlightedSectorIds.includes(p.sectorId);
+      const highlighted = highlightedSectorIds
+        .map((id) => id.toUpperCase())
+        .includes(p.sectorId.toUpperCase());
       return (
         <Tile
           key={`${p.x}-${p.y}`}
           {...p}
+          selected={p.sectorId === selectedSectorId}
           highlighted={highlighted}
           onSectorClick={onSectorClick}
         />
       );
     });
-  }, [highlightedSectorIds, onSectorClick]);
+  }, [highlightedSectorIds, selectedSectorId, onSectorClick]);
 
   useEffect(() => {
     refresh();
