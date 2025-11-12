@@ -246,6 +246,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
       makeFileItem('smoke-effects.json', 'Smoke Effects', JsonItemsForm, {
         name: 'name',
         preview: (item: any) => <StiPreview file={item.staticGraphics} />,
+        canAddNewItem: false,
         uiSchema: {
           'ui:order': [
             'name',
@@ -299,6 +300,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     children: [
       makeFileItem('ammo-types.json', 'Ammo Types', JsonItemsForm, {
         name: 'internalName',
+        canAddNewItem: false,
         uiSchema: { 'ui:order': ['index', 'internalName'] },
       }),
       makeFileItem('armours.json', 'Armours', JsonItemsForm, {
@@ -425,7 +427,8 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         'Tactical Map Item Replacements',
         JsonItemsForm,
         {
-          name: (item: any) => `${item.from} to ${item.to}`,
+          name: (item: any) =>
+            `${item.from ?? 'unknown'} to ${item.to ?? 'unknown'}`,
           uiSchema: {
             from: {
               oneOf: [
@@ -797,7 +800,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         'Creature Lairs',
         JsonItemsForm,
         {
-          name: (item: any) => item.entranceSector[0],
+          name: (item: any) => item.entranceSector?.[0] ?? 'unknown',
           uiSchema: {
             'ui:order': [
               'lairId',
@@ -884,7 +887,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         },
       ),
       makeFileItem('strategic-map-towns.json', 'Towns', JsonItemsForm, {
-        name: 'townId',
+        name: 'internalName',
         uiSchema: {
           'ui:order': [
             'townId',

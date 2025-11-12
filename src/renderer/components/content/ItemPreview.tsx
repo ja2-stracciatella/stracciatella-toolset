@@ -6,12 +6,12 @@ interface SubImage {
 }
 
 interface ItemPreviewProps {
-  inventoryGraphics: {
-    small: SubImage;
-    big: SubImage;
+  inventoryGraphics?: {
+    small?: SubImage;
+    big?: SubImage;
   };
 }
 
-export function ItemPreview({ inventoryGraphics: { big } }: ItemPreviewProps) {
-  return <StiPreview file={big.path} />;
+export function ItemPreview({ inventoryGraphics }: ItemPreviewProps) {
+  return <StiPreview file={inventoryGraphics?.big?.path ?? ''} />;
 }

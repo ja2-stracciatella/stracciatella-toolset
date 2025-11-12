@@ -198,6 +198,18 @@ const filesSlice = createSlice({
       (open.value as Array<any>)[index] = value;
       open.modified = isModified(state, filename);
     },
+    addJsonItem: (
+      state,
+      action: PayloadAction<{ filename: string; value: any }>,
+    ) => {
+      const { filename, value } = action.payload;
+      const open = state.open[filename];
+      if (!open || open.editMode !== 'visual' || !Array.isArray(open.value)) {
+        return;
+      }
+      open.value = [...open.value, value];
+      open.modified = isModified(state, filename);
+    },
     changeSaveMode(
       state,
       action: PayloadAction<{ filename: string; saveMode: SaveMode }>,
@@ -348,6 +360,7 @@ export const {
   changeText,
   changeJson,
   changeJsonItem,
+  addJsonItem,
   changeSaveMode,
   changeEditMode,
 } = filesSlice.actions;

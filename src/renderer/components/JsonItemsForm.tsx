@@ -1,5 +1,5 @@
 import { useCallback, useMemo, JSX, memo } from 'react';
-import { Collapse, Space } from 'antd';
+import { Button, Collapse, Flex, Space } from 'antd';
 
 import { JsonSchemaForm } from './JsonSchemaForm';
 import { FullSizeLoader } from './FullSizeLoader';
@@ -17,6 +17,9 @@ import {
 } from '../hooks/files';
 import { ErrorAlert } from './ErrorAlert';
 import { TextEditorOr } from './TextEditor';
+import { useAppDispatch } from '../hooks/state';
+import { addJsonItem } from '../state/files';
+import { PlusCircleOutlined } from '@ant-design/icons';
 
 type PreviewFn = (item: any) => JSX.Element | string | null;
 
@@ -146,6 +149,8 @@ export interface JsonItemsFormProps {
   name: NameOrPreviewFn;
   preview?: PreviewFn;
   uiSchema?: UiSchema;
+  canAddNewItem?: boolean;
+  getNewItem?: () => any;
 }
 
 export const JsonItemsForm = memo(function JsonItemsForm({
@@ -153,10 +158,29 @@ export const JsonItemsForm = memo(function JsonItemsForm({
   name,
   preview,
   uiSchema,
+  canAddNewItem,
+  getNewItem,
 }: JsonItemsFormProps) {
+  const dispatch = useAppDispatch();
   const loading = useFileLoading(file);
   const error = useFileLoadingError(file);
   const numItems = useFileJsonNumberOfItems(file);
+  const addNewItem = useCallback(() => {
+    dispatch(
+      addJsonItem({ filename: file, value: getNewItem ? getNewItem() : {} }),
+    );
+  }, [dispatch, file, getNewItem]);
+  const addButton = useMemo(() => {
+    const render = typeof canAddNewItem === 'undefined' ? true : canAddNewItem;
+    if (!render) return null;
+    return (
+      <div style={{ width: '192px' }}>
+        <Button type="primary" block onClick={addNewItem}>
+          <PlusCircleOutlined />
+        </Button>
+      </div>
+    );
+  }, [addNewItem, canAddNewItem]);
   const content = useMemo(() => {
     if (numItems == null) {
       return <ErrorAlert error={{ message: 'No items after loading' }} />;
@@ -164,16 +188,19 @@ export const JsonItemsForm = memo(function JsonItemsForm({
     return (
       <>
         <JsonFormHeader file={file} />
-        <FormItems
-          file={file}
-          name={name}
-          preview={preview}
-          numItems={numItems}
-          uiSchema={uiSchema}
-        />
+        <Flex vertical gap="middle">
+          <FormItems
+            file={file}
+            name={name}
+            preview={preview}
+            numItems={numItems}
+            uiSchema={uiSchema}
+          />
+          {addButton}
+        </Flex>
       </>
     );
-  }, [file, name, numItems, preview, uiSchema]);
+  }, [addButton, file, name, numItems, preview, uiSchema]);
 
   if (error) {
     return <ErrorAlert error={error} />;
