@@ -1,117 +1,17 @@
 import { IChangeEvent, withTheme } from '@rjsf/core';
-import { UiSchema, FieldTemplateProps, FieldProps } from '@rjsf/utils';
+import { UiSchema } from '@rjsf/utils';
 import { Theme as AntdTheme } from '@rjsf/antd';
-import { Form } from 'antd';
-import ReactMarkdown from 'react-markdown';
-import { memo, useMemo } from 'react';
 import validator from '@rjsf/validator-ajv8';
+import { useMemo } from 'react';
 
-export interface DescriptionFieldProps extends Partial<FieldProps> {
-  description?: string;
-}
+const RjsfForm = withTheme(AntdTheme);
 
-const MarkdownDescriptionField = memo(function MarkdownDescriptionField({
-  id,
-  description,
-}: DescriptionFieldProps) {
-  if (!description) {
-    return null;
-  }
-  return (
-    <div id={id}>
-      <ReactMarkdown>{description}</ReactMarkdown>
-    </div>
-  );
-});
-
-const HORIZONTAL_LABEL_COL = { span: 6 };
-const HORIZONTAL_WRAPPER_COL = { span: 18 };
-
-// Cloned from Antd theme with some changes
-const MarkdownFieldTemplate = memo(function MarkdownFieldTemplate({
-  children,
-  // classNames,
-  // description,
-  // disabled,
-  displayLabel,
-  // errors,
-  // fields,
-  formContext,
-  // help,
-  hidden,
-  id,
-  label,
-  // onDropPropertyClick,
-  // onKeyChange,
-  rawDescription,
-  rawErrors,
-  // rawHelp,
-  // readonly,
-  required,
-  schema,
-}: // uiSchema,
-FieldTemplateProps) {
-  const { colon, wrapperStyle } = formContext;
-  const fieldErrors = useMemo(() => {
-    if (!rawErrors) {
-      return null;
-    }
-    return [...Array.from(new Set(rawErrors))].map((error: any) => (
-      <div key={`field-${id}-error-${error}`}>{error}</div>
-    ));
-  }, [id, rawErrors]);
-  const renderedDescription = useMemo(() => {
-    if (!rawDescription) {
-      return null;
-    }
-    return <ReactMarkdown>{rawDescription}</ReactMarkdown>;
-  }, [rawDescription]);
-
-  if (hidden) {
-    return <div className="field-hidden">{children}</div>;
-  }
-
-  return id === 'root' ? (
-    children
-  ) : (
-    <Form.Item
-      colon={colon}
-      extra={
-        schema.type !== 'array' &&
-        schema.type !== 'object' &&
-        renderedDescription
-      }
-      hasFeedback={schema.type !== 'array' && schema.type !== 'object'}
-      help={schema.type !== 'array' && schema.type !== 'object' && fieldErrors}
-      htmlFor={id}
-      label={displayLabel && label}
-      labelCol={HORIZONTAL_LABEL_COL}
-      labelAlign="left"
-      required={required}
-      style={wrapperStyle}
-      validateStatus={rawErrors ? 'error' : undefined}
-      wrapperCol={HORIZONTAL_WRAPPER_COL}
-    >
-      {children}
-    </Form.Item>
-  );
-});
-
-const RjsfForm = withTheme({
-  ...AntdTheme,
-  widgets: {
-    ...AntdTheme.widgets,
-    // CheckboxWidget: CheckboxWidgetWithDescription,
+const DEFAULT_UI_SCHEMA: UiSchema = {
+  'ui:globalOptions': {
+    enableMarkdownInDescription: true,
+    enableMarkdownInHelp: true,
   },
-  fields: {
-    ...AntdTheme.fields,
-    DescriptionField: MarkdownDescriptionField,
-  },
-  templates: {
-    ...AntdTheme.templates,
-    FieldTemplate: MarkdownFieldTemplate,
-  },
-});
+};
 
 export interface JsonSchemaFormProps {
   idPrefix?: string;
@@ -132,6 +32,14 @@ export function JsonSchemaForm({
   onChange,
   onSubmit,
 }: JsonSchemaFormProps) {
+  const appliedUiSchema: UiSchema = useMemo(
+    () => ({
+      ...DEFAULT_UI_SCHEMA,
+      ...uiSchema,
+    }),
+    [uiSchema],
+  );
+
   return (
     <RjsfForm
       idPrefix={idPrefix}
@@ -143,7 +51,7 @@ export function JsonSchemaForm({
       liveValidate
       noHtml5Validate
       showErrorList={false}
-      uiSchema={uiSchema}
+      uiSchema={appliedUiSchema}
       onChange={onChange}
       onSubmit={onSubmit}
     />
