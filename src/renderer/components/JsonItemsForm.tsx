@@ -1,5 +1,5 @@
 import { useCallback, useMemo, JSX, memo } from 'react';
-import { Collapse, Flex, Space } from 'antd';
+import { Collapse, Flex } from 'antd';
 import { JsonSchemaForm } from './JsonSchemaForm';
 import { FullSizeLoader } from './FullSizeLoader';
 import './JsonItemsForm.css';
@@ -19,6 +19,7 @@ import { TextEditorOr } from './TextEditor';
 import { useAppDispatch } from '../hooks/state';
 import { addJsonItem } from '../state/files';
 import { AddNewButton } from './form/AddNewButton';
+import { RemoveButton } from './form/RemoveButton';
 
 type PreviewFn = (item: any) => JSX.Element | string | null;
 
@@ -51,10 +52,13 @@ const ItemFormHeader = memo(function ItemFormHeader({
   const p = useMemo(() => (preview ? preview(value) : null), [preview, value]);
 
   return (
-    <Space direction="horizontal">
-      {p}
-      {label}
-    </Space>
+    <Flex justify="space-between" align="center">
+      <Flex gap="small" align="center">
+        {p}
+        {label}
+      </Flex>
+      <RemoveButton file={file} index={index} />
+    </Flex>
   );
 });
 

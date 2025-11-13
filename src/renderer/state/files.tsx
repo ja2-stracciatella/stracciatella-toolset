@@ -22,7 +22,7 @@ import {
   JsonSchema,
 } from '../../common/invokables/jsons';
 import { InvokableOutput } from 'src/common/invokables';
-import { omit } from 'remeda';
+import { isArray, omit, splice } from 'remeda';
 
 export type SaveMode = 'patch' | 'replace';
 
@@ -194,10 +194,10 @@ const filesSlice = createSlice({
     ) => {
       const { filename, index, value } = action.payload;
       const open = state.open[filename];
-      if (!open || open.editMode !== 'visual' || !Array.isArray(open.value)) {
+      if (!open || open.editMode !== 'visual' || !isArray(open.value)) {
         return;
       }
-      (open.value as Array<any>)[index] = value;
+      open.value[index] = value;
       open.modified = isModified(state, filename);
     },
     addJsonItem: (
@@ -206,10 +206,27 @@ const filesSlice = createSlice({
     ) => {
       const { filename, value } = action.payload;
       const open = state.open[filename];
-      if (!open || open.editMode !== 'visual' || !Array.isArray(open.value)) {
+      if (!open || open.editMode !== 'visual' || !isArray(open.value)) {
         return;
       }
       open.value = [...open.value, value];
+      open.modified = isModified(state, filename);
+    },
+    removeJsonItem: (
+      state,
+      action: PayloadAction<{ filename: string; index: number }>,
+    ) => {
+      const { filename, index } = action.payload;
+      const open = state.open[filename];
+      if (
+        !open ||
+        open.editMode !== 'visual' ||
+        !isArray(open.value) ||
+        typeof open.value[index] === 'undefined'
+      ) {
+        return;
+      }
+      open.value = splice(open.value, index, 1, []);
       open.modified = isModified(state, filename);
     },
     changeSaveMode(
@@ -366,6 +383,7 @@ export const {
   changeJson,
   changeJsonItem,
   addJsonItem,
+  removeJsonItem,
   changeSaveMode,
   changeEditMode,
 } = filesSlice.actions;

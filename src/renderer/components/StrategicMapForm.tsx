@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Space } from 'antd';
+import { Space, Typography } from 'antd';
 
 import { UiSchema } from '@rjsf/utils';
 import { FullSizeLoader } from './FullSizeLoader';
@@ -21,6 +21,7 @@ import { AddNewButton } from './form/AddNewButton';
 import { useAppDispatch } from '../hooks/state';
 import { addJsonItem } from '../state/files';
 import { findIndex, isDeepEqual } from 'remeda';
+import { RemoveButton } from './form/RemoveButton';
 
 interface ItemFormProps {
   file: string;
@@ -126,47 +127,18 @@ export function JsonStrategicMapForm({
     },
     [value],
   );
-  const contents = useMemo(() => {
-    if (!value) {
-      return <ErrorAlert error={{ message: 'No items after loading' }} />;
-    }
+  const removeButton = useMemo(() => {
+    if (selectedItem === -1) return null;
     return (
-      <Space direction="horizontal" align="start" size="large">
-        <StrategicMap
-          level={level}
-          selectedSectorId={selectedSector}
-          highlightedSectorIds={sectorsWithContent}
-          onSectorClick={onSectorClick}
-          onLevelChange={canChangeLevel ? setLevel : undefined}
+      <Typography.Paragraph>
+        <RemoveButton
+          file={file}
+          index={selectedItem}
+          label="Remove from this sector"
         />
-        <div>
-          <JsonFormHeader file={file} />
-          <ItemForm
-            file={file}
-            index={selectedItem}
-            uiSchema={uiSchema}
-            sectorId={selectedSector}
-            transformSectorToItem={transformSectorToItem}
-            canAddNewItem={canAddNewItem}
-            getNewItem={getNewItem}
-          />
-        </div>
-      </Space>
+      </Typography.Paragraph>
     );
-  }, [
-    canAddNewItem,
-    canChangeLevel,
-    file,
-    getNewItem,
-    level,
-    onSectorClick,
-    sectorsWithContent,
-    selectedItem,
-    selectedSector,
-    transformSectorToItem,
-    uiSchema,
-    value,
-  ]);
+  }, [file, selectedItem]);
 
   if (loading) {
     return <FullSizeLoader />;
@@ -177,7 +149,30 @@ export function JsonStrategicMapForm({
 
   return (
     <EditorContent path={file}>
-      <TextEditorOr file={file}>{contents}</TextEditorOr>
+      <TextEditorOr file={file}>
+        <Space direction="horizontal" align="start" size="large">
+          <StrategicMap
+            level={level}
+            selectedSectorId={selectedSector}
+            highlightedSectorIds={sectorsWithContent}
+            onSectorClick={onSectorClick}
+            onLevelChange={canChangeLevel ? setLevel : undefined}
+          />
+          <div>
+            <JsonFormHeader file={file} />
+            {removeButton}
+            <ItemForm
+              file={file}
+              index={selectedItem}
+              uiSchema={uiSchema}
+              sectorId={selectedSector}
+              transformSectorToItem={transformSectorToItem}
+              canAddNewItem={canAddNewItem}
+              getNewItem={getNewItem}
+            />
+          </div>
+        </Space>
+      </TextEditorOr>
     </EditorContent>
   );
 }
