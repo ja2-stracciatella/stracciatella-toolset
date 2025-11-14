@@ -10,6 +10,7 @@ interface ResourceReferenceWidgetProps extends WidgetProps {
   resourceType: ResourceType;
   pathPrefix: string[];
   postProcess: (path: string) => string;
+  preview?: React.ReactNode;
 }
 
 export function ResourceReferenceWidget({
@@ -18,6 +19,7 @@ export function ResourceReferenceWidget({
   postProcess,
   value,
   onChange,
+  preview,
 }: ResourceReferenceWidgetProps) {
   const [modalIsOpen, setModalOpen] = useState(false);
   const openModal = useCallback(() => setModalOpen(true), []);
@@ -35,7 +37,10 @@ export function ResourceReferenceWidget({
     },
     [onChange],
   );
-  const preview = useMemo(() => {
+  const previewElement = useMemo(() => {
+    if (preview) {
+      return preview;
+    }
     const trimmed = (value ?? '').startsWith('/') ? value.substring(1) : value;
     if (resourceType === ResourceType.Sound) {
       return (
@@ -52,11 +57,11 @@ export function ResourceReferenceWidget({
       );
     }
     return null;
-  }, [pathPrefix, resourceType, value]);
+  }, [preview, pathPrefix, resourceType, value]);
 
   return (
     <Flex dir="row" gap="small">
-      {preview}
+      {previewElement}
       <Input
         style={{ flexGrow: 1 }}
         value={value}

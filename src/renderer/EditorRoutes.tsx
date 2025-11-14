@@ -32,6 +32,8 @@ import { StiPreview } from './components/content/StiPreview';
 import { ResourceType } from './lib/resourceType';
 import { makeMultiSectorSelectorWidget } from './components/form/MultiSectorSelectorWidget';
 import { mergeDeep } from 'remeda';
+import { UiSchema } from '@rjsf/utils';
+import { InventoryGraphicsField } from './components/form/InventoryGraphicsField';
 
 const baseItemProps = [
   'itemIndex',
@@ -68,6 +70,16 @@ const baseItemFlags = [
   'bUnaerodynamic',
   'bSinks',
 ];
+const baseItemUiSchema: UiSchema = {
+  inventoryGraphics: {
+    small: {
+      'ui:field': InventoryGraphicsField,
+    },
+    big: {
+      'ui:field': InventoryGraphicsField,
+    },
+  },
+};
 
 export interface Route {
   id: string;
@@ -337,6 +349,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
 
             ...baseItemFlags,
           ],
+          ...baseItemUiSchema,
         },
       }),
       makeFileItem('calibres.json', 'Calibres', JsonItemsForm, {
@@ -389,6 +402,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             'isPressureTriggered',
             ...baseItemFlags,
           ],
+          ...baseItemUiSchema,
           calibre: {
             'ui:widget': stringReferenceToExplosiveCalibres,
           },
@@ -410,6 +424,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             'ubClassIndex',
             ...baseItemFlags,
           ],
+          ...baseItemUiSchema,
         },
       }),
       makeFileItem('magazines.json', 'Magazines', JsonItemsForm, {
@@ -427,6 +442,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             'dontUseAsDefaultMagazine',
             ...baseItemFlags,
           ],
+          ...baseItemUiSchema,
           ammoType: {
             'ui:widget': stringReferenceToAmmoTypes,
           },
@@ -499,6 +515,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             'attachment_UnderGLauncher',
             ...baseItemFlags,
           ],
+          ...baseItemUiSchema,
           calibre: {
             'ui:widget': stringReferenceToCalibres,
           },
