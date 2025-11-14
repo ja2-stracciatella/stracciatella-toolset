@@ -24,6 +24,22 @@ export function sectorIdStringFromCoords(x: number, y: number): string {
   return `${String.fromCharCode(97 + y)}${(x + 1).toString()}`.toUpperCase();
 }
 
+export function coordsFromSectorIdString(
+  sectorId: string,
+): [number, number] | null {
+  const yStr = sectorId[0];
+  const xStr = sectorId.substring(1);
+  if (!xStr || !yStr) {
+    return null;
+  }
+  const x = parseInt(xStr, 10) - 1;
+  const y = yStr.charCodeAt(0) - 'A'.charCodeAt(0);
+  if (isNaN(x) || isNaN(y)) {
+    return null;
+  }
+  return [x, y];
+}
+
 export interface StrategicMapProps {
   level?: number;
   selectedSectorId?: NormalizedSectorId | null;

@@ -35,6 +35,7 @@ import { mergeDeep } from 'remeda';
 import { UiSchema } from '@rjsf/utils';
 import { InventoryGraphicsField } from './components/form/InventoryGraphicsField';
 import { SamSitesAirControlForm } from './components/SamSitesAirControlForm';
+import { MovementCostsForm } from './components/MovementCostsForm';
 
 const baseItemProps = [
   'itemIndex',
@@ -893,7 +894,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
       makeFileItem(
         'strategic-map-movement-costs.json',
         'Movement Costs',
-        JsonForm,
+        MovementCostsForm,
         {},
       ),
       makeFileItem(

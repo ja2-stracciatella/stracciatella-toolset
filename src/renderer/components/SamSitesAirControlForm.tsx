@@ -10,6 +10,7 @@ import { FullSizeLoader } from './FullSizeLoader';
 import { TextEditorOr } from './TextEditor';
 import { useMemo, useState } from 'react';
 import {
+  coordsFromSectorIdString,
   HIGHLIGHT_COLORS,
   NormalizedSectorId,
   sectorIdStringFromCoords,
@@ -17,20 +18,6 @@ import {
 } from './content/StrategicMap';
 import { Badge, Flex, Select, Space, Typography } from 'antd';
 import { JsonFormHeader } from './form/JsonFormHeader';
-
-function coordsFromSectorIdString(sectorId: string): [number, number] | null {
-  const yStr = sectorId[0];
-  const xStr = sectorId.substring(1);
-  if (!xStr || !yStr) {
-    return null;
-  }
-  const x = parseInt(xStr, 10) - 1;
-  const y = yStr.charCodeAt(0) - 'A'.charCodeAt(0);
-  if (isNaN(x) || isNaN(y)) {
-    return null;
-  }
-  return [x, y];
-}
 
 interface SamSitesAirControlProps {
   file: string;
