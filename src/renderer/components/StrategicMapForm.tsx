@@ -3,7 +3,11 @@ import { Space, Typography } from 'antd';
 
 import { UiSchema } from '@rjsf/utils';
 import { FullSizeLoader } from './FullSizeLoader';
-import { NormalizedSectorId, StrategicMap } from './content/StrategicMap';
+import {
+  DEFAULT_HIGHLIGHT_COLOR,
+  NormalizedSectorId,
+  StrategicMap,
+} from './content/StrategicMap';
 import { JsonSchemaForm } from './JsonSchemaForm';
 import { EditorContent } from './EditorContent';
 import { JsonFormHeader } from './form/JsonFormHeader';
@@ -112,6 +116,9 @@ export function JsonStrategicMapForm({
     () => (value ?? []).map((d: any) => extractSectorFromItem(d)),
     [value, extractSectorFromItem],
   );
+  const highlightedSectorIds = useMemo(() => {
+    return { [DEFAULT_HIGHLIGHT_COLOR]: sectorsWithContent };
+  }, [sectorsWithContent]);
   const selectedItem = useMemo(() => {
     if (!selectedSector) return -1;
     return findIndex(sectorsWithContent, (sector) =>
@@ -154,7 +161,7 @@ export function JsonStrategicMapForm({
           <StrategicMap
             level={level}
             selectedSectorId={selectedSector}
-            highlightedSectorIds={sectorsWithContent}
+            highlightedSectorIds={highlightedSectorIds}
             onSectorClick={onSectorClick}
             onLevelChange={canChangeLevel ? setLevel : undefined}
           />

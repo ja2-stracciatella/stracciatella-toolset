@@ -66,7 +66,7 @@ export function JsonForm({ file, uiSchema }: JsonFormProps) {
 
   return (
     <EditorContent path={file}>
-      <TextEditorOr file={file}> {contents}</TextEditorOr>
+      <TextEditorOr file={file}>{contents}</TextEditorOr>
     </EditorContent>
   );
 }

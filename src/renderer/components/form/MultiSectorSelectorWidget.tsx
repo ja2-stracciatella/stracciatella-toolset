@@ -1,5 +1,9 @@
 import { WidgetProps } from '@rjsf/utils';
-import { NormalizedSectorId, StrategicMap } from '../content/StrategicMap';
+import {
+  DEFAULT_HIGHLIGHT_COLOR,
+  NormalizedSectorId,
+  StrategicMap,
+} from '../content/StrategicMap';
 import { useCallback, useMemo, useState } from 'react';
 import { Flex } from 'antd';
 import { find, isDeepEqual } from 'remeda';
@@ -23,7 +27,11 @@ function MultiSectorSelectorWidget<T>({
 }: MultiSectorSelectorWidgetProps<T>) {
   const [level, setLevel] = useState(initialLevel);
   const highlightedSectorIds = useMemo(
-    () => value.map(extractSectorFromItem ?? ((s: T) => s)),
+    () => ({
+      [DEFAULT_HIGHLIGHT_COLOR]: value.map(
+        extractSectorFromItem ?? ((s: T) => s),
+      ),
+    }),
     [value, extractSectorFromItem],
   );
   const handleSectorClick = useCallback(

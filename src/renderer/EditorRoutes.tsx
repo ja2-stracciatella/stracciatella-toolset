@@ -34,6 +34,7 @@ import { makeMultiSectorSelectorWidget } from './components/form/MultiSectorSele
 import { mergeDeep } from 'remeda';
 import { UiSchema } from '@rjsf/utils';
 import { InventoryGraphicsField } from './components/form/InventoryGraphicsField';
+import { SamSitesAirControlForm } from './components/SamSitesAirControlForm';
 
 const baseItemProps = [
   'itemIndex',
@@ -919,7 +920,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
       makeFileItem(
         'strategic-map-sam-sites-air-control.json',
         'Sam Sites Air Control',
-        JsonForm,
+        SamSitesAirControlForm,
         {},
       ),
       makeFileItem(

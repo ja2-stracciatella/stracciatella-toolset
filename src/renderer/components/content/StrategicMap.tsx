@@ -1,16 +1,33 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useImageFile } from '../../hooks/useImage';
-
 import './StrategicMap.css';
 import { Button, Flex } from 'antd';
 import { MinusOutlined, PlusOutlined } from '@ant-design/icons';
 
+export const HIGHLIGHT_COLORS = [
+  '#3cb44b',
+  '#4363d8',
+  '#f58231',
+  '#911eb4',
+  '#bfef45',
+  '#e6194B',
+  '#42d4f4',
+  '#ffe119',
+  '#f032e6',
+] as const;
+
+export const DEFAULT_HIGHLIGHT_COLOR = HIGHLIGHT_COLORS[0];
+
 export type NormalizedSectorId = [string, number];
+
+export function sectorIdStringFromCoords(x: number, y: number): string {
+  return `${String.fromCharCode(97 + y)}${(x + 1).toString()}`.toUpperCase();
+}
 
 export interface StrategicMapProps {
   level?: number;
   selectedSectorId?: NormalizedSectorId | null;
-  highlightedSectorIds: NormalizedSectorId[];
+  highlightedSectorIds?: { [color: string]: NormalizedSectorId[] };
   onSectorClick?: (sectorId: NormalizedSectorId) => unknown;
   onLevelChange?: (level: number) => unknown;
 }
@@ -27,8 +44,7 @@ for (let y = 0; y < 16; y++) {
     tilePrefabs.push({
       x,
       y,
-      sectorId:
-        `${String.fromCharCode(97 + y)}${(x + 1).toString()}`.toUpperCase(),
+      sectorId: sectorIdStringFromCoords(x, y),
     });
   }
 }
@@ -36,7 +52,7 @@ for (let y = 0; y < 16; y++) {
 interface TileProps extends TilePrefab {
   level: number;
   selected: boolean;
-  highlighted: boolean;
+  highlightColor?: string;
   onSectorClick?: (sectorId: NormalizedSectorId) => unknown;
 }
 
@@ -46,17 +62,22 @@ function Tile({
   sectorId,
   level,
   selected,
-  highlighted,
+  highlightColor,
   onSectorClick,
 }: TileProps) {
   const className = useMemo(() => {
     return `strategic-map-tile row-${y} col-${x} ${sectorId} ${
-      highlighted ? 'highlighted' : ''
+      highlightColor ? 'highlighted' : ''
     } ${selected ? 'selected' : ''}`;
-  }, [highlighted, selected, sectorId, x, y]);
+  }, [highlightColor, selected, sectorId, x, y]);
   const content = useMemo(() => {
-    return highlighted ? <div className="highlight" /> : null;
-  }, [highlighted]);
+    return highlightColor ? (
+      <div
+        className="highlight"
+        style={{ backgroundColor: highlightColor, opacity: 0.4 }}
+      />
+    ) : null;
+  }, [highlightColor]);
   const onClick = useCallback(() => {
     if (onSectorClick) {
       return onSectorClick([sectorId, level]);
@@ -121,9 +142,13 @@ export function StrategicMap({
   }, [image]);
   const tiles = useMemo(() => {
     return tilePrefabs.map((p) => {
-      const highlighted: boolean = !!highlightedSectorIds.find(
-        ([sectorId, l]) => sectorId === p.sectorId && l === level,
-      );
+      const highlightColor = Object.entries(highlightedSectorIds ?? {})
+        .filter(([, s]) => {
+          return !!s.find(
+            ([sectorId, l]) => sectorId === p.sectorId && l === level,
+          );
+        })
+        .map(([color]) => color)[0];
       const selected =
         p.sectorId === selectedSectorId?.[0] && level === selectedSectorId?.[1];
       return (
@@ -132,7 +157,7 @@ export function StrategicMap({
           {...p}
           level={level}
           selected={selected}
-          highlighted={highlighted}
+          highlightColor={highlightColor}
           onSectorClick={onSectorClick}
         />
       );

@@ -14,7 +14,10 @@ export function resourceTypeFromFilename(filename: string): ResourceType {
   if (split.length < 2) {
     return ResourceType.Any;
   }
-  const extension = split[split.length - 1].toLowerCase();
+  const extension = split[split.length - 1]?.toLowerCase();
+  if (!extension) {
+    return ResourceType.Any;
+  }
 
   return mapping[extension] ?? ResourceType.Any;
 }

@@ -78,7 +78,9 @@ function SideMenu() {
     sorted.sort((a, b) =>
       a.label.localeCompare(b.label, 'en', { ignorePunctuation: true }),
     );
-    return [dashboard, ...sorted].map((r) => routeToItem(navigate, '', r));
+    return [...(dashboard ? [dashboard] : []), ...sorted].map((r) =>
+      routeToItem(navigate, '', r),
+    );
   }, [navigate]);
 
   return (

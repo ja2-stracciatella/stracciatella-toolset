@@ -12,7 +12,7 @@ import { AppState } from '../state/store';
 import { memoize } from 'proxy-memoize';
 import { JsonRoot, JsonSchema } from '../../common/invokables/jsons';
 
-type UseFilesRequest = { [key: PropertyKey]: string };
+type UseFilesRequest = { [key: string]: string };
 
 type UseFilesResult<R extends UseFilesRequest, V> = {
   [key in keyof R]: V;
@@ -90,7 +90,7 @@ export function useFilesJson<R extends UseFilesRequest>(
     function selectFilesJson(s) {
       const values: { [key in keyof R]: JsonRoot | null } = {} as any;
       for (const key in files) {
-        const open = s.files.open[files[key]];
+        const open = s.files.open[files[key]!];
         if (!open || open.editMode === 'text') {
           values[key] = null;
         } else {
@@ -105,7 +105,7 @@ export function useFilesJson<R extends UseFilesRequest>(
     (file: keyof R, value: JsonRoot) => {
       dispatch(
         changeJson({
-          filename: files[file],
+          filename: files[file]!,
           value,
         }),
       );
@@ -116,7 +116,7 @@ export function useFilesJson<R extends UseFilesRequest>(
   useEffect(() => {
     for (const key in files) {
       if (loading[key] === null) {
-        dispatch(loadJSON(files[key]));
+        dispatch(loadJSON(files[key]!));
       }
     }
   }, [dispatch, files, loading]);
