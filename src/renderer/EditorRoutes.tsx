@@ -36,6 +36,7 @@ import { UiSchema } from '@rjsf/utils';
 import { InventoryGraphicsField } from './components/form/InventoryGraphicsField';
 import { SamSitesAirControlForm } from './components/SamSitesAirControlForm';
 import { MovementCostsForm } from './components/MovementCostsForm';
+import { NormalizedSectorId } from './components/content/StrategicMap';
 
 const baseItemProps = [
   'itemIndex',
@@ -173,6 +174,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
           uiSchema: {
             items: {
               items: {
+                'ui:label': false,
                 'ui:widget': stringReferenceToWeapons,
               },
             },
@@ -187,6 +189,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
           uiSchema: {
             items: {
               items: {
+                'ui:label': false,
                 'ui:widget': stringReferenceToWeapons,
               },
             },
@@ -713,6 +716,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         k,
         {
           items: {
+            'ui:label': false,
             'ui:widget': resourceReferenceToSound,
           },
         },
@@ -876,18 +880,26 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
       makeFileItem(
         'strategic-map-creature-lairs.json',
         'Creature Lairs',
-        JsonItemsForm,
+        JsonStrategicMapForm,
         {
-          name: (item: any) => item.entranceSector?.[0] ?? 'unknown',
+          extractSectorFromItem: (item: any) => item.entranceSector ?? null,
+          transformSectorToItem: (sector: NormalizedSectorId) => ({
+            entranceSector: sector,
+          }),
+          initialLevel: 1,
+          canChangeLevel: true,
           uiSchema: {
             'ui:order': [
+              'entranceSector',
               'lairId',
               'associatedMineId',
-              'entranceSector',
               'warpExit',
               'sectors',
               'attackSectors',
             ],
+            entranceSector: {
+              'ui:disabled': true,
+            },
           },
         },
       ),
@@ -914,6 +926,12 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             ],
             profile: {
               'ui:widget': stringReferenceToMercProfiles,
+            },
+            sectors: {
+              'ui:widget': makeMultiSectorSelectorWidget({
+                extractSectorFromItem: (sector: any) => [sector, 0],
+                transformSectorToItem: (sector: any) => sector[0],
+              }),
             },
           },
         },
@@ -1037,8 +1055,8 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               'ui:widget': makeMultiSectorSelectorWidget({
                 initialLevel: 1,
                 canChangeLevel: true,
-                extractSectorFromItem: (sector: string) => [sector, 0],
-                transformSectorToItem: (sector) => sector[0],
+                extractSectorFromItem: (sector: any) => sector,
+                transformSectorToItem: (sector) => sector,
               }),
             },
           },
