@@ -1,6 +1,5 @@
 import { useCallback, useMemo, JSX, memo } from 'react';
-import { Collapse, Space } from 'antd';
-
+import { Collapse, Flex } from 'antd';
 import { JsonSchemaForm } from './JsonSchemaForm';
 import { FullSizeLoader } from './FullSizeLoader';
 import './JsonItemsForm.css';
@@ -17,6 +16,10 @@ import {
 } from '../hooks/files';
 import { ErrorAlert } from './ErrorAlert';
 import { TextEditorOr } from './TextEditor';
+import { useAppDispatch } from '../hooks/state';
+import { addJsonItem } from '../state/files';
+import { AddNewButton } from './form/AddNewButton';
+import { RemoveButton } from './form/RemoveButton';
 
 type PreviewFn = (item: any) => JSX.Element | string | null;
 
@@ -49,10 +52,13 @@ const ItemFormHeader = memo(function ItemFormHeader({
   const p = useMemo(() => (preview ? preview(value) : null), [preview, value]);
 
   return (
-    <Space direction="horizontal">
-      {p}
-      {label}
-    </Space>
+    <Flex justify="space-between" align="center">
+      <Flex gap="small" align="center">
+        {p}
+        {label}
+      </Flex>
+      <RemoveButton file={file} index={index} />
+    </Flex>
   );
 });
 
@@ -135,9 +141,9 @@ const FormItems = memo(function FormItems({
   }, [file, name, numItems, preview, uiSchema]);
 
   return (
-    <Space direction="vertical" style={{ width: '100%' }}>
+    <Flex vertical gap="small">
       {items}
-    </Space>
+    </Flex>
   );
 });
 
@@ -146,6 +152,8 @@ export interface JsonItemsFormProps {
   name: NameOrPreviewFn;
   preview?: PreviewFn;
   uiSchema?: UiSchema;
+  canAddNewItem?: boolean;
+  getNewItem?: () => object;
 }
 
 export const JsonItemsForm = memo(function JsonItemsForm({
@@ -153,10 +161,23 @@ export const JsonItemsForm = memo(function JsonItemsForm({
   name,
   preview,
   uiSchema,
+  canAddNewItem,
+  getNewItem,
 }: JsonItemsFormProps) {
+  const dispatch = useAppDispatch();
   const loading = useFileLoading(file);
   const error = useFileLoadingError(file);
   const numItems = useFileJsonNumberOfItems(file);
+  const addNewItem = useCallback(() => {
+    dispatch(
+      addJsonItem({ filename: file, value: getNewItem ? getNewItem() : {} }),
+    );
+  }, [dispatch, file, getNewItem]);
+  const addButton = useMemo(() => {
+    const render = typeof canAddNewItem === 'undefined' ? true : canAddNewItem;
+    if (!render) return null;
+    return <AddNewButton onClick={addNewItem} />;
+  }, [addNewItem, canAddNewItem]);
   const content = useMemo(() => {
     if (numItems == null) {
       return <ErrorAlert error={{ message: 'No items after loading' }} />;
@@ -164,16 +185,19 @@ export const JsonItemsForm = memo(function JsonItemsForm({
     return (
       <>
         <JsonFormHeader file={file} />
-        <FormItems
-          file={file}
-          name={name}
-          preview={preview}
-          numItems={numItems}
-          uiSchema={uiSchema}
-        />
+        <Flex vertical gap="middle">
+          <FormItems
+            file={file}
+            name={name}
+            preview={preview}
+            numItems={numItems}
+            uiSchema={uiSchema}
+          />
+          {addButton}
+        </Flex>
       </>
     );
-  }, [file, name, numItems, preview, uiSchema]);
+  }, [addButton, file, name, numItems, preview, uiSchema]);
 
   if (error) {
     return <ErrorAlert error={error} />;

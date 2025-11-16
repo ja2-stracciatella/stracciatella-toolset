@@ -53,12 +53,14 @@ const JSON_SCHEMA_SCHEMA = z
   .object({
     title: z.optional(z.string()),
     description: z.optional(z.string()),
-    items: z
-      .object({
-        title: z.optional(z.string()),
-        description: z.optional(z.string()),
-      })
-      .catchall(z.any()),
+    items: z.optional(
+      z
+        .object({
+          title: z.optional(z.string()),
+          description: z.optional(z.string()),
+        })
+        .catchall(z.any()),
+    ),
   })
   .catchall(z.any());
 

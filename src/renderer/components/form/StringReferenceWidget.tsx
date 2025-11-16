@@ -53,7 +53,7 @@ export function StringReferenceWidget<T extends { [key: string]: string }>({
       const fileResults = values[key] as Array<any>;
       if (!fileResults) continue;
       for (const item of fileResults) {
-        const value: string = item[references[key].property];
+        const value: string = item[references[key].property] ?? '';
         let label: JSX.Element | string | null = value;
         if (references[key].preview) {
           label = (

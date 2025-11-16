@@ -15,15 +15,28 @@ import {
 } from './components/form/StringReferenceWidget';
 import { JsonForm } from './components/JsonForm';
 import { JsonItemsForm } from './components/JsonItemsForm';
-import { JsonStrategicMapForm } from './components/StrategicMapForm';
+import {
+  JsonStrategicMapForm,
+  makeStrategicMapFormPropsForProperties,
+  makeStrategicMapFormPropsForProperty,
+} from './components/StrategicMapForm';
 import { Dashboard } from './components/Dashboard';
 import { MercPreview } from './components/content/MercPreview';
 import { ItemPreview } from './components/content/ItemPreview';
 import {
+  makeResourceReference,
   resourceReferenceToGraphics,
   resourceReferenceToSound,
 } from './components/form/ResourceReferenceWidget';
 import { StiPreview } from './components/content/StiPreview';
+import { ResourceType } from './lib/resourceType';
+import { makeMultiSectorSelectorWidget } from './components/form/MultiSectorSelectorWidget';
+import { mergeDeep } from 'remeda';
+import { UiSchema } from '@rjsf/utils';
+import { InventoryGraphicsField } from './components/form/InventoryGraphicsField';
+import { SamSitesAirControlForm } from './components/SamSitesAirControlForm';
+import { MovementCostsForm } from './components/MovementCostsForm';
+import { NormalizedSectorId } from './components/content/StrategicMap';
 
 const baseItemProps = [
   'itemIndex',
@@ -60,6 +73,16 @@ const baseItemFlags = [
   'bUnaerodynamic',
   'bSinks',
 ];
+const baseItemUiSchema: UiSchema = {
+  inventoryGraphics: {
+    small: {
+      'ui:field': InventoryGraphicsField,
+    },
+    big: {
+      'ui:field': InventoryGraphicsField,
+    },
+  },
+};
 
 export interface Route {
   id: string;
@@ -134,15 +157,14 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         'army-garrison-groups.json',
         'Garrison Groups',
         JsonStrategicMapForm,
-        {
+        mergeDeep(makeStrategicMapFormPropsForProperty('sector'), {
           uiSchema: {
             'ui:order': ['sector', 'composition'],
-            sector: { 'ui:disabled': true },
             composition: {
               'ui:widget': stringReferenceToArmyCompositions,
             },
           },
-        },
+        }),
       ),
       makeFileItem(
         'army-gun-choice-normal.json',
@@ -152,6 +174,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
           uiSchema: {
             items: {
               items: {
+                'ui:label': false,
                 'ui:widget': stringReferenceToWeapons,
               },
             },
@@ -166,6 +189,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
           uiSchema: {
             items: {
               items: {
+                'ui:label': false,
                 'ui:widget': stringReferenceToWeapons,
               },
             },
@@ -246,6 +270,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
       makeFileItem('smoke-effects.json', 'Smoke Effects', JsonItemsForm, {
         name: 'name',
         preview: (item: any) => <StiPreview file={item.staticGraphics} />,
+        canAddNewItem: false,
         uiSchema: {
           'ui:order': [
             'name',
@@ -261,6 +286,15 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             'affectsMonsters',
             'affectsRobot',
           ],
+          graphics: {
+            'ui:widget': resourceReferenceToGraphics,
+          },
+          staticGraphics: {
+            'ui:widget': resourceReferenceToGraphics,
+          },
+          dissipatingGraphics: {
+            'ui:widget': resourceReferenceToGraphics,
+          },
         },
       }),
     ],
@@ -299,6 +333,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     children: [
       makeFileItem('ammo-types.json', 'Ammo Types', JsonItemsForm, {
         name: 'internalName',
+        canAddNewItem: false,
         uiSchema: { 'ui:order': ['index', 'internalName'] },
       }),
       makeFileItem('armours.json', 'Armours', JsonItemsForm, {
@@ -319,6 +354,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
 
             ...baseItemFlags,
           ],
+          ...baseItemUiSchema,
         },
       }),
       makeFileItem('calibres.json', 'Calibres', JsonItemsForm, {
@@ -371,6 +407,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             'isPressureTriggered',
             ...baseItemFlags,
           ],
+          ...baseItemUiSchema,
           calibre: {
             'ui:widget': stringReferenceToExplosiveCalibres,
           },
@@ -392,6 +429,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             'ubClassIndex',
             ...baseItemFlags,
           ],
+          ...baseItemUiSchema,
         },
       }),
       makeFileItem('magazines.json', 'Magazines', JsonItemsForm, {
@@ -409,6 +447,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             'dontUseAsDefaultMagazine',
             ...baseItemFlags,
           ],
+          ...baseItemUiSchema,
           ammoType: {
             'ui:widget': stringReferenceToAmmoTypes,
           },
@@ -425,7 +464,8 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         'Tactical Map Item Replacements',
         JsonItemsForm,
         {
-          name: (item: any) => `${item.from} to ${item.to}`,
+          name: (item: any) =>
+            `${item.from ?? 'unknown'} to ${item.to ?? 'unknown'}`,
           uiSchema: {
             from: {
               oneOf: [
@@ -480,6 +520,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             'attachment_UnderGLauncher',
             ...baseItemFlags,
           ],
+          ...baseItemUiSchema,
           calibre: {
             'ui:widget': stringReferenceToCalibres,
           },
@@ -498,21 +539,29 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
   },
   makeFileItem('loading-screens.json', 'Loading Screens', JsonItemsForm, {
     name: 'internalName',
-    uiSchema: { 'ui:order': ['internalName', 'filename'] },
+    preview: (item) => <StiPreview file={`loadscreens${item.filename}`} />,
+    uiSchema: {
+      'ui:order': ['internalName', 'filename'],
+      filename: {
+        'ui:widget': makeResourceReference({
+          type: ResourceType.Graphics,
+          prefix: ['loadscreens'],
+          postProcess: (filename) => `/${filename}`,
+        }),
+      },
+    },
   }),
   makeFileItem(
     'loading-screens-mapping.json',
     'Loading Screens Mapping',
     JsonStrategicMapForm,
-    {
+    mergeDeep(makeStrategicMapFormPropsForProperties('sector', 'sectorLevel'), {
       uiSchema: {
         'ui:order': ['sector', 'sectorLevel', 'day', 'night'],
-        sector: { 'ui:disabled': true },
-        sectorLevel: { 'ui:disabled': true },
         day: { 'ui:widget': stringReferenceToLoadingScreens },
         night: { 'ui:widget': stringReferenceToLoadingScreens },
       },
-    },
+    }),
   ),
   {
     type: 'Submenu',
@@ -548,8 +597,35 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
           },
         },
       ),
-      makeFileItem('mercs-relations.json', 'Relations', JsonItemsForm, {
-        name: 'internalName',
+      makeFileItem('mercs-relations.json', 'Opinions', JsonItemsForm, {
+        name: 'profile',
+        preview: (item: any) => <MercPreview profile={item.profile} />,
+        uiSchema: {
+          'ui:order': ['profile', 'relations'],
+          profile: {
+            'ui:widget': stringReferenceToMercProfiles,
+          },
+          relations: {
+            items: {
+              'ui:order': [
+                'target',
+                'opinion',
+                'friend1',
+                'friend2',
+                'enemy1',
+                'enemy2',
+                'eventualFriend',
+                'resistanceToBefriending',
+                'eventualEnemy',
+                'resistanceToMakingEnemy',
+                'tolerance',
+              ],
+              target: {
+                'ui:widget': stringReferenceToMercProfiles,
+              },
+            },
+          },
+        },
       }),
       makeFileItem('mercs-profile-info.json', 'Profiles', JsonItemsForm, {
         name: 'internalName',
@@ -640,6 +716,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         k,
         {
           items: {
+            'ui:label': false,
             'ui:widget': resourceReferenceToSound,
           },
         },
@@ -729,7 +806,7 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     'Shipping Destinations',
     JsonItemsForm,
     {
-      name: 'locationId',
+      name: (item) => item.locationId.toString(),
       uiSchema: {
         'ui:order': [
           'locationId',
@@ -758,18 +835,17 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         'strategic-bloodcat-placements.json',
         'Bloodcat Placements',
         JsonStrategicMapForm,
-        {
+        mergeDeep(makeStrategicMapFormPropsForProperty('sector'), {
           uiSchema: {
             'ui:order': ['sector', 'bloodCatPlacements'],
-            sector: { 'ui:disabled': true },
           },
-        },
+        }),
       ),
       makeFileItem(
         'strategic-bloodcat-spawns.json',
         'Bloodcat Spawns',
         JsonStrategicMapForm,
-        {
+        mergeDeep(makeStrategicMapFormPropsForProperty('sector'), {
           uiSchema: {
             'ui:order': [
               'sector',
@@ -779,41 +855,58 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               'isArena',
               'isLair',
             ],
-            sector: { 'ui:disabled': true },
           },
-        },
+        }),
       ),
       makeFileItem('strategic-fact-params.json', 'Fact Params', JsonItemsForm, {
-        name: 'fact',
+        name: (item) => item.fact.toString(),
       }),
       makeFileItem(
         'strategic-map-cache-sectors.json',
         'Weapon Cache Sectors',
         JsonForm,
-        {},
+        {
+          uiSchema: {
+            'ui:order': ['sectors', 'numTroops', 'numTroopsVariance'],
+            sectors: {
+              'ui:widget': makeMultiSectorSelectorWidget({
+                extractSectorFromItem: (value: string) => [value, 0],
+                transformSectorToItem: (value) => value[0],
+              }),
+            },
+          },
+        },
       ),
       makeFileItem(
         'strategic-map-creature-lairs.json',
         'Creature Lairs',
-        JsonItemsForm,
+        JsonStrategicMapForm,
         {
-          name: (item: any) => item.entranceSector[0],
+          extractSectorFromItem: (item: any) => item.entranceSector ?? null,
+          transformSectorToItem: (sector: NormalizedSectorId) => ({
+            entranceSector: sector,
+          }),
+          initialLevel: 1,
+          canChangeLevel: true,
           uiSchema: {
             'ui:order': [
+              'entranceSector',
               'lairId',
               'associatedMineId',
-              'entranceSector',
               'warpExit',
               'sectors',
               'attackSectors',
             ],
+            entranceSector: {
+              'ui:disabled': true,
+            },
           },
         },
       ),
       makeFileItem(
         'strategic-map-movement-costs.json',
         'Movement Costs',
-        JsonForm,
+        MovementCostsForm,
         {},
       ),
       makeFileItem(
@@ -834,31 +927,36 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             profile: {
               'ui:widget': stringReferenceToMercProfiles,
             },
+            sectors: {
+              'ui:widget': makeMultiSectorSelectorWidget({
+                extractSectorFromItem: (sector: any) => [sector, 0],
+                transformSectorToItem: (sector: any) => sector[0],
+              }),
+            },
           },
         },
       ),
       makeFileItem(
         'strategic-map-sam-sites-air-control.json',
         'Sam Sites Air Control',
-        JsonForm,
+        SamSitesAirControlForm,
         {},
       ),
       makeFileItem(
         'strategic-map-sam-sites.json',
         'Sam Sites',
         JsonStrategicMapForm,
-        {
+        mergeDeep(makeStrategicMapFormPropsForProperty('sector'), {
           uiSchema: {
             'ui:order': ['sector', 'gridNos'],
-            sector: { 'ui:disabled': true },
           },
-        },
+        }),
       ),
       makeFileItem(
         'strategic-map-secrets.json',
         'Secrets',
         JsonStrategicMapForm,
-        {
+        mergeDeep(makeStrategicMapFormPropsForProperty('sector'), {
           uiSchema: {
             'ui:order': [
               'sector',
@@ -867,24 +965,27 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
               'secretMapIcon',
               'isSAMSite',
             ],
-            sector: { 'ui:disabled': true },
+            secretMapIcon: {
+              'ui:widget': resourceReferenceToGraphics,
+            },
           },
-        },
+        }),
       ),
       makeFileItem(
         'strategic-map-sectors-descriptions.json',
         'Sector Descriptions',
         JsonStrategicMapForm,
-        {
-          uiSchema: {
-            'ui:order': ['sector', 'sectorLevel', 'landType'],
-            sector: { 'ui:disabled': true },
-            sectorLevel: { 'ui:disabled': true },
+        mergeDeep(
+          makeStrategicMapFormPropsForProperties('sector', 'sectorLevel'),
+          {
+            uiSchema: {
+              'ui:order': ['sector', 'sectorLevel', 'landType'],
+            },
           },
-        },
+        ),
       ),
       makeFileItem('strategic-map-towns.json', 'Towns', JsonItemsForm, {
-        name: 'townId',
+        name: 'internalName',
         uiSchema: {
           'ui:order': [
             'townId',
@@ -893,6 +994,12 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
             'townPoint',
             'isMilitiaTrainingAllowed',
           ],
+          sectors: {
+            'ui:widget': makeMultiSectorSelectorWidget({
+              extractSectorFromItem: (sector: string) => [sector, 0],
+              transformSectorToItem: (sector) => sector[0],
+            }),
+          },
         },
       }),
       makeFileItem(
@@ -905,43 +1012,56 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         'strategic-map-underground-sectors.json',
         'Underground Sectors',
         JsonStrategicMapForm,
-        {
+        mergeDeep(
+          makeStrategicMapFormPropsForProperties('sector', 'sectorLevel'),
+          {
+            initialLevel: 1,
+            uiSchema: {
+              'ui:order': [
+                'sector',
+                'sectorLevel',
+                'adjacentSectors',
+                'numTroops',
+                'numTroopsVariance',
+                'numElites',
+                'numElitesVariance',
+                'numCreatures',
+                'numCreaturesVariance',
+              ],
+            },
+          },
+        ),
+      ),
+      makeFileItem(
+        'strategic-mines.json',
+        'Mines',
+        JsonStrategicMapForm,
+        mergeDeep(makeStrategicMapFormPropsForProperty('entranceSector'), {
           uiSchema: {
             'ui:order': [
-              'sector',
-              'sectorLevel',
-              'adjacentSectors',
-              'numTroops',
-              'numTroopsVariance',
-              'numElites',
-              'numElitesVariance',
-              'numCreatures',
-              'numCreaturesVariance',
+              'entranceSector',
+              'associatedTownId',
+              'associatedTown',
+              'mineType',
+              'minimumMineProduction',
+              'noDepletion',
+              'delayDepletion',
+              'headMinerAssigned',
+              'faceDisplayYOffset',
+              'mineSectors',
             ],
-            sector: { 'ui:disabled': true },
-            sectorLevel: { 'ui:disabled': true },
+            associatedTown: { 'ui:widget': stringReferenceToTowns },
+            mineSectors: {
+              'ui:widget': makeMultiSectorSelectorWidget({
+                initialLevel: 1,
+                canChangeLevel: true,
+                extractSectorFromItem: (sector: any) => sector,
+                transformSectorToItem: (sector) => sector,
+              }),
+            },
           },
-        },
+        }),
       ),
-      makeFileItem('strategic-mines.json', 'Mines', JsonStrategicMapForm, {
-        property: 'entranceSector',
-        uiSchema: {
-          'ui:order': [
-            'entranceSector',
-            'associatedTownId',
-            'associatedTown',
-            'mineType',
-            'minimumMineProduction',
-            'noDepletion',
-            'delayDepletion',
-            'headMinerAssigned',
-            'faceDisplayYOffset',
-            'mineSectors',
-          ],
-          entranceSector: { 'ui:disabled': true },
-          associatedTown: { 'ui:widget': stringReferenceToTowns },
-        },
-      }),
     ],
   },
   makeFileItem(
@@ -949,12 +1069,11 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
     'Tactical Npc Action Params',
     JsonItemsForm,
     {
-      name: 'actionCode',
+      name: (item) => item.actionCode.toString(),
     },
   ),
   makeFileItem('vehicles.json', 'Vehicles', JsonItemsForm, {
     name: 'profile',
-    preview: (item: any) => <MercPreview profile={item.profile} />,
     uiSchema: {
       'ui:order': [
         'profile',
@@ -966,6 +1085,8 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
       ],
       profile: { 'ui:widget': stringReferenceToMercProfiles },
       armourType: { 'ui:widget': stringReferenceToArmours },
+      enterSound: { 'ui:widget': resourceReferenceToSound },
+      moveSound: { 'ui:widget': resourceReferenceToSound },
     },
   }),
 ];

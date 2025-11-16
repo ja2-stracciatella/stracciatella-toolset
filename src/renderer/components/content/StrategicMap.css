@@ -1,41 +1,42 @@
 .strategic-map {
-    width: 338px;
-    height: 290px;
-    flex-wrap: wrap;
-    background-repeat: no-repeat;
-    box-sizing: border-box;
-    padding: 1px;
-    padding-right: 0;
+  width: 338px;
+  height: 290px;
+  flex-wrap: wrap;
+  background-repeat: no-repeat;
+  box-sizing: border-box;
+  padding: 1px;
+  padding-right: 0;
 }
 
 .strategic-map .strategic-map-tile {
-    float: left;
-    width: 22px;
-    height: 19px;
-    cursor: pointer;
-    transition: border-color 0.25s;
-    box-sizing: border-box;
-    margin-top: -1px;
-    margin-left: -1px;
-    position: relative;
-    border: 1px solid transparent;
+  float: left;
+  width: 22px;
+  height: 19px;
+  cursor: pointer;
+  transition: border-color 0.25s;
+  box-sizing: border-box;
+  margin-top: -1px;
+  margin-left: -1px;
+  position: relative;
+  border: 1px solid transparent;
 }
 
 .strategic-map .strategic-map-tile.col-0 {
-    width: 23px;
+  width: 23px;
 }
 
 .strategic-map .strategic-map-tile.row-0 {
-    height: 20px;
+  height: 20px;
 }
 
-.strategic-map .strategic-map-tile:hover {
-    border-color: white;
+.strategic-map .strategic-map-tile:hover,
+.strategic-map .strategic-map-tile.selected {
+  border-color: white;
 }
 
 .strategic-map .strategic-map-tile.highlighted .highlight {
-    background-color: rgba(0, 136, 0, 0.4);
-    width: 100%;
-    height: 100%;
-    display: block;
+  background-color: rgba(0, 136, 0, 0.4);
+  width: 100%;
+  height: 100%;
+  display: block;
 }

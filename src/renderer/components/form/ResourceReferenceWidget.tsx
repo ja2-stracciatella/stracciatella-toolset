@@ -8,40 +8,64 @@ import { ResourceType } from '../../lib/resourceType';
 
 interface ResourceReferenceWidgetProps extends WidgetProps {
   resourceType: ResourceType;
+  pathPrefix: string[];
+  postProcess: (path: string) => string;
+  preview?: React.ReactNode;
 }
 
 export function ResourceReferenceWidget({
   resourceType,
+  pathPrefix,
+  postProcess,
   value,
   onChange,
+  preview,
 }: ResourceReferenceWidgetProps) {
   const [modalIsOpen, setModalOpen] = useState(false);
   const openModal = useCallback(() => setModalOpen(true), []);
   const closeModal = useCallback(() => setModalOpen(false), []);
   const onSelect = useCallback(
     (path: string) => {
-      onChange(path);
+      onChange(postProcess(path));
       closeModal();
     },
-    [closeModal, onChange],
+    [closeModal, onChange, postProcess],
   );
-  const preview = useMemo(() => {
+  const onInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange(e.target.value);
+    },
+    [onChange],
+  );
+  const previewElement = useMemo(() => {
+    if (preview) {
+      return preview;
+    }
+    const trimmed = (value ?? '').startsWith('/') ? value.substring(1) : value;
     if (resourceType === ResourceType.Sound) {
-      return <SoundPreview path={value} />;
+      return (
+        <SoundPreview
+          path={`${pathPrefix.join('/')}${pathPrefix.length > 0 ? '/' : ''}${trimmed}`}
+        />
+      );
     }
     if (resourceType === ResourceType.Graphics) {
-      return <StiPreview file={value} />;
+      return (
+        <StiPreview
+          file={`${pathPrefix.join('/')}${pathPrefix.length > 0 ? '/' : ''}${trimmed}`}
+        />
+      );
     }
     return null;
-  }, [resourceType, value]);
+  }, [preview, pathPrefix, resourceType, value]);
 
   return (
     <Flex dir="row" gap="small">
-      {preview}
+      {previewElement}
       <Input
         style={{ flexGrow: 1 }}
         value={value}
-        onChange={onChange}
+        onChange={onInputChange}
         placeholder="Please select a resource..."
       />
       <Button onClick={openModal}>…</Button>
@@ -50,19 +74,37 @@ export function ResourceReferenceWidget({
         onSelect={onSelect}
         onCancel={closeModal}
         resourceType={resourceType}
+        pathPrefix={pathPrefix}
       />
     </Flex>
   );
 }
 
-function resourceReference(type: ResourceType = ResourceType.Any) {
+export function makeResourceReference({
+  type = ResourceType.Any,
+  prefix = [],
+  postProcess = (path: string) => path,
+}: {
+  type: ResourceType;
+  prefix?: string[];
+  postProcess?: (path: string) => string;
+}) {
   return function ResourceReference(props: WidgetProps) {
-    return <ResourceReferenceWidget resourceType={type} {...props} />;
+    return (
+      <ResourceReferenceWidget
+        resourceType={type}
+        pathPrefix={prefix}
+        postProcess={postProcess}
+        {...props}
+      />
+    );
   };
 }
 
-export const resourceReferenceToSound = resourceReference(ResourceType.Sound);
+export const resourceReferenceToSound = makeResourceReference({
+  type: ResourceType.Sound,
+});
 
-export const resourceReferenceToGraphics = resourceReference(
-  ResourceType.Graphics,
-);
+export const resourceReferenceToGraphics = makeResourceReference({
+  type: ResourceType.Graphics,
+});

@@ -23,18 +23,20 @@ import { ResourceType, resourceTypeFromFilename } from '../../lib/resourceType';
 import { ResourceEntry } from '../../../common/invokables/resources';
 
 const Breadcrumbs = memo(function Breadcrumbs({
+  pathPrefix,
   currentDir,
   switchDir,
 }: {
+  pathPrefix: string[];
   currentDir: string[];
   switchDir: (currentDir: string[]) => void;
 }) {
   const setToParentDir = useCallback(() => {
-    if (currentDir.length == 0) {
+    if (currentDir.length === pathPrefix.length) {
       return;
     }
     switchDir(currentDir.slice(0, -1));
-  }, [currentDir, switchDir]);
+  }, [currentDir, pathPrefix.length, switchDir]);
   const items = useMemo(() => {
     return currentDir.reduce(
       (prev, curr, currIndex) => {
@@ -54,18 +56,18 @@ const Breadcrumbs = memo(function Breadcrumbs({
               <HomeOutlined />
             </a>
           ),
-          onClick: () => switchDir([]),
+          onClick: () => switchDir(pathPrefix),
         },
       ],
     );
-  }, [currentDir, switchDir]);
+  }, [currentDir, pathPrefix, switchDir]);
 
   return (
     <Flex gap="middle" align="center">
       <Button
         size="small"
         onClick={setToParentDir}
-        disabled={currentDir.length === 0}
+        disabled={currentDir.length === pathPrefix.length}
       >
         <ArrowUpOutlined />
       </Button>
@@ -134,18 +136,20 @@ const Preview = memo(function Preview({
 
 export function ResourceSelectorModal({
   resourceType,
+  pathPrefix,
   initialDir,
   isOpen,
   onSelect,
   onCancel,
 }: {
   resourceType: ResourceType;
+  pathPrefix: string[];
   initialDir?: string[];
   isOpen: boolean;
   onSelect: (value: string) => unknown;
   onCancel: () => unknown;
 }) {
-  const [currentDir, setCurrentDir] = useState(initialDir ?? []);
+  const [currentDir, setCurrentDir] = useState(initialDir ?? pathPrefix ?? []);
   const [selectedEntry, setSelectedEntry] = useState<ResourceEntry | null>(
     null,
   );
@@ -249,7 +253,11 @@ export function ResourceSelectorModal({
       styles={{ body: { overflow: 'hidden', height: '60vh' } }}
     >
       <Flex vertical gap="middle" style={{ height: '100%' }}>
-        <Breadcrumbs currentDir={currentDir} switchDir={switchDir} />
+        <Breadcrumbs
+          pathPrefix={pathPrefix}
+          currentDir={currentDir}
+          switchDir={switchDir}
+        />
         <div style={{ flexGrow: 1, overflowY: 'auto' }}>
           <Splitter>
             <Splitter.Panel

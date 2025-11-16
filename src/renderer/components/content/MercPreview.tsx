@@ -18,7 +18,7 @@ export function MercPreview({ profile }: MercPreviewProps) {
       return null;
     }
     const p = content.find((it: any) => it.internalName === profile);
-    if (!p || !p.profileID) {
+    if (!p || typeof p.profileID !== 'number') {
       return null;
     }
     return p.profileID as number;

@@ -16,6 +16,10 @@ const configuration: webpack.Configuration = {
   module: {
     rules: [
       {
+        test: /\.m?js$/,
+        type: 'javascript/auto',
+      },
+      {
         test: /\.[jt]sx?$/,
         exclude: /node_modules/,
         use: {

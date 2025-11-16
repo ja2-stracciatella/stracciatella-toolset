@@ -22,6 +22,7 @@ import {
   JsonSchema,
 } from '../../common/invokables/jsons';
 import { InvokableOutput } from 'src/common/invokables';
+import { isArray, omit, splice } from 'remeda';
 
 export type SaveMode = 'patch' | 'replace';
 
@@ -30,6 +31,7 @@ export type EditMode = 'visual' | 'text';
 interface JsonFile {
   saveMode: SaveMode;
   schema: JsonSchema;
+  itemSchema: JsonSchema | null;
   vanilla: JsonRoot;
   mod: JsonRoot | null;
   patch: JsonPatch | null;
@@ -192,10 +194,39 @@ const filesSlice = createSlice({
     ) => {
       const { filename, index, value } = action.payload;
       const open = state.open[filename];
-      if (!open || open.editMode !== 'visual' || !Array.isArray(open.value)) {
+      if (!open || open.editMode !== 'visual' || !isArray(open.value)) {
         return;
       }
-      (open.value as Array<any>)[index] = value;
+      open.value[index] = value;
+      open.modified = isModified(state, filename);
+    },
+    addJsonItem: (
+      state,
+      action: PayloadAction<{ filename: string; value: any }>,
+    ) => {
+      const { filename, value } = action.payload;
+      const open = state.open[filename];
+      if (!open || open.editMode !== 'visual' || !isArray(open.value)) {
+        return;
+      }
+      open.value = [...open.value, value];
+      open.modified = isModified(state, filename);
+    },
+    removeJsonItem: (
+      state,
+      action: PayloadAction<{ filename: string; index: number }>,
+    ) => {
+      const { filename, index } = action.payload;
+      const open = state.open[filename];
+      if (
+        !open ||
+        open.editMode !== 'visual' ||
+        !isArray(open.value) ||
+        typeof open.value[index] === 'undefined'
+      ) {
+        return;
+      }
+      open.value = splice(open.value, index, 1, []);
       open.modified = isModified(state, filename);
     },
     changeSaveMode(
@@ -286,12 +317,15 @@ const filesSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    const transform = (data: InvokableOutput<JsonReadInvokable>) => {
+    const transform = (data: InvokableOutput<JsonReadInvokable>): JsonFile => {
       const saveMode: SaveMode = data.value ? 'replace' : 'patch';
       const applied = applyPatch(data.value ?? data.vanilla, data.patch ?? []);
 
       return {
         schema: data.schema,
+        itemSchema: data.schema.items
+          ? omit(data.schema.items, ['title', 'description'])
+          : null,
         vanilla: data.vanilla,
         mod: data.value,
         patch: data.patch,
@@ -348,6 +382,8 @@ export const {
   changeText,
   changeJson,
   changeJsonItem,
+  addJsonItem,
+  removeJsonItem,
   changeSaveMode,
   changeEditMode,
 } = filesSlice.actions;
