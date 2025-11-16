@@ -1,14 +1,19 @@
-import { Spin } from 'antd';
-import { LoadingOutlined } from '@ant-design/icons';
+import { Flex } from 'antd';
+import { Loader } from './Loader';
 
-import './FullSizeLoader.css';
+interface FullSizeLoaderProps {
+  size?: 'small' | 'default' | 'large';
+}
 
-const antIcon = <LoadingOutlined style={{ fontSize: 24 }} spin />;
+const FLEX_STYLE = {
+  width: '100%',
+  height: '100%',
+};
 
-export function FullSizeLoader() {
+export function FullSizeLoader({ size = 'large' }: FullSizeLoaderProps) {
   return (
-    <div className="full-size-loader">
-      <Spin indicator={antIcon} />
-    </div>
+    <Flex align="center" justify="center" style={FLEX_STYLE}>
+      <Loader size={size} />
+    </Flex>
   );
 }

@@ -1,8 +1,9 @@
 import { ExclamationOutlined } from '@ant-design/icons';
-import { Image, Flex, Spin } from 'antd';
+import { Image, Flex } from 'antd';
 import { useEffect, useMemo } from 'react';
 import { useImageFile } from '../../hooks/useImage';
 import { useFileJson } from '../../hooks/files';
+import { Loader } from '../common/Loader';
 
 interface MercPreviewProps {
   profile: string;
@@ -50,7 +51,7 @@ export function MercPreview({ profile }: MercPreviewProps) {
   const image = useMemo(() => {
     const loading = loading1 || loading2;
     if (loading) {
-      return <Spin size="small" />;
+      return <Loader />;
     }
     const error = error1 && error2 ? error1 || error2 : null;
     if (error) {

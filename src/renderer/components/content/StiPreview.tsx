@@ -1,7 +1,8 @@
 import { ExclamationOutlined } from '@ant-design/icons';
-import { Flex, Image, Spin } from 'antd';
+import { Flex, Image } from 'antd';
 import { useEffect, useMemo } from 'react';
 import { useImageFile } from '../../hooks/useImage';
+import { Loader } from '../common/Loader';
 
 export function StiPreview({
   file,
@@ -13,7 +14,7 @@ export function StiPreview({
   const { loading, data, error, refresh } = useImageFile(file, subimage);
   const image = useMemo(() => {
     if (loading) {
-      return <Spin size="small" />;
+      return <Loader />;
     }
     if (error) {
       return <ExclamationOutlined title={error.message} />;
