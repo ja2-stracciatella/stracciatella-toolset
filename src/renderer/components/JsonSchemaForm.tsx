@@ -1,4 +1,4 @@
-import { IChangeEvent, withTheme } from '@rjsf/core';
+import { FormProps, IChangeEvent, withTheme } from '@rjsf/core';
 import { UiSchema } from '@rjsf/utils';
 import { Theme as AntdTheme } from '@rjsf/antd';
 import validator from '@rjsf/validator-ajv8';
@@ -10,6 +10,30 @@ const DEFAULT_UI_SCHEMA: UiSchema = {
   'ui:globalOptions': {
     enableMarkdownInDescription: true,
     enableMarkdownInHelp: true,
+  },
+};
+
+const DEFAULT_PROPS: Pick<
+  FormProps,
+  | 'experimental_defaultFormStateBehavior'
+  | 'showErrorList'
+  | 'validator'
+  | 'liveValidate'
+  | 'liveOmit'
+  | 'noHtml5Validate'
+> = {
+  showErrorList: false,
+  noHtml5Validate: true,
+  validator: validator,
+  liveValidate: 'onChange',
+  liveOmit: 'onChange',
+  experimental_defaultFormStateBehavior: {
+    arrayMinItems: {
+      populate: 'never',
+      mergeExtraDefaults: false,
+    },
+    emptyObjectFields: 'skipDefaults',
+    allOf: 'skipDefaults',
   },
 };
 
@@ -47,13 +71,10 @@ export function JsonSchemaForm({
       formData={content}
       // eslint-disable-next-line react/no-children-prop
       children={renderButton ? undefined : true}
-      validator={validator}
-      liveValidate
-      noHtml5Validate
-      showErrorList={false}
       uiSchema={appliedUiSchema}
       onChange={onChange}
       onSubmit={onSubmit}
+      {...DEFAULT_PROPS}
     />
   );
 }
