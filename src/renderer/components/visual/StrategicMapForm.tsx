@@ -2,14 +2,14 @@ import { useCallback, useMemo, useState } from 'react';
 import { Space, Typography } from 'antd';
 
 import { UiSchema } from '@rjsf/utils';
-import { FullSizeLoader } from './FullSizeLoader';
+import { FullSizeLoader } from '../common/FullSizeLoader';
 import {
   DEFAULT_HIGHLIGHT_COLOR,
   NormalizedSectorId,
   StrategicMap,
-} from './content/StrategicMap';
-import { JsonSchemaForm } from './JsonSchemaForm';
-import { EditorContent } from './EditorContent';
+} from '../content/StrategicMap';
+import { JsonSchemaForm } from './form/JsonSchemaForm';
+import { EditorContent } from '../layout/EditorContent';
 import { JsonFormHeader } from './form/JsonFormHeader';
 import {
   useFileLoadingError,
@@ -17,13 +17,13 @@ import {
   useFileJsonItem,
   useFileJsonItemSchema,
   useFileLoading,
-} from '../hooks/files';
+} from '../../hooks/files';
 import { IChangeEvent } from '@rjsf/core';
-import { ErrorAlert } from './ErrorAlert';
-import { TextEditorOr } from './TextEditor';
+import { ErrorAlert } from '../common/ErrorAlert';
+import { TextEditorOr } from '../TextEditor';
 import { AddNewButton } from './form/AddNewButton';
-import { useAppDispatch } from '../hooks/state';
-import { addJsonItem } from '../state/files';
+import { useAppDispatch } from '../../hooks/state';
+import { addJsonItem } from '../../state/files';
 import { findIndex, isDeepEqual } from 'remeda';
 import { RemoveButton } from './form/RemoveButton';
 

@@ -1,10 +1,10 @@
 import { WidgetProps } from '@rjsf/utils';
 import { Input, Button, Flex } from 'antd';
 import { useCallback, useMemo, useState } from 'react';
-import { ResourceSelectorModal } from '../content/ResourceSelectorModal';
-import { SoundPreview } from '../content/SoundPreview';
-import { StiPreview } from '../content/StiPreview';
-import { ResourceType } from '../../lib/resourceType';
+import { ResourceSelectorModal } from '../../content/ResourceSelectorModal';
+import { SoundPreview } from '../../content/SoundPreview';
+import { StiPreview } from '../../content/StiPreview';
+import { ResourceType } from '../../../lib/resourceType';
 
 interface ResourceReferenceWidgetProps extends WidgetProps {
   resourceType: ResourceType;

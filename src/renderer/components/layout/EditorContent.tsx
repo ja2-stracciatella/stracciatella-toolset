@@ -2,21 +2,21 @@ import { ExclamationCircleOutlined, SaveOutlined } from '@ant-design/icons';
 import { Button, Flex, Select, Typography } from 'antd';
 import { ReactNode, memo, useCallback, useMemo } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { useAppDispatch } from '../hooks/state';
+import { useAppDispatch } from '../../hooks/state';
 import {
   changeSaveMode,
   changeEditMode,
   EditMode,
   persistJSON,
   SaveMode,
-} from '../state/files';
+} from '../../state/files';
 import {
   useFileEditMode,
   useFileModified,
   useFilePersistingError,
   useFileSaveMode,
   useFileSaving,
-} from '../hooks/files';
+} from '../../hooks/files';
 
 const SAVE_MODE_SELECT_OPTIONS = [
   {

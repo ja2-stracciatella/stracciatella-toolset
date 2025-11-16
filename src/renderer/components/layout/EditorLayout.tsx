@@ -3,9 +3,9 @@ import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 import { Badge, Layout, Menu, MenuProps, Space, Typography } from 'antd';
 
 import './EditorLayout.css';
-import { Item, MENU, MenuItem } from '../EditorRoutes';
-import { useAppSelector } from '../hooks/state';
-import { useFileModified } from '../hooks/files';
+import { Item, MENU, MenuItem } from '../../EditorRoutes';
+import { useAppSelector } from '../../hooks/state';
+import { useFileModified } from '../../hooks/files';
 
 type ItemType = NonNullable<MenuProps['items']>[number];
 

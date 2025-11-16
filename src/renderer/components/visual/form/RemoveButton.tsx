@@ -1,8 +1,8 @@
 import { DeleteOutlined } from '@ant-design/icons';
 import { Button, Modal } from 'antd';
 import { MouseEventHandler, useCallback, useState } from 'react';
-import { useAppDispatch } from '../../hooks/state';
-import { removeJsonItem } from '../../state/files';
+import { useAppDispatch } from '../../../hooks/state';
+import { removeJsonItem } from '../../../state/files';
 
 interface RemoveButtonProps {
   file: string;

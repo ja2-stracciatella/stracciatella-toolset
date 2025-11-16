@@ -1,11 +1,11 @@
 import { PropsWithChildren, useCallback, useEffect, useState } from 'react';
 import { Button, Typography } from 'antd';
 import { IChangeEvent } from '@rjsf/core';
-import { FullSizeLoader } from './FullSizeLoader';
-import { JsonSchemaForm } from './JsonSchemaForm';
-import { FullSizeDialogLayout } from './FullSizeDialogLayout';
-import { ErrorAlert } from './ErrorAlert';
-import { HostPathWidget } from './form/HostPathWidget';
+import { FullSizeLoader } from './common/FullSizeLoader';
+import { JsonSchemaForm } from './visual/form/JsonSchemaForm';
+import { FullSizeDialogLayout } from './layout/FullSizeDialogLayout';
+import { ErrorAlert } from './common/ErrorAlert';
+import { HostPathWidget } from './visual/form/HostPathWidget';
 import { useToolsetConfig } from '../hooks/useToolsetConfig';
 import { toJSONSchema } from 'zod';
 import {

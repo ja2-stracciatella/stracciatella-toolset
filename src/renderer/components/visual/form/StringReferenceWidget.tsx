@@ -5,11 +5,11 @@ import {
   useFilesError,
   useFilesJson,
   useFilesLoading,
-} from '../../hooks/files';
+} from '../../../hooks/files';
 import { BaseOptionType } from 'antd/lib/select';
 import { Space } from 'antd/lib';
-import { MercPreview } from '../content/MercPreview';
-import { ItemPreview } from '../content/ItemPreview';
+import { MercPreview } from '../../content/MercPreview';
+import { ItemPreview } from '../../content/ItemPreview';
 
 type PreviewFn = (item: any) => JSX.Element | string | null;
 

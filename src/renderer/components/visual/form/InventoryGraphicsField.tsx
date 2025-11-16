@@ -1,10 +1,10 @@
 import { FieldProps } from '@rjsf/utils';
 import { ResourceReferenceWidget } from './ResourceReferenceWidget';
-import { ResourceType } from '../../lib/resourceType';
+import { ResourceType } from '../../../lib/resourceType';
 import { useCallback, useEffect, useMemo } from 'react';
 import { Select, Space } from 'antd';
-import { useImageMetadata } from '../../hooks/useImageMetadata';
-import { StiPreview } from '../content/StiPreview';
+import { useImageMetadata } from '../../../hooks/useImageMetadata';
+import { StiPreview } from '../../content/StiPreview';
 
 function SubImageSelector({
   file,

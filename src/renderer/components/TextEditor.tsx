@@ -6,7 +6,7 @@ import {
   useFileText,
 } from '../hooks/files';
 import * as monaco from 'monaco-editor';
-import { FullSizeLoader } from './FullSizeLoader';
+import { FullSizeLoader } from './common/FullSizeLoader';
 import { useCallback, useEffect } from 'react';
 import { toJSONSchema } from 'zod';
 import { JSON_PATCH_SCHEMA } from '../../common/invokables/jsons';

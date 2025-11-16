@@ -1,16 +1,16 @@
 import { useCallback, useMemo } from 'react';
 import { IChangeEvent } from '@rjsf/core';
 import { UiSchema } from '@rjsf/utils';
-import { JsonSchemaForm } from './JsonSchemaForm';
-import { FullSizeLoader } from './FullSizeLoader';
-import { EditorContent } from './EditorContent';
+import { JsonSchemaForm } from './form/JsonSchemaForm';
+import { FullSizeLoader } from '../common/FullSizeLoader';
+import { EditorContent } from '../layout/EditorContent';
 import { JsonFormHeader } from './form/JsonFormHeader';
-import { useFileLoading, useFileSchema } from '../hooks/files';
-import { useFileLoadingError } from '../hooks/files';
-import { useFileJson } from '../hooks/files';
-import { ErrorAlert } from './ErrorAlert';
+import { useFileLoading, useFileSchema } from '../../hooks/files';
+import { useFileLoadingError } from '../../hooks/files';
+import { useFileJson } from '../../hooks/files';
+import { ErrorAlert } from '../common/ErrorAlert';
 import { miniSerializeError } from '@reduxjs/toolkit';
-import { TextEditorOr } from './TextEditor';
+import { TextEditorOr } from '../TextEditor';
 
 export interface JsonFormProps {
   file: string;

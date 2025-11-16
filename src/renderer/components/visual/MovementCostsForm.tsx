@@ -3,20 +3,20 @@ import {
   useFileJson,
   useFileLoading,
   useFileLoadingError,
-} from '../hooks/files';
+} from '../../hooks/files';
 import {
   coordsFromSectorIdString,
   NormalizedSectorId,
   StrategicMap,
-} from './content/StrategicMap';
-import { EditorContent } from './EditorContent';
-import { ErrorAlert } from './ErrorAlert';
-import { FullSizeLoader } from './FullSizeLoader';
-import { TextEditorOr } from './TextEditor';
+} from '../content/StrategicMap';
+import { EditorContent } from '../layout/EditorContent';
+import { ErrorAlert } from '../common/ErrorAlert';
+import { FullSizeLoader } from '../common/FullSizeLoader';
+import { TextEditorOr } from '../TextEditor';
 import { Flex, Typography } from 'antd';
 import { JsonFormHeader } from './form/JsonFormHeader';
 import { JsonSchema } from 'src/common/invokables/jsons';
-import { JsonSchemaForm } from './JsonSchemaForm';
+import { JsonSchemaForm } from './form/JsonSchemaForm';
 import { UiSchema } from '@rjsf/utils';
 import { IChangeEvent } from '@rjsf/core';
 import { clone } from 'remeda';

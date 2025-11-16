@@ -1,7 +1,7 @@
 import { memo, useMemo } from 'react';
 import { Typography } from 'antd';
 import ReactMarkdown from 'react-markdown';
-import { useFileSchema } from '../../hooks/files';
+import { useFileSchema } from '../../../hooks/files';
 
 interface JsonFormHeaderProps {
   file: string;

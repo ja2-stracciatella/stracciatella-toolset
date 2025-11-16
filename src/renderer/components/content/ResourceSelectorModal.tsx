@@ -14,7 +14,7 @@ import {
   FunctionComponent,
   useEffect,
 } from 'react';
-import { ErrorAlert } from '../ErrorAlert';
+import { ErrorAlert } from '../common/ErrorAlert';
 import { SoundPreview } from './SoundPreview';
 import { useImageMetadata } from '../../hooks/useImageMetadata';
 import { StiPreview } from './StiPreview';

@@ -3,11 +3,11 @@ import {
   useFileJson,
   useFileLoading,
   useFileLoadingError,
-} from '../hooks/files';
-import { EditorContent } from './EditorContent';
-import { ErrorAlert } from './ErrorAlert';
-import { FullSizeLoader } from './FullSizeLoader';
-import { TextEditorOr } from './TextEditor';
+} from '../../hooks/files';
+import { EditorContent } from '../layout/EditorContent';
+import { ErrorAlert } from '../common/ErrorAlert';
+import { FullSizeLoader } from '../common/FullSizeLoader';
+import { TextEditorOr } from '../TextEditor';
 import { useMemo, useState } from 'react';
 import {
   coordsFromSectorIdString,
@@ -15,7 +15,7 @@ import {
   NormalizedSectorId,
   sectorIdStringFromCoords,
   StrategicMap,
-} from './content/StrategicMap';
+} from '../content/StrategicMap';
 import { Badge, Flex, Select, Space, Typography } from 'antd';
 import { JsonFormHeader } from './form/JsonFormHeader';
 

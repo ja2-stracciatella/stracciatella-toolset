@@ -1,11 +1,11 @@
 import { useCallback, useMemo, JSX, memo } from 'react';
 import { Collapse, Flex } from 'antd';
-import { JsonSchemaForm } from './JsonSchemaForm';
-import { FullSizeLoader } from './FullSizeLoader';
+import { JsonSchemaForm } from './form/JsonSchemaForm';
+import { FullSizeLoader } from '../common/FullSizeLoader';
 import './JsonItemsForm.css';
 import { IChangeEvent } from '@rjsf/core';
 import { UiSchema } from '@rjsf/utils';
-import { EditorContent } from './EditorContent';
+import { EditorContent } from '../layout/EditorContent';
 import { JsonFormHeader } from './form/JsonFormHeader';
 import {
   useFileLoading,
@@ -13,11 +13,11 @@ import {
   useFileJsonItem,
   useFileJsonItemSchema,
   useFileJsonNumberOfItems,
-} from '../hooks/files';
-import { ErrorAlert } from './ErrorAlert';
-import { TextEditorOr } from './TextEditor';
-import { useAppDispatch } from '../hooks/state';
-import { addJsonItem } from '../state/files';
+} from '../../hooks/files';
+import { ErrorAlert } from '../common/ErrorAlert';
+import { TextEditorOr } from '../TextEditor';
+import { useAppDispatch } from '../../hooks/state';
+import { addJsonItem } from '../../state/files';
 import { AddNewButton } from './form/AddNewButton';
 import { RemoveButton } from './form/RemoveButton';
 

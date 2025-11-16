@@ -12,14 +12,14 @@ import {
   stringReferenceToMercProfiles,
   stringReferenceToTowns,
   stringReferenceToWeapons,
-} from './components/form/StringReferenceWidget';
-import { JsonForm } from './components/JsonForm';
-import { JsonItemsForm } from './components/JsonItemsForm';
+} from './components/visual/form/StringReferenceWidget';
+import { JsonForm } from './components/visual/JsonForm';
+import { JsonItemsForm } from './components/visual/JsonItemsForm';
 import {
   JsonStrategicMapForm,
   makeStrategicMapFormPropsForProperties,
   makeStrategicMapFormPropsForProperty,
-} from './components/StrategicMapForm';
+} from './components/visual/StrategicMapForm';
 import { Dashboard } from './components/Dashboard';
 import { MercPreview } from './components/content/MercPreview';
 import { ItemPreview } from './components/content/ItemPreview';
@@ -27,15 +27,15 @@ import {
   makeResourceReference,
   resourceReferenceToGraphics,
   resourceReferenceToSound,
-} from './components/form/ResourceReferenceWidget';
+} from './components/visual/form/ResourceReferenceWidget';
 import { StiPreview } from './components/content/StiPreview';
 import { ResourceType } from './lib/resourceType';
-import { makeMultiSectorSelectorWidget } from './components/form/MultiSectorSelectorWidget';
+import { makeMultiSectorSelectorWidget } from './components/visual/form/MultiSectorSelectorWidget';
 import { mergeDeep } from 'remeda';
 import { UiSchema } from '@rjsf/utils';
-import { InventoryGraphicsField } from './components/form/InventoryGraphicsField';
-import { SamSitesAirControlForm } from './components/SamSitesAirControlForm';
-import { MovementCostsForm } from './components/MovementCostsForm';
+import { InventoryGraphicsField } from './components/visual/form/InventoryGraphicsField';
+import { SamSitesAirControlForm } from './components/visual/SamSitesAirControlForm';
+import { MovementCostsForm } from './components/visual/MovementCostsForm';
 import { NormalizedSectorId } from './components/content/StrategicMap';
 
 const baseItemProps = [

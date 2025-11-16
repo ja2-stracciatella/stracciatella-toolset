@@ -1,7 +1,7 @@
 import { WidgetProps } from '@rjsf/utils';
 import { Button, Col, Input, Row, Space } from 'antd';
 import { useCallback, useState } from 'react';
-import { invoke } from '../../lib/invoke';
+import { invoke } from '../../../lib/invoke';
 
 export function HostPathWidget({ value, onChange }: WidgetProps) {
   const [modalIsOpen, setModalOpen] = useState(false);
