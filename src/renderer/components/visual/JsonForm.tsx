@@ -2,26 +2,20 @@ import { useCallback, useMemo } from 'react';
 import { IChangeEvent } from '@rjsf/core';
 import { UiSchema } from '@rjsf/utils';
 import { JsonSchemaForm } from './form/JsonSchemaForm';
-import { FullSizeLoader } from '../common/FullSizeLoader';
-import { EditorContent } from '../layout/EditorContent';
-import { JsonFormHeader } from './form/JsonFormHeader';
-import { useFileLoading, useFileSchema } from '../../hooks/files';
-import { useFileLoadingError } from '../../hooks/files';
-import { useFileJson } from '../../hooks/files';
-import { ErrorAlert } from '../common/ErrorAlert';
-import { miniSerializeError } from '@reduxjs/toolkit';
-import { TextEditorOr } from '../TextEditor';
+import { VisualFormProps, VisualFormWrapper } from './VisualFormWrapper';
+import { VisualFormWithHeader } from './VisualFormWithHeader';
+import { useFileJsonValue } from '../../hooks/useFileJsonValue';
+import { useFileJsonUpdate } from '../../hooks/useFileJsonUpdate';
+import { useFileJsonSchema } from '../../hooks/useFileJsonSchema';
 
-export interface JsonFormProps {
-  file: string;
+export interface JsonFormProps extends VisualFormProps {
   uiSchema?: UiSchema;
 }
 
-export function JsonForm({ file, uiSchema }: JsonFormProps) {
-  const loading = useFileLoading(file);
-  const error = useFileLoadingError(file);
-  const [value, update] = useFileJson(file);
-  const baseSchema = useFileSchema(file);
+function Form({ file, uiSchema }: JsonFormProps) {
+  const value = useFileJsonValue(file);
+  const update = useFileJsonUpdate(file);
+  const baseSchema = useFileJsonSchema(file);
   const schema = useMemo(() => {
     if (!baseSchema) {
       return null;
@@ -36,37 +30,26 @@ export function JsonForm({ file, uiSchema }: JsonFormProps) {
     (value: IChangeEvent<any>) => update(value.formData),
     [update],
   );
-  const contents = useMemo(() => {
-    if (!schema || !value) {
-      return (
-        <ErrorAlert
-          error={miniSerializeError(new Error('No schema or value'))}
-        />
-      );
-    }
-    return (
-      <>
-        <JsonFormHeader file={file} />
-        <JsonSchemaForm
-          schema={schema}
-          content={value}
-          uiSchema={uiSchema}
-          onChange={onFormChange}
-        />
-      </>
-    );
-  }, [file, onFormChange, schema, uiSchema, value]);
 
-  if (error) {
-    return <ErrorAlert error={error} />;
+  if (!schema || !value) {
+    return null;
   }
-  if (loading == null || loading) {
-    return <FullSizeLoader />;
-  }
-
   return (
-    <EditorContent path={file}>
-      <TextEditorOr file={file}>{contents}</TextEditorOr>
-    </EditorContent>
+    <VisualFormWithHeader file={file}>
+      <JsonSchemaForm
+        schema={schema}
+        content={value}
+        uiSchema={uiSchema}
+        onChange={onFormChange}
+      />
+    </VisualFormWithHeader>
+  );
+}
+
+export function JsonForm({ file, ...rest }: JsonFormProps) {
+  return (
+    <VisualFormWrapper file={file}>
+      <Form file={file} {...rest} />
+    </VisualFormWrapper>
   );
 }

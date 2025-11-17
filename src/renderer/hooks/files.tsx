@@ -1,10 +1,10 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from './state';
 import {
   changeJson,
   changeJsonItem,
   EditMode,
-  loadJSON,
+  // loadJSON,
   SaveMode,
 } from '../state/files';
 import { SerializedError } from '@reduxjs/toolkit';
@@ -85,7 +85,7 @@ export function useFilesJson<R extends UseFilesRequest>(
   update: (file: keyof R, value: JsonRoot) => void;
 } {
   const dispatch = useAppDispatch();
-  const loading = useFilesLoading(files);
+  // const loading = useFilesLoading(files);
   const values = useAppFilesProxySelector(
     function selectFilesJson(s) {
       const values: { [key in keyof R]: JsonRoot | null } = {} as any;
@@ -113,13 +113,13 @@ export function useFilesJson<R extends UseFilesRequest>(
     [files, dispatch],
   );
 
-  useEffect(() => {
-    for (const key in files) {
-      if (loading[key] === null) {
-        dispatch(loadJSON(files[key]!));
-      }
-    }
-  }, [dispatch, files, loading]);
+  // useEffect(() => {
+  //   for (const key in files) {
+  //     if (loading[key] === null) {
+  //       dispatch(loadJSON(files[key]!));
+  //     }
+  //   }
+  // }, [dispatch, files, loading]);
 
   return {
     values,
@@ -181,7 +181,7 @@ export function useFileJson(
   filename: string,
 ): [JsonRoot | null, (value: JsonRoot) => void] {
   const dispatch = useAppDispatch();
-  const loading = useFileLoading(filename);
+  // const loading = useFileLoading(filename);
   const update = useCallback(
     (value: JsonRoot) => {
       dispatch(
@@ -194,11 +194,11 @@ export function useFileJson(
     [filename, dispatch],
   );
 
-  useEffect(() => {
-    if (loading === null) {
-      dispatch(loadJSON(filename));
-    }
-  }, [dispatch, filename, loading]);
+  // useEffect(() => {
+  //   if (loading === null) {
+  //     dispatch(loadJSON(filename));
+  //   }
+  // }, [dispatch, filename, loading]);
 
   return [
     useAppSelector((s) => {
@@ -215,17 +215,17 @@ export function useFileJson(
 export function useFileText(
   filename: string,
 ): [string | null, (value: string) => void] {
-  const dispatch = useAppDispatch();
-  const loading = useFileLoading(filename);
+  // const dispatch = useAppDispatch();
+  // const loading = useFileLoading(filename);
   const update = useCallback(() => {
     throw new Error('not implemented');
   }, []);
 
-  useEffect(() => {
-    if (loading === null) {
-      dispatch(loadJSON(filename));
-    }
-  }, [dispatch, filename, loading]);
+  // useEffect(() => {
+  //   if (loading === null) {
+  //     dispatch(loadJSON(filename));
+  //   }
+  // }, [dispatch, filename, loading]);
 
   return [
     useAppSelector((s) => {

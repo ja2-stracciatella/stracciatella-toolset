@@ -1,6 +1,6 @@
 import { Alert, Typography } from 'antd';
 
-interface ErrorAlertProps {
+export interface ErrorAlertProps {
   error: { message?: string } | null;
 }
 

@@ -1,55 +1,55 @@
-import { useCallback, useMemo, JSX, memo } from 'react';
+import { useCallback, useMemo, JSX } from 'react';
 import { Collapse, Flex } from 'antd';
 import { JsonSchemaForm } from './form/JsonSchemaForm';
-import { FullSizeLoader } from '../common/FullSizeLoader';
-import './JsonItemsForm.css';
 import { IChangeEvent } from '@rjsf/core';
 import { UiSchema } from '@rjsf/utils';
-import { EditorContent } from '../layout/EditorContent';
-import { JsonFormHeader } from './form/JsonFormHeader';
-import {
-  useFileLoading,
-  useFileLoadingError,
-  useFileJsonItem,
-  useFileJsonItemSchema,
-  useFileJsonNumberOfItems,
-} from '../../hooks/files';
-import { ErrorAlert } from '../common/ErrorAlert';
-import { TextEditorOr } from '../TextEditor';
 import { useAppDispatch } from '../../hooks/state';
 import { addJsonItem } from '../../state/files';
 import { AddNewButton } from './form/AddNewButton';
 import { RemoveButton } from './form/RemoveButton';
+import { VisualFormProps, VisualFormWrapper } from './VisualFormWrapper';
+import { VisualFormWithHeader } from './VisualFormWithHeader';
+import { useFileJsonItemCount } from '../../hooks/useFileJsonItemCount';
+import { useFileJsonItemSchema } from '../../hooks/useFileJsonItemSchema';
+import { useFileJsonItem } from '../../hooks/useFileJsonItem';
+import { useFileJsonItemUpdate } from '../../hooks/useFileJsonItemUpdate';
+import { AnyJsonObject } from '../../../common/invokables/jsons';
 
-type PreviewFn = (item: any) => JSX.Element | string | null;
+type PreviewFn = (item: AnyJsonObject) => JSX.Element | string | null;
 
 type NameOrPreviewFn = string | PreviewFn;
 
-interface ItemFormHeaderProps {
-  file: string;
-  index: number;
+export interface JsonItemsFormProps extends VisualFormProps {
   name: NameOrPreviewFn;
   preview?: PreviewFn;
+  uiSchema?: UiSchema;
+  canAddNewItem?: boolean;
+  getNewItem?: () => object;
 }
 
-const ItemFormHeader = memo(function ItemFormHeader({
+interface ItemFormHeaderProps
+  extends Pick<JsonItemsFormProps, 'file' | 'name' | 'preview'> {
+  index: number;
+}
+
+const ItemFormHeader = function ItemFormHeader({
   file,
   index,
   name,
   preview,
 }: ItemFormHeaderProps) {
-  const [value] = useFileJsonItem(file, index);
+  const value = useFileJsonItem(file, index);
   const label = useMemo(() => {
+    if (!value) return '';
     if (typeof name === 'string') {
-      const label = value ? value[name] : null;
-      if (typeof label == 'string') {
-        return label;
-      }
-      return '';
+      return name in value ? value[name] : '';
     }
     return name(value);
   }, [name, value]);
-  const p = useMemo(() => (preview ? preview(value) : null), [preview, value]);
+  const p = useMemo(
+    () => (preview && value ? preview(value) : null),
+    [preview, value],
+  );
 
   return (
     <Flex justify="space-between" align="center">
@@ -60,19 +60,17 @@ const ItemFormHeader = memo(function ItemFormHeader({
       <RemoveButton file={file} index={index} />
     </Flex>
   );
-});
+};
 
-interface ItemFormProps {
-  file: string;
-  name: NameOrPreviewFn;
-  preview?: PreviewFn;
-  uiSchema?: UiSchema;
+interface ItemFormProps
+  extends Pick<JsonItemsFormProps, 'file' | 'name' | 'preview' | 'uiSchema'> {
   index: number;
 }
 
 function ItemForm({ file, name, preview, uiSchema, index }: ItemFormProps) {
   const schema = useFileJsonItemSchema(file);
-  const [value, update] = useFileJsonItem(file, index);
+  const value = useFileJsonItem(file, index);
+  const update = useFileJsonItemUpdate(file, index);
   const onItemChange = useCallback(
     (ev: IChangeEvent<any>) => update(ev.formData),
     [update],
@@ -105,39 +103,24 @@ function ItemForm({ file, name, preview, uiSchema, index }: ItemFormProps) {
   );
 }
 
-export interface FormItemsProps {
-  file: string;
-  name: NameOrPreviewFn;
-  preview?: PreviewFn;
-  numItems: number | null;
-  uiSchema?: UiSchema;
-}
-
-const FormItems = memo(function FormItems({
+const FormItems = function FormItems({
   file,
   name,
   preview,
-  numItems,
   uiSchema,
-}: FormItemsProps) {
+}: JsonItemsFormProps) {
+  const numItems = useFileJsonItemCount(file);
   const items = useMemo(() => {
-    if (numItems == null) {
-      return null;
-    }
-    const i = [];
-    for (let it = 0; it < numItems; it++) {
-      i.push(
-        <ItemForm
-          file={file}
-          key={it}
-          name={name}
-          index={it}
-          preview={preview}
-          uiSchema={uiSchema}
-        />,
-      );
-    }
-    return i;
+    return [...Array(numItems).keys()].map((idx) => (
+      <ItemForm
+        file={file}
+        key={idx}
+        name={name}
+        index={idx}
+        preview={preview}
+        uiSchema={uiSchema}
+      />
+    ));
   }, [file, name, numItems, preview, uiSchema]);
 
   return (
@@ -145,18 +128,9 @@ const FormItems = memo(function FormItems({
       {items}
     </Flex>
   );
-});
+};
 
-export interface JsonItemsFormProps {
-  file: string;
-  name: NameOrPreviewFn;
-  preview?: PreviewFn;
-  uiSchema?: UiSchema;
-  canAddNewItem?: boolean;
-  getNewItem?: () => object;
-}
-
-export const JsonItemsForm = memo(function JsonItemsForm({
+export const JsonItemsForm = function JsonItemsForm({
   file,
   name,
   preview,
@@ -165,9 +139,6 @@ export const JsonItemsForm = memo(function JsonItemsForm({
   getNewItem,
 }: JsonItemsFormProps) {
   const dispatch = useAppDispatch();
-  const loading = useFileLoading(file);
-  const error = useFileLoadingError(file);
-  const numItems = useFileJsonNumberOfItems(file);
   const addNewItem = useCallback(() => {
     dispatch(
       addJsonItem({ filename: file, value: getNewItem ? getNewItem() : {} }),
@@ -178,36 +149,20 @@ export const JsonItemsForm = memo(function JsonItemsForm({
     if (!render) return null;
     return <AddNewButton onClick={addNewItem} />;
   }, [addNewItem, canAddNewItem]);
-  const content = useMemo(() => {
-    if (numItems == null) {
-      return <ErrorAlert error={{ message: 'No items after loading' }} />;
-    }
-    return (
-      <>
-        <JsonFormHeader file={file} />
+
+  return (
+    <VisualFormWrapper file={file}>
+      <VisualFormWithHeader file={file}>
         <Flex vertical gap="middle">
           <FormItems
             file={file}
             name={name}
             preview={preview}
-            numItems={numItems}
             uiSchema={uiSchema}
           />
           {addButton}
         </Flex>
-      </>
-    );
-  }, [addButton, file, name, numItems, preview, uiSchema]);
-
-  if (error) {
-    return <ErrorAlert error={error} />;
-  }
-  if (loading) {
-    return <FullSizeLoader />;
-  }
-  return (
-    <EditorContent path={file}>
-      <TextEditorOr file={file}>{content}</TextEditorOr>
-    </EditorContent>
+      </VisualFormWithHeader>
+    </VisualFormWrapper>
   );
-});
+};

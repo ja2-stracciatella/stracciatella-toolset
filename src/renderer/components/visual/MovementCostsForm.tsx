@@ -1,25 +1,18 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
-  useFileJson,
-  useFileLoading,
-  useFileLoadingError,
-} from '../../hooks/files';
-import {
   coordsFromSectorIdString,
   NormalizedSectorId,
-  StrategicMap,
 } from '../content/StrategicMap';
-import { EditorContent } from '../layout/EditorContent';
-import { ErrorAlert } from '../common/ErrorAlert';
-import { FullSizeLoader } from '../common/FullSizeLoader';
-import { TextEditorOr } from '../TextEditor';
-import { Flex, Typography } from 'antd';
-import { JsonFormHeader } from './form/JsonFormHeader';
+import { Typography } from 'antd';
 import { JsonSchema } from 'src/common/invokables/jsons';
 import { JsonSchemaForm } from './form/JsonSchemaForm';
 import { UiSchema } from '@rjsf/utils';
 import { IChangeEvent } from '@rjsf/core';
 import { clone } from 'remeda';
+import { VisualFormProps } from './VisualFormWrapper';
+import { VisualStrategicMapFormWrapper } from './VisualStrategicMapFormWrapper';
+import { useFileJsonValue } from '../../hooks/useFileJsonValue';
+import { useFileJsonUpdate } from '../../hooks/useFileJsonUpdate';
 
 const TRAVERSABILITY_ENUM_JSON_SCHEMA: JsonSchema = {
   type: 'string',
@@ -138,43 +131,39 @@ const MOVEMENT_COSTS_UI_SCHEMA: UiSchema = {
   traverseThrough: { 'ui:enumNames': TRAVERSABILITY_ENUM_TITLES },
 };
 
-interface MovementCostsFormProps {
-  file: string;
-}
-
-function MovementCosts({
+function Form({
   file,
-  value,
-  onChange,
-}: MovementCostsFormProps & {
-  value: any;
-  onChange: (value: any) => unknown;
+  selectedSectorId,
+}: VisualFormProps & {
+  selectedSectorId: NormalizedSectorId | null;
 }) {
-  const [selectedSector, setSelectedSector] =
-    useState<NormalizedSectorId | null>(null);
+  const values = useFileJsonValue(file);
+  const update = useFileJsonUpdate(file);
   const coords = useMemo(
-    () => (selectedSector ? coordsFromSectorIdString(selectedSector[0]) : null),
-    [selectedSector],
+    () =>
+      selectedSectorId ? coordsFromSectorIdString(selectedSectorId[0]) : null,
+    [selectedSectorId],
   );
   const content = useMemo(() => {
-    if (!coords) {
+    if (!coords || !values) {
       return {};
     }
+    const v = values as any;
     return {
-      traverseThrough: value.traverseThrough[coords[1]][coords[0]],
-      traverseNorth: value.traverseNS[coords[1]][coords[0]],
-      traverseSouth: value.traverseNS[coords[1] + 1][coords[0]],
-      traverseWest: value.traverseWE[coords[1]][coords[0]],
-      traverseEast: value.traverseWE[coords[1]][coords[0] + 1],
-      travelRating: value.travelRatings[coords[1]][coords[0]],
+      traverseThrough: v.traverseThrough[coords[1]][coords[0]],
+      traverseNorth: v.traverseNS[coords[1]][coords[0]],
+      traverseSouth: v.traverseNS[coords[1] + 1][coords[0]],
+      traverseWest: v.traverseWE[coords[1]][coords[0]],
+      traverseEast: v.traverseWE[coords[1]][coords[0] + 1],
+      travelRating: v.travelRatings[coords[1]][coords[0]],
     };
-  }, [value, coords]);
+  }, [values, coords]);
   const handleChange = useCallback(
     (newContent: IChangeEvent<any>) => {
-      if (!coords) {
+      if (!coords || !values) {
         return;
       }
-      const n = clone(value);
+      const n = clone(values) as any;
       n.traverseThrough[coords[1]][coords[0]] =
         newContent.formData.traverseThrough;
       n.traverseNS[coords[1]][coords[0]] = newContent.formData.traverseNorth;
@@ -183,59 +172,38 @@ function MovementCosts({
       n.traverseWE[coords[1]][coords[0]] = newContent.formData.traverseWest;
       n.traverseWE[coords[1]][coords[0] + 1] = newContent.formData.traverseEast;
       n.travelRatings[coords[1]][coords[0]] = newContent.formData.travelRating;
-      onChange(n);
+      update(n);
     },
-    [coords, onChange, value],
+    [coords, update, values],
   );
-  const contentElement = useMemo(() => {
-    if (!coords) {
-      return (
-        <Typography.Paragraph>
-          Select sector to view and edit movement costs.
-        </Typography.Paragraph>
-      );
-    }
-    return (
-      <JsonSchemaForm
-        schema={MOVEMENT_COSTS_JSON_SCHEMA}
-        content={content}
-        onChange={handleChange}
-        uiSchema={MOVEMENT_COSTS_UI_SCHEMA}
-      />
-    );
-  }, [content, coords, handleChange]);
 
+  if (!selectedSectorId) {
+    return (
+      <Typography.Paragraph>
+        Select sector to view and edit movement costs.
+      </Typography.Paragraph>
+    );
+  }
   return (
-    <Flex gap="middle">
-      <StrategicMap
-        selectedSectorId={selectedSector}
-        onSectorClick={setSelectedSector}
-      />
-      <div>
-        <JsonFormHeader file={file} />
-        {contentElement}
-      </div>
-    </Flex>
+    <JsonSchemaForm
+      schema={MOVEMENT_COSTS_JSON_SCHEMA}
+      content={content}
+      onChange={handleChange}
+      uiSchema={MOVEMENT_COSTS_UI_SCHEMA}
+    />
   );
 }
 
-export function MovementCostsForm({ file }: MovementCostsFormProps) {
-  const loading = useFileLoading(file);
-  const error = useFileLoadingError(file);
-  const [value, update] = useFileJson(file);
-
-  if (loading == null || loading) {
-    return <FullSizeLoader />;
-  }
-  if (error) {
-    return <ErrorAlert error={error} />;
-  }
+export function MovementCostsForm({ file }: VisualFormProps) {
+  const [selectedSectorId, setSelectedSectorId] =
+    useState<NormalizedSectorId | null>(null);
 
   return (
-    <EditorContent path={file}>
-      <TextEditorOr file={file}>
-        <MovementCosts file={file} value={value as any[][]} onChange={update} />
-      </TextEditorOr>
-    </EditorContent>
+    <VisualStrategicMapFormWrapper
+      strategicMap={{ selectedSectorId, onSectorClick: setSelectedSectorId }}
+      file={file}
+    >
+      <Form file={file} selectedSectorId={selectedSectorId} />
+    </VisualStrategicMapFormWrapper>
   );
 }

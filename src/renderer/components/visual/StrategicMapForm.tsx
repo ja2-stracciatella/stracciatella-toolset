@@ -1,36 +1,29 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Space, Typography } from 'antd';
-
+import { Typography } from 'antd';
 import { UiSchema } from '@rjsf/utils';
-import { FullSizeLoader } from '../common/FullSizeLoader';
 import {
   DEFAULT_HIGHLIGHT_COLOR,
   NormalizedSectorId,
-  StrategicMap,
 } from '../content/StrategicMap';
 import { JsonSchemaForm } from './form/JsonSchemaForm';
-import { EditorContent } from '../layout/EditorContent';
-import { JsonFormHeader } from './form/JsonFormHeader';
-import {
-  useFileLoadingError,
-  useFileJson,
-  useFileJsonItem,
-  useFileJsonItemSchema,
-  useFileLoading,
-} from '../../hooks/files';
 import { IChangeEvent } from '@rjsf/core';
-import { ErrorAlert } from '../common/ErrorAlert';
-import { TextEditorOr } from '../TextEditor';
 import { AddNewButton } from './form/AddNewButton';
 import { useAppDispatch } from '../../hooks/state';
 import { addJsonItem } from '../../state/files';
 import { findIndex, isDeepEqual } from 'remeda';
 import { RemoveButton } from './form/RemoveButton';
+import { VisualFormProps } from './VisualFormWrapper';
+import { VisualStrategicMapFormWrapper } from './VisualStrategicMapFormWrapper';
+import { useFileJsonValue } from '../../hooks/useFileJsonValue';
+import { useFileJsonItemSchema } from '../../hooks/useFileJsonItemSchema';
+import { useFileJsonItem } from '../../hooks/useFileJsonItem';
+import { useFileJsonItemUpdate } from '../../hooks/useFileJsonItemUpdate';
+import { AnyJsonObject } from '../../../common/invokables/jsons';
 
 interface ItemFormProps {
   file: string;
   index: number;
-  transformSectorToItem: (sectorId: NormalizedSectorId) => any;
+  transformSectorToItem: (sectorId: NormalizedSectorId) => AnyJsonObject;
   uiSchema?: UiSchema;
   sectorId?: NormalizedSectorId;
   canAddNewItem?: boolean;
@@ -48,9 +41,14 @@ function ItemForm({
 }: ItemFormProps) {
   const dispatch = useAppDispatch();
   const schema = useFileJsonItemSchema(file);
-  const [value, update] = useFileJsonItem(file, index);
+  const value = useFileJsonItem(file, index);
+  const update = useFileJsonItemUpdate(file, index);
   const onItemChange = useCallback(
-    (ev: IChangeEvent<any>) => update(ev.formData),
+    (ev: IChangeEvent<AnyJsonObject>) => {
+      if (ev.formData) {
+        update(ev.formData);
+      }
+    },
     [update],
   );
   const addNewItem = useCallback(() => {
@@ -84,15 +82,14 @@ function ItemForm({
   );
 }
 
-export interface StrategicMapFormProps {
-  file: string;
+export interface StrategicMapFormProps extends VisualFormProps {
   uiSchema?: UiSchema;
   canAddNewItem?: boolean;
   initialLevel?: number;
   canChangeLevel?: boolean;
-  getNewItem?: () => object;
-  extractSectorFromItem: (value: any) => NormalizedSectorId;
-  transformSectorToItem: (sectorId: NormalizedSectorId) => any;
+  getNewItem?: () => AnyJsonObject;
+  extractSectorFromItem: (value: AnyJsonObject) => NormalizedSectorId;
+  transformSectorToItem: (sectorId: NormalizedSectorId) => AnyJsonObject;
 }
 
 export function JsonStrategicMapForm({
@@ -101,15 +98,13 @@ export function JsonStrategicMapForm({
   extractSectorFromItem,
   transformSectorToItem,
   canAddNewItem,
-  initialLevel = 0,
+  initialLevel,
   canChangeLevel,
   getNewItem,
 }: StrategicMapFormProps) {
-  const [level, setLevel] = useState(initialLevel);
-  const loading = useFileLoading(file);
-  const error = useFileLoadingError(file);
-  const [value] = useFileJson(file);
-  const [selectedSector, setSelectedSector] = useState<
+  const [level, setLevel] = useState(initialLevel ?? 0);
+  const value = useFileJsonValue(file);
+  const [selectedSectorId, setSelectedSector] = useState<
     NormalizedSectorId | undefined
   >();
   const sectorsWithContent: NormalizedSectorId[] = useMemo(
@@ -120,19 +115,17 @@ export function JsonStrategicMapForm({
     return { [DEFAULT_HIGHLIGHT_COLOR]: sectorsWithContent };
   }, [sectorsWithContent]);
   const selectedItem = useMemo(() => {
-    if (!selectedSector) return -1;
+    if (!selectedSectorId) return -1;
     return findIndex(sectorsWithContent, (sector) =>
-      isDeepEqual(sector, selectedSector),
+      isDeepEqual(sector, selectedSectorId),
     );
-  }, [sectorsWithContent, selectedSector]);
+  }, [sectorsWithContent, selectedSectorId]);
   const onSectorClick = useCallback(
     (sectorId: NormalizedSectorId) => {
-      if (!value) {
-        return;
-      }
+      if (isDeepEqual(sectorId, selectedSectorId)) return;
       setSelectedSector(sectorId);
     },
-    [value],
+    [selectedSectorId],
   );
   const removeButton = useMemo(() => {
     if (selectedItem === -1) return null;
@@ -146,41 +139,30 @@ export function JsonStrategicMapForm({
       </Typography.Paragraph>
     );
   }, [file, selectedItem]);
-
-  if (loading) {
-    return <FullSizeLoader />;
-  }
-  if (error) {
-    return <ErrorAlert error={error} />;
-  }
+  const onLevelChange = canChangeLevel ? setLevel : undefined;
 
   return (
-    <EditorContent path={file}>
-      <TextEditorOr file={file}>
-        <Space direction="horizontal" align="start" size="large">
-          <StrategicMap
-            level={level}
-            selectedSectorId={selectedSector}
-            highlightedSectorIds={highlightedSectorIds}
-            onSectorClick={onSectorClick}
-            onLevelChange={canChangeLevel ? setLevel : undefined}
-          />
-          <div>
-            <JsonFormHeader file={file} />
-            {removeButton}
-            <ItemForm
-              file={file}
-              index={selectedItem}
-              uiSchema={uiSchema}
-              sectorId={selectedSector}
-              transformSectorToItem={transformSectorToItem}
-              canAddNewItem={canAddNewItem}
-              getNewItem={getNewItem}
-            />
-          </div>
-        </Space>
-      </TextEditorOr>
-    </EditorContent>
+    <VisualStrategicMapFormWrapper
+      file={file}
+      strategicMap={{
+        level,
+        selectedSectorId,
+        highlightedSectorIds,
+        onSectorClick,
+        onLevelChange,
+      }}
+    >
+      {removeButton}
+      <ItemForm
+        file={file}
+        index={selectedItem}
+        uiSchema={uiSchema}
+        sectorId={selectedSectorId}
+        transformSectorToItem={transformSectorToItem}
+        canAddNewItem={canAddNewItem}
+        getNewItem={getNewItem}
+      />
+    </VisualStrategicMapFormWrapper>
   );
 }
 
@@ -188,8 +170,11 @@ export function makeStrategicMapFormPropsForProperty<S extends string>(
   prop: S,
 ) {
   return {
-    extractSectorFromItem: (item: any): NormalizedSectorId => [item[prop], 0],
-    transformSectorToItem: (sector: NormalizedSectorId) => ({
+    extractSectorFromItem: (item: AnyJsonObject): NormalizedSectorId => [
+      item[prop],
+      0,
+    ],
+    transformSectorToItem: (sector: NormalizedSectorId): AnyJsonObject => ({
       [prop]: sector[0],
     }),
     uiSchema: {
@@ -203,7 +188,7 @@ export function makeStrategicMapFormPropsForProperties<
   L extends string,
 >(sectorProp: S, levelProp: L) {
   return {
-    extractSectorFromItem: (item: any): NormalizedSectorId => [
+    extractSectorFromItem: (item: AnyJsonObject): NormalizedSectorId => [
       item[sectorProp],
       item[levelProp] ?? 0,
     ],
