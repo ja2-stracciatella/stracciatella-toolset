@@ -1,22 +1,17 @@
 import { ExclamationCircleOutlined, SaveOutlined } from '@ant-design/icons';
-import { Button, Flex, Select, Typography } from 'antd';
-import { ReactNode, memo, useCallback, useMemo } from 'react';
+import { Button, Flex, Select, theme, Typography } from 'antd';
+import { ReactNode, useCallback, useMemo } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { useAppDispatch } from '../../hooks/state';
-import {
-  changeSaveMode,
-  changeEditMode,
-  EditMode,
-  persistJSON,
-  SaveMode,
-} from '../../state/files';
-import {
-  useFileEditMode,
-  useFileModified,
-  useFilePersistingError,
-  useFileSaveMode,
-  useFileSaving,
-} from '../../hooks/files';
+import { useFileModified } from '../../hooks/useFileModified';
+import { useFileSaving } from '../../hooks/useFileSaving';
+import { useFileLoading } from '../../hooks/useFileLoading';
+import { useFileSavingError } from '../../hooks/useFileSavingError';
+import { useFileEditMode } from '../../hooks/useFileEditMode';
+import { useFileEditModeUpdate } from '../../hooks/useFileEditModeUpdate';
+import { useFileSaveMode } from '../../hooks/useFileSaveMode';
+import { useFileSaveModeUpdate } from '../../hooks/useFileSaveModeUpdate';
+import { useFileSave } from '../../hooks/useFileSave';
+import { Loader } from '../common/Loader';
 
 const SAVE_MODE_SELECT_OPTIONS = [
   {
@@ -47,47 +42,25 @@ const EDIT_MODE_SELECT_OPTIONS = [
 ];
 
 interface ContentProps {
-  path: string;
+  file: string;
   children: ReactNode;
 }
 
-const EditorContentHeader = memo(function EditorContentHeader({
-  path,
-}: {
-  path: string;
-}) {
-  const dispatch = useAppDispatch();
-  const modified = useFileModified(path);
-  const saving = useFileSaving(path);
-  const saveMode = useFileSaveMode(path);
-  const editMode = useFileEditMode(path);
-  const error = useFilePersistingError(path);
-  const errorStyle = useMemo(() => ({ color: '#9d1e1c' }), []);
+function EditorContentSaveButton({ file }: Pick<ContentProps, 'file'>) {
+  const modified = useFileModified(file);
+  const saving = useFileSaving(file);
+  const loading = useFileLoading(file);
+  const error = useFileSavingError(file);
+  const {
+    token: { colorError },
+  } = theme.useToken();
+  const errorStyle = useMemo(() => ({ color: colorError }), [colorError]);
+  const save = useFileSave(file);
   const saveFile = useCallback(() => {
-    dispatch(persistJSON(path));
-  }, [dispatch, path]);
-  const setSaveMode = useCallback(
-    (saveMode: SaveMode) => {
-      dispatch(
-        changeSaveMode({
-          filename: path,
-          saveMode,
-        }),
-      );
-    },
-    [dispatch, path],
-  );
-  const setEditMode = useCallback(
-    (editMode: EditMode) => {
-      dispatch(
-        changeEditMode({
-          filename: path,
-          editMode,
-        }),
-      );
-    },
-    [dispatch, path],
-  );
+    if (modified && !saving && !loading) {
+      save();
+    }
+  }, [loading, modified, save, saving]);
 
   useHotkeys('ctrl+s', saveFile, {
     enableOnFormTags: true,
@@ -95,68 +68,119 @@ const EditorContentHeader = memo(function EditorContentHeader({
   });
 
   return (
+    <Flex gap="small">
+      <Button disabled={!modified || saving || loading}>
+        {saving ? <Loader /> : <SaveOutlined onClick={saveFile} />}
+      </Button>
+      {error ? (
+        <ExclamationCircleOutlined title={error.message} style={errorStyle} />
+      ) : null}
+    </Flex>
+  );
+}
+
+function EditModeSelect({ file }: Pick<ContentProps, 'file'>) {
+  const loading = useFileLoading(file);
+  const saving = useFileSaving(file);
+  const editMode = useFileEditMode(file);
+  const update = useFileEditModeUpdate(file);
+
+  return (
+    <Flex gap="small" align="center">
+      <Typography>Edit Mode</Typography>
+      <Select
+        style={{ minWidth: '150px' }}
+        options={EDIT_MODE_SELECT_OPTIONS}
+        value={editMode}
+        onChange={update}
+        disabled={loading || saving}
+      />
+    </Flex>
+  );
+}
+
+function SaveModeSelect({ file }: Pick<ContentProps, 'file'>) {
+  const loading = useFileLoading(file);
+  const saving = useFileSaving(file);
+  const editMode = useFileSaveMode(file);
+  const update = useFileSaveModeUpdate(file);
+
+  return (
+    <Flex gap="small" align="center">
+      <Typography>Save Mode</Typography>
+      <Select
+        style={{ minWidth: '150px' }}
+        options={SAVE_MODE_SELECT_OPTIONS}
+        value={editMode}
+        onChange={update}
+        disabled={loading || saving}
+      />
+    </Flex>
+  );
+}
+
+function EditorContentHeader({ file }: { file: string }) {
+  return (
     <Flex justify="space-between">
-      <Flex gap="small">
-        <Button disabled={!modified || !!saving}>
-          <SaveOutlined onClick={saveFile} />
-        </Button>
-        {error ? (
-          <ExclamationCircleOutlined title={error.message} style={errorStyle} />
-        ) : null}
-      </Flex>
+      <EditorContentSaveButton file={file} />
       <Flex gap="middle">
-        <Flex gap="small" align="center">
-          <Typography>Edit Mode</Typography>
-          <Select
-            style={{ minWidth: '150px' }}
-            options={EDIT_MODE_SELECT_OPTIONS}
-            value={editMode}
-            onChange={setEditMode}
-          />
-        </Flex>
-        <Flex gap="small" align="center">
-          <Typography>Save Mode</Typography>
-          <Select
-            style={{ minWidth: '150px' }}
-            options={SAVE_MODE_SELECT_OPTIONS}
-            value={saveMode}
-            onChange={setSaveMode}
-          />
-        </Flex>
+        <EditModeSelect file={file} />
+        <SaveModeSelect file={file} />
       </Flex>
     </Flex>
   );
-});
+}
 
-export const EditorContent = memo(function EditorContent({
-  path,
+export const EditorContent = function EditorContent({
+  file,
   children,
 }: ContentProps) {
+  const flexStyle = useMemo(
+    () =>
+      ({
+        height: '100%',
+      }) as const,
+    [],
+  );
+  const headerStyle = useMemo(
+    () =>
+      ({
+        paddingTop: '10px',
+        paddingLeft: '10px',
+        paddingRight: '10px',
+      }) as const,
+    [],
+  );
+  const contentWrapperStyle = useMemo(
+    () =>
+      ({
+        position: 'relative',
+        margin: '10px',
+        padding: '20px',
+        flexGrow: 1,
+        background: 'white',
+        overflowY: 'auto',
+      }) as const,
+    [],
+  );
+  const contentStyle = useMemo(
+    () =>
+      ({
+        position: 'relative',
+        height: '1px',
+        minHeight: '100%',
+      }) as const,
+    [],
+  );
+
   return (
-    <Flex vertical style={{ height: '100%' }}>
-      <div
-        style={{
-          paddingTop: '10px',
-          paddingLeft: '10px',
-          paddingRight: '10px',
-        }}
-      >
-        <EditorContentHeader path={path} />
+    <Flex vertical style={flexStyle}>
+      <div style={headerStyle}>
+        <EditorContentHeader file={file} />
       </div>
-      <div
-        style={{
-          position: 'relative',
-          margin: '10px',
-          padding: '20px',
-          flexGrow: 1,
-          background: 'white',
-          overflowY: 'auto',
-        }}
-      >
-        <div style={{ position: 'relative', height: '1px', minHeight: '100%' }}>
-          {children}
-        </div>
+      <div style={contentWrapperStyle}>
+        <div style={contentStyle}>{children}</div>
       </div>
     </Flex>
   );
-});
+};

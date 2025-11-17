@@ -51,7 +51,7 @@ export function VisualFormWrapper({
   }, [dispatch, allFiles]);
 
   return (
-    <EditorContent path={file}>
+    <EditorContent file={file}>
       <LoadingOr loading={loading}>
         <ErrorOr error={error}>
           <TextEditorOr file={file}>{children}</TextEditorOr>
