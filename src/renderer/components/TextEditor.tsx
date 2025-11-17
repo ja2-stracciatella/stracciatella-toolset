@@ -1,17 +1,14 @@
 import { Editor, useMonaco, loader } from '@monaco-editor/react';
-import {
-  useFileEditMode,
-  useFileSaveMode,
-  useFileSchema,
-  useFileText,
-} from '../hooks/files';
 import * as monaco from 'monaco-editor';
 import { FullSizeLoader } from './common/FullSizeLoader';
 import { useCallback, useEffect } from 'react';
 import { toJSONSchema } from 'zod';
 import { JSON_PATCH_SCHEMA } from '../../common/invokables/jsons';
-import { useAppDispatch } from '../hooks/state';
-import { changeText } from '../state/files';
+import { useFileSaveMode } from '../hooks/useFileSaveMode';
+import { useFileJsonSchema } from '../hooks/useFileJsonSchema';
+import { useFileTextValue } from '../hooks/useFileTextValue';
+import { useFileTextUpdate } from '../hooks/useFileTextUpdate';
+import { useFileEditMode } from '../hooks/useFileEditMode';
 
 const JSON_PATCH_JSON_SCHEMA = toJSONSchema(JSON_PATCH_SCHEMA);
 
@@ -24,23 +21,18 @@ export interface TextEditorProps {
 }
 
 export function TextEditor({ file }: TextEditorProps) {
-  const dispatch = useAppDispatch();
   const monaco = useMonaco();
   const saveMode = useFileSaveMode(file);
-  const schema = useFileSchema(file);
-  const [text] = useFileText(file);
+  const schema = useFileJsonSchema(file);
+  const text = useFileTextValue(file);
+  const update = useFileTextUpdate(file);
   const loading = !monaco || typeof text !== 'string';
   const onChange = useCallback(
     (value: string | undefined) => {
       if (typeof value === 'undefined') return;
-      dispatch(
-        changeText({
-          filename: file,
-          value,
-        }),
-      );
+      update(value);
     },
-    [dispatch, file],
+    [update],
   );
 
   useEffect(() => {

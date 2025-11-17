@@ -5,7 +5,7 @@ import { Badge, Layout, Menu, MenuProps, Space, Typography } from 'antd';
 import './EditorLayout.css';
 import { Item, MENU, MenuItem } from '../../EditorRoutes';
 import { useAppSelector } from '../../hooks/state';
-import { useFileModified } from '../../hooks/files';
+import { useFileModified } from '../../hooks/useFileModified';
 
 type ItemType = NonNullable<MenuProps['items']>[number];
 
