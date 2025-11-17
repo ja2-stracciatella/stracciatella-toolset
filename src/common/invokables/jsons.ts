@@ -11,6 +11,7 @@ export const JSON_ROOT_SCHEMA = z.union([
   ANY_JSON_OBJECT_SCHEMA,
   z.array(ANY_JSON_OBJECT_SCHEMA),
   z.array(z.array(z.number())),
+  z.array(z.array(z.string())),
 ]);
 
 export type JsonRoot = z.infer<typeof JSON_ROOT_SCHEMA>;

@@ -29,13 +29,15 @@ export type SaveMode = 'patch' | 'replace';
 export type EditMode = 'visual' | 'text';
 
 interface JsonFile {
-  saveMode: SaveMode;
+  title: string;
+  description: string | null;
   schema: JsonSchema;
   itemSchema: JsonSchema | null;
   vanilla: JsonRoot;
   mod: JsonRoot | null;
   patch: JsonPatch | null;
   applied: JsonRoot;
+  saveMode: SaveMode;
 }
 
 interface OpenBase {
@@ -317,12 +319,25 @@ const filesSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    const transform = (data: InvokableOutput<JsonReadInvokable>): JsonFile => {
+    const transform = (
+      data: InvokableOutput<JsonReadInvokable>,
+      file: string,
+    ): JsonFile => {
       const saveMode: SaveMode = data.value ? 'replace' : 'patch';
       const applied = applyPatch(data.value ?? data.vanilla, data.patch ?? []);
+      const title =
+        [data.schema.title, data.schema.items?.title].find(
+          (t) => t && t.trim(),
+        ) ?? file;
+      const description =
+        [data.schema.items?.description, data.schema.description]
+          .filter((t) => t && t.trim())
+          .join('\n\n') || null;
 
       return {
-        schema: data.schema,
+        title,
+        description,
+        schema: omit(data.schema, ['title', 'description']),
         itemSchema: data.schema.items
           ? omit(data.schema.items, ['title', 'description'])
           : null,
