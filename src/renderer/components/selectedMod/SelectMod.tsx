@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { List, Button, Typography } from 'antd';
 import { NewMod } from './NewMod';
-import { FullSizeDialogLayout } from '../FullSizeDialogLayout';
-import { ErrorAlert } from '../ErrorAlert';
+import { FullSizeDialogLayout } from '../layout/FullSizeDialogLayout';
+import { ErrorAlert } from '../common/ErrorAlert';
 import { useMods } from '../../hooks/useMods';
 import { useSelectedMod } from '../../hooks/useSelectedMod';
-import { FullSizeLoader } from '../FullSizeLoader';
+import { FullSizeLoader } from '../common/FullSizeLoader';
 import { EditableMod } from '../../../common/invokables/mods';
 
 export function SelectMod() {

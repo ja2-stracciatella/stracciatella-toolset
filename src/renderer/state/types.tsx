@@ -53,7 +53,7 @@ export function buildLoadableMapping<
     state: Draft<State>,
     payload: PayloadAction<unknown, string, { arg: Input }>,
   ) => Draft<Loadable<Transformed>>,
-  transform: (data: Returned) => Transformed,
+  transform: (data: Returned, input: Input) => Transformed,
   postProcess: (
     state: Draft<State>,
     payload: PayloadAction<Returned, string, { arg: Input }>,
@@ -68,7 +68,7 @@ export function buildLoadableMapping<
   builder.addCase(thunk.fulfilled, (state, payload) => {
     fulfilledLoadable<Transformed>(
       selector(state, payload),
-      transform(payload.payload),
+      transform(payload.payload, payload.meta.arg),
     );
     postProcess(state, payload);
   });
@@ -121,7 +121,7 @@ export function buildPersistableMapping<
     state: Draft<State>,
     payload: PayloadAction<unknown, string, { arg: Input }>,
   ) => Draft<Persistable<Transformed>>,
-  transform: (data: Returned) => Transformed,
+  transform: (data: Returned, input: Input) => Transformed,
   postProcess: (
     state: Draft<State>,
     payload: PayloadAction<Returned, string, { arg: Input }>,
@@ -134,7 +134,10 @@ export function buildPersistableMapping<
     rejectedPersistable(selector(state, payload), payload),
   );
   builder.addCase(thunk.fulfilled, (state, payload) => {
-    fulfilledPersistable(selector(state, payload), transform(payload.payload));
+    fulfilledPersistable(
+      selector(state, payload),
+      transform(payload.payload, payload.meta.arg),
+    );
     postProcess(state, payload);
   });
 }

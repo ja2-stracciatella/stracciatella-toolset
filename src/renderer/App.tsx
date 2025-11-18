@@ -6,7 +6,7 @@ import { ROUTES } from './EditorRoutes';
 import './App.css';
 import { WithToolsetConfig } from './components/WithToolsetConfig';
 import { WithSelectedMod } from './components/selectedMod/WithSelectedMod';
-import { EditorLayout } from './components/EditorLayout';
+import { EditorLayout } from './components/layout/EditorLayout';
 import { Provider } from 'react-redux';
 import { appStore } from './state/store';
 import { ListenAll } from './components/events/ListenAll';

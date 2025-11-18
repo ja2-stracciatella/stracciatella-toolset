@@ -1,28 +1,35 @@
-import { ExclamationOutlined } from '@ant-design/icons';
-import { Image, Flex, Spin } from 'antd';
+import { ExclamationOutlined, QuestionOutlined } from '@ant-design/icons';
+import { Image, Flex } from 'antd';
 import { useEffect, useMemo } from 'react';
 import { useImageFile } from '../../hooks/useImage';
-import { useFileJson } from '../../hooks/files';
+import { useFileJsonDiskValue } from '../../hooks/useFileJsonDiskValue';
+import { isArray, isPlainObject } from 'remeda';
+import { useFileLoad } from '../../hooks/useFileLoad';
 
 interface MercPreviewProps {
   profile: string;
 }
 
+const PROFILES_FILE = 'mercs-profile-info.json';
+
 export function MercPreview({ profile }: MercPreviewProps) {
-  const [content] = useFileJson('mercs-profile-info.json');
+  const loadFile = useFileLoad();
+  const profiles = useFileJsonDiskValue(PROFILES_FILE);
   const profileId = useMemo(() => {
-    if (!content) {
+    if (!profiles || !isArray(profiles)) return null;
+
+    const profileValue = profiles
+      .filter(isPlainObject)
+      .find((it) => it.internalName === profile);
+    if (
+      !profileValue ||
+      !('profileID' in profileValue) ||
+      typeof profileValue.profileID !== 'number'
+    ) {
       return null;
     }
-    if (!Array.isArray(content)) {
-      return null;
-    }
-    const p = content.find((it: any) => it.internalName === profile);
-    if (!p || typeof p.profileID !== 'number') {
-      return null;
-    }
-    return p.profileID as number;
-  }, [content, profile]);
+    return profileValue.profileID;
+  }, [profiles, profile]);
   const graphic1 = useMemo(() => {
     if (profileId === null) {
       return null;
@@ -36,32 +43,31 @@ export function MercPreview({ profile }: MercPreviewProps) {
     return `faces/B${profileId.toString().padStart(2, '0')}.sti`;
   }, [profileId]);
   const {
-    loading: loading1,
     data: image1,
     error: error1,
     refresh: refresh1,
   } = useImageFile(graphic1);
   const {
-    loading: loading2,
     data: image2,
     error: error2,
     refresh: refresh2,
   } = useImageFile(graphic2);
   const image = useMemo(() => {
-    const loading = loading1 || loading2;
-    if (loading) {
-      return <Spin size="small" />;
+    const error = error1 && error2 ? (error1 ?? error2) : null;
+    if (profileId === null || (!image1 && !image2 && !error)) {
+      return <QuestionOutlined />;
     }
-    const error = error1 && error2 ? error1 || error2 : null;
     if (error) {
       return <ExclamationOutlined title={error.message} />;
     }
-    if (!image1 && !image2) {
-      return null;
-    }
-    return <Image preview={false} src={(image1 || image2) ?? undefined} />;
-  }, [error1, error2, image1, image2, loading1, loading2]);
+    return <Image preview={false} src={image1 ?? image2 ?? undefined} />;
+  }, [error1, error2, image1, image2, profileId]);
 
+  useEffect(() => {
+    if (!profiles) {
+      loadFile(PROFILES_FILE);
+    }
+  }, [loadFile, profiles]);
   useEffect(() => {
     refresh1();
     refresh2();

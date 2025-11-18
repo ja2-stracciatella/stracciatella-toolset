@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Button, Typography } from 'antd';
 import { IChangeEvent } from '@rjsf/core';
-import { JsonSchemaForm } from '../JsonSchemaForm';
+import { JsonSchemaForm } from '../visual/form/JsonSchemaForm';
 import { useAppSelector } from '../../hooks/state';
-import { FullSizeDialogLayout } from '../FullSizeDialogLayout';
+import { FullSizeDialogLayout } from '../layout/FullSizeDialogLayout';
 import { Space } from 'antd/lib';
-import { ErrorAlert } from '../ErrorAlert';
+import { ErrorAlert } from '../common/ErrorAlert';
 import { useSelectedMod } from '../../hooks/useSelectedMod';
 import { selectStracciatellaHome } from '../../state/selectors';
 import { toJSONSchema } from 'zod';

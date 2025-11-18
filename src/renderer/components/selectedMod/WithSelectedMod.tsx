@@ -1,8 +1,8 @@
 import { PropsWithChildren, useEffect } from 'react';
 import { SelectMod } from './SelectMod';
-import { FullSizeLoader } from '../FullSizeLoader';
-import { FullSizeDialogLayout } from '../FullSizeDialogLayout';
-import { ErrorAlert } from '../ErrorAlert';
+import { FullSizeLoader } from '../common/FullSizeLoader';
+import { FullSizeDialogLayout } from '../layout/FullSizeDialogLayout';
+import { ErrorAlert } from '../common/ErrorAlert';
 import { useSelectedMod } from '../../hooks/useSelectedMod';
 import { ConfirmCloseMod } from './ConfirmCloseMod';
 
