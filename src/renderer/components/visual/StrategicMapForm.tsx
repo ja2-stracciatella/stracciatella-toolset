@@ -94,6 +94,7 @@ export interface StrategicMapFormProps extends VisualFormProps {
 
 export function JsonStrategicMapForm({
   file,
+  extraFiles,
   uiSchema,
   extractSectorFromItem,
   transformSectorToItem,
@@ -144,6 +145,7 @@ export function JsonStrategicMapForm({
   return (
     <VisualStrategicMapFormWrapper
       file={file}
+      extraFiles={extraFiles}
       strategicMap={{
         level,
         selectedSectorId,

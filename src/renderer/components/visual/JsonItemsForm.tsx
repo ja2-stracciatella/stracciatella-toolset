@@ -132,6 +132,7 @@ const FormItems = function FormItems({
 
 export const JsonItemsForm = function JsonItemsForm({
   file,
+  extraFiles,
   name,
   preview,
   uiSchema,
@@ -151,7 +152,7 @@ export const JsonItemsForm = function JsonItemsForm({
   }, [addNewItem, canAddNewItem]);
 
   return (
-    <VisualFormWrapper file={file}>
+    <VisualFormWrapper file={file} extraFiles={extraFiles}>
       <VisualFormWithHeader file={file}>
         <Flex vertical gap="middle">
           <FormItems

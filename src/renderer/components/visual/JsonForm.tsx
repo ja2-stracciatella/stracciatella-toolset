@@ -12,7 +12,7 @@ export interface JsonFormProps extends VisualFormProps {
   uiSchema?: UiSchema;
 }
 
-function Form({ file, uiSchema }: JsonFormProps) {
+function Form({ file, uiSchema }: Omit<JsonFormProps, 'extraFiles'>) {
   const value = useFileJsonValue(file);
   const update = useFileJsonUpdate(file);
   const baseSchema = useFileJsonSchema(file);
@@ -46,9 +46,9 @@ function Form({ file, uiSchema }: JsonFormProps) {
   );
 }
 
-export function JsonForm({ file, ...rest }: JsonFormProps) {
+export function JsonForm({ file, extraFiles, ...rest }: JsonFormProps) {
   return (
-    <VisualFormWrapper file={file}>
+    <VisualFormWrapper file={file} extraFiles={extraFiles}>
       <Form file={file} {...rest} />
     </VisualFormWrapper>
   );

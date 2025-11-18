@@ -194,7 +194,7 @@ function Form({
   );
 }
 
-export function MovementCostsForm({ file }: VisualFormProps) {
+export function MovementCostsForm({ file, extraFiles }: VisualFormProps) {
   const [selectedSectorId, setSelectedSectorId] =
     useState<NormalizedSectorId | null>(null);
 
@@ -202,6 +202,7 @@ export function MovementCostsForm({ file }: VisualFormProps) {
     <VisualStrategicMapFormWrapper
       strategicMap={{ selectedSectorId, onSectorClick: setSelectedSectorId }}
       file={file}
+      extraFiles={extraFiles}
     >
       <Form file={file} selectedSectorId={selectedSectorId} />
     </VisualStrategicMapFormWrapper>

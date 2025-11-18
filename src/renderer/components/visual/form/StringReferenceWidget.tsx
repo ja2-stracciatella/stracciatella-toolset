@@ -1,7 +1,6 @@
 import { WidgetProps } from '@rjsf/utils';
 import { Input, AutoComplete, Flex } from 'antd';
 import { JSX, useCallback, useEffect, useMemo } from 'react';
-import { BaseOptionType } from 'antd/lib/select';
 import { Space } from 'antd/lib';
 import { MercPreview } from '../../content/MercPreview';
 import { ItemPreview } from '../../content/ItemPreview';
@@ -59,7 +58,7 @@ export function StringReferenceWidget({
     return uniqueBy(options, (option) => option.value);
   }, [values, references]);
   const onChangeMemo = useCallback(
-    (value: BaseOptionType) => {
+    (value: string) => {
       onChange(value);
     },
     [onChange],
@@ -67,11 +66,11 @@ export function StringReferenceWidget({
 
   useEffect(() => {
     files.forEach((file, idx) => {
-      if (!values[idx]) {
+      if (!values[idx] && !error) {
         loadFile(file);
       }
     });
-  }, [files, loadFile, values]);
+  }, [error, files, loadFile, values]);
 
   if (loading) {
     return (
@@ -82,7 +81,7 @@ export function StringReferenceWidget({
   }
   if (error) {
     return (
-      <Flex>
+      <Flex gap="small">
         <Input value={value} onChange={onChange} required={required} />;
         <ExclamationCircleOutlined title={error.message} />
       </Flex>

@@ -6,6 +6,8 @@ import { ErrorAlert, ErrorAlertProps } from '../common/ErrorAlert';
 import { useAnyFileLoading } from '../../hooks/useAnyFileLoading';
 import { useAnyFileLoadingError } from '../../hooks/useAnyFileLoadingError';
 import { useFileLoad } from '../../hooks/useFileLoad';
+import { useFileHasDiskValue } from '../../hooks/useFileHasDiskValue';
+import { VisualErrorBoundary } from './VisualErrorBoundary';
 
 export interface VisualFormProps {
   /*
@@ -20,10 +22,12 @@ export interface VisualFormProps {
 }
 
 function LoadingOr({
-  children,
+  file,
   loading,
-}: PropsWithChildren<{ loading: boolean }>) {
-  return loading ? <FullSizeLoader /> : children;
+  children,
+}: PropsWithChildren<Pick<VisualFormProps, 'file'> & { loading: boolean }>) {
+  const hasDiskValue = useFileHasDiskValue(file);
+  return loading && !hasDiskValue ? <FullSizeLoader /> : children;
 }
 
 function ErrorOr({ children, ...rest }: PropsWithChildren<ErrorAlertProps>) {
@@ -51,9 +55,11 @@ export function VisualFormWrapper({
 
   return (
     <EditorContent file={file}>
-      <LoadingOr loading={loading}>
+      <LoadingOr file={file} loading={loading}>
         <ErrorOr error={error}>
-          <TextEditorOr file={file}>{children}</TextEditorOr>
+          <TextEditorOr file={file}>
+            <VisualErrorBoundary file={file}>{children}</VisualErrorBoundary>
+          </TextEditorOr>
         </ErrorOr>
       </LoadingOr>
     </EditorContent>
