@@ -5,8 +5,7 @@ import { FullSizeLoader } from '../common/FullSizeLoader';
 import { ErrorAlert, ErrorAlertProps } from '../common/ErrorAlert';
 import { useAnyFileLoading } from '../../hooks/useAnyFileLoading';
 import { useAnyFileLoadingError } from '../../hooks/useAnyFileLoadingError';
-import { useAppDispatch } from '../../hooks/state';
-import { loadJSON } from '../../state/files';
+import { useFileLoad } from '../../hooks/useFileLoad';
 
 export interface VisualFormProps {
   /*
@@ -36,7 +35,7 @@ export function VisualFormWrapper({
   extraFiles,
   children,
 }: PropsWithChildren<VisualFormProps>) {
-  const dispatch = useAppDispatch();
+  const loadFile = useFileLoad();
   const allFiles = useMemo(
     () => [file, ...(extraFiles ?? [])],
     [file, extraFiles],
@@ -46,9 +45,9 @@ export function VisualFormWrapper({
 
   useEffect(() => {
     for (const file of allFiles) {
-      dispatch(loadJSON(file));
+      loadFile(file);
     }
-  }, [dispatch, allFiles]);
+  }, [allFiles, loadFile]);
 
   return (
     <EditorContent file={file}>

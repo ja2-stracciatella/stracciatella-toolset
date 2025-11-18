@@ -1,78 +1,62 @@
 import { WidgetProps } from '@rjsf/utils';
-import { Input, AutoComplete, AutoCompleteProps } from 'antd';
-import { JSX, useCallback, useMemo } from 'react';
-import {
-  useFilesError,
-  useFilesJson,
-  useFilesLoading,
-} from '../../../hooks/files';
+import { Input, AutoComplete, Flex } from 'antd';
+import { JSX, useCallback, useEffect, useMemo } from 'react';
 import { BaseOptionType } from 'antd/lib/select';
 import { Space } from 'antd/lib';
 import { MercPreview } from '../../content/MercPreview';
 import { ItemPreview } from '../../content/ItemPreview';
+import { useAnyFileLoading } from '../../../hooks/useAnyFileLoading';
+import { useAnyFileLoadingError } from '../../../hooks/useAnyFileLoadingError';
+import { useFilesJsonDiskValue } from '../../../hooks/useFilesJsonDiskValue';
+import { isArray, uniqueBy } from 'remeda';
+import { AnyJsonObject } from '../../../../common/invokables/jsons';
+import { Loader } from '../../common/Loader';
+import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { useFileLoad } from '../../../hooks/useFileLoad';
 
-type PreviewFn = (item: any) => JSX.Element | string | null;
+type PreviewFn = (item: AnyJsonObject) => JSX.Element | string | null;
 
-interface StringReferenceWidgetProps<T extends { [key: string]: string }>
-  extends WidgetProps {
-  references: {
-    [key in keyof T]: { file: string; property: string; preview?: PreviewFn };
-  };
+interface StringReferenceWidgetProps extends WidgetProps {
+  references: Array<{ file: string; property: string; preview?: PreviewFn }>;
 }
 
-export function StringReferenceWidget<T extends { [key: string]: string }>({
+export function StringReferenceWidget({
   value,
   onChange,
   required,
   references,
-}: StringReferenceWidgetProps<T>) {
-  const files = useMemo(() => {
-    const f: { [key in keyof T]: string } = {} as any;
-    for (const key in references) {
-      f[key] = references[key].file;
-    }
-    return f;
-  }, [references]);
-  const loadings = useFilesLoading(files);
-  const errors = useFilesError(files);
-  const loadingDidNotComplete = useMemo(() => {
-    return (
-      Object.values(loadings).some((l) => l) ||
-      Object.values(errors).some((e) => e)
-    );
-  }, [loadings, errors]);
-  const { values } = useFilesJson(files);
+}: StringReferenceWidgetProps) {
+  const files = useMemo(() => references.map((r) => r.file), [references]);
+  const loading = useAnyFileLoading(files);
+  const error = useAnyFileLoadingError(files);
+  const values = useFilesJsonDiskValue(files);
+  const loadFile = useFileLoad();
   const options = useMemo(() => {
-    if (!Object.values(values).every((v) => v)) {
-      return [];
-    }
-    const options: Array<
-      NonNullable<AutoCompleteProps['options']>[0] & { value: string }
-    > = [];
-    for (const key in values) {
-      const fileResults = values[key] as Array<any>;
-      if (!fileResults) continue;
-      for (const item of fileResults) {
-        const value: string = item[references[key].property] ?? '';
+    const options = values.flatMap((value, index) => {
+      if (!isArray(value)) return [];
+      return value.flatMap((o) => {
+        const reference = references[index];
+        if (isArray(o) || !reference) return [];
+        const value = (o[reference.property] as any) ?? '';
+        if (typeof value !== 'string') return [];
         let label: JSX.Element | string | null = value;
-        if (references[key].preview) {
+        if (reference.preview) {
           label = (
             <Space>
-              {references[key].preview(item)}
+              {reference.preview(o)}
               <span>{value}</span>
             </Space>
           );
         }
-        if (!options.some((option) => option.value === value)) {
-          options.push({
-            value,
-            label,
-          });
-        }
-      }
-    }
+
+        return {
+          value,
+          label,
+        };
+      });
+    });
     options.sort((a, b) => a.value.localeCompare(b.value));
-    return options;
+    return uniqueBy(options, (option) => option.value);
   }, [values, references]);
   const onChangeMemo = useCallback(
     (value: BaseOptionType) => {
@@ -81,8 +65,28 @@ export function StringReferenceWidget<T extends { [key: string]: string }>({
     [onChange],
   );
 
-  if (loadingDidNotComplete) {
-    return <Input value={value} onChange={onChange} required={required} />;
+  useEffect(() => {
+    files.forEach((file, idx) => {
+      if (!values[idx]) {
+        loadFile(file);
+      }
+    });
+  }, [files, loadFile, values]);
+
+  if (loading) {
+    return (
+      <Flex>
+        <Loader />
+      </Flex>
+    );
+  }
+  if (error) {
+    return (
+      <Flex>
+        <Input value={value} onChange={onChange} required={required} />;
+        <ExclamationCircleOutlined title={error.message} />
+      </Flex>
+    );
   }
 
   return (
@@ -106,13 +110,13 @@ export function stringReferenceTo(
   return function StringReference(props: WidgetProps) {
     return (
       <StringReferenceWidget
-        references={{
-          f: {
+        references={[
+          {
             property,
             file,
             preview,
           },
-        }}
+        ]}
         {...props}
       />
     );
@@ -122,8 +126,9 @@ export function stringReferenceTo(
 export function stringReferenceToMultiple(references: {
   [k: string]: { file: string; property: string; preview?: PreviewFn };
 }) {
+  const referencesArr = Object.values(references);
   return function StringReference(props: WidgetProps) {
-    return <StringReferenceWidget references={references} {...props} />;
+    return <StringReferenceWidget references={referencesArr} {...props} />;
   };
 }
 
