@@ -8,7 +8,7 @@ import { WithToolsetConfig } from './components/WithToolsetConfig';
 import { WithSelectedMod } from './components/selectedMod/WithSelectedMod';
 import { EditorLayout } from './components/layout/EditorLayout';
 import { Provider } from 'react-redux';
-import { appStore } from './state/store';
+import { createAppStore } from './state/store';
 import { ListenAll } from './components/events/ListenAll';
 
 export function AppWithoutProviders() {
@@ -33,6 +33,8 @@ export function AppWithoutProviders() {
     </>
   );
 }
+
+const appStore = createAppStore();
 
 export default function App() {
   return (

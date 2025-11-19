@@ -280,7 +280,7 @@ const filesSlice = createSlice({
       if (open.editMode === 'text') {
         try {
           if (open.saveMode === 'patch') {
-            const patch = JSON.parse(open.value);
+            const patch = JSON_PATCH_SCHEMA.parse(JSON.parse(open.value));
             const applied = applyPatch(disk.applied, patch);
             state.open[filename] = {
               ...open,
@@ -288,7 +288,7 @@ const filesSlice = createSlice({
               value: applied,
             };
           } else {
-            const value = JSON.parse(open.value);
+            const value = JSON_ROOT_SCHEMA.parse(JSON.parse(open.value));
             state.open[filename] = {
               ...open,
               editMode: editMode as 'visual',
@@ -301,7 +301,7 @@ const filesSlice = createSlice({
       } else {
         if (open.saveMode === 'patch') {
           const value = open.value;
-          const patch = generatePatch(disk.applied, value);
+          const patch = generatePatch(disk.vanilla, value);
           state.open[filename] = {
             ...open,
             editMode: editMode as 'text',
