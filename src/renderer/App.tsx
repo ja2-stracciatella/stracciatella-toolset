@@ -10,6 +10,7 @@ import { EditorLayout } from './components/layout/EditorLayout';
 import { Provider } from 'react-redux';
 import { createAppStore } from './state/store';
 import { ListenAll } from './components/events/ListenAll';
+import { ConfigProvider, ThemeConfig } from 'antd';
 
 export function AppWithoutProviders() {
   const routes = useMemo(() => {
@@ -35,13 +36,20 @@ export function AppWithoutProviders() {
 }
 
 const appStore = createAppStore();
+const THEME_CONFIG: ThemeConfig = {
+  token: {
+    colorPrimary: '#9d1e1c',
+  },
+};
 
 export default function App() {
   return (
     <div className="app-root">
-      <Provider store={appStore}>
-        <AppWithoutProviders />
-      </Provider>
+      <ConfigProvider theme={THEME_CONFIG}>
+        <Provider store={appStore}>
+          <AppWithoutProviders />
+        </Provider>
+      </ConfigProvider>
     </div>
   );
 }
