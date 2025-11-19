@@ -42,11 +42,11 @@ const EDIT_MODE_SELECT_OPTIONS = [
 ];
 
 interface ContentProps {
-  file: string;
+  file?: string;
   children: ReactNode;
 }
 
-function EditorContentSaveButton({ file }: Pick<ContentProps, 'file'>) {
+function EditorContentSaveButton({ file }: { file: string }) {
   const modified = useFileModified(file);
   const saving = useFileSaving(file);
   const loading = useFileLoading(file);
@@ -79,7 +79,9 @@ function EditorContentSaveButton({ file }: Pick<ContentProps, 'file'>) {
   );
 }
 
-function EditModeSelect({ file }: Pick<ContentProps, 'file'>) {
+function EditModeSelect({
+  file,
+}: Parameters<typeof EditorContentSaveButton>[0]) {
   const loading = useFileLoading(file);
   const saving = useFileSaving(file);
   const editMode = useFileEditMode(file);
@@ -99,7 +101,9 @@ function EditModeSelect({ file }: Pick<ContentProps, 'file'>) {
   );
 }
 
-function SaveModeSelect({ file }: Pick<ContentProps, 'file'>) {
+function SaveModeSelect({
+  file,
+}: Parameters<typeof EditorContentSaveButton>[0]) {
   const loading = useFileLoading(file);
   const saving = useFileSaving(file);
   const editMode = useFileSaveMode(file);
@@ -142,15 +146,6 @@ export const EditorContent = function EditorContent({
       }) as const,
     [],
   );
-  const headerStyle = useMemo(
-    () =>
-      ({
-        paddingTop: '10px',
-        paddingLeft: '10px',
-        paddingRight: '10px',
-      }) as const,
-    [],
-  );
   const contentWrapperStyle = useMemo(
     () =>
       ({
@@ -172,12 +167,24 @@ export const EditorContent = function EditorContent({
       }) as const,
     [],
   );
+  const header = useMemo(() => {
+    if (!file) return null;
+    return (
+      <div
+        style={{
+          paddingTop: '10px',
+          paddingLeft: '10px',
+          paddingRight: '10px',
+        }}
+      >
+        <EditorContentHeader file={file} />
+      </div>
+    );
+  }, [file]);
 
   return (
     <Flex vertical style={flexStyle}>
-      <div style={headerStyle}>
-        <EditorContentHeader file={file} />
-      </div>
+      {header}
       <div style={contentWrapperStyle}>
         <div style={contentStyle}>{children}</div>
       </div>

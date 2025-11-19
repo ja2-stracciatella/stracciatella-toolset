@@ -6,7 +6,7 @@ import { ROUTES } from './EditorRoutes';
 import './App.css';
 import { WithToolsetConfig } from './components/WithToolsetConfig';
 import { WithSelectedMod } from './components/selectedMod/WithSelectedMod';
-import { EditorLayout } from './components/layout/EditorLayout';
+import { ToolsetLayout } from './components/layout/ToolsetLayout';
 import { Provider } from 'react-redux';
 import { createAppStore } from './state/store';
 import { ListenAll } from './components/events/ListenAll';
@@ -25,9 +25,9 @@ export function AppWithoutProviders() {
       <WithToolsetConfig>
         <WithSelectedMod>
           <BrowserRouter>
-            <EditorLayout>
+            <ToolsetLayout>
               <Routes>{routes}</Routes>
-            </EditorLayout>
+            </ToolsetLayout>
           </BrowserRouter>
         </WithSelectedMod>
       </WithToolsetConfig>

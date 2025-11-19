@@ -2,7 +2,7 @@ import { ReactNode, useMemo } from 'react';
 import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
 import { Badge, Layout, Menu, MenuProps, Space, Typography } from 'antd';
 
-import './EditorLayout.css';
+import './ToolsetLayout.css';
 import { Item, MENU, MenuItem } from '../../EditorRoutes';
 import { useAppSelector } from '../../hooks/state';
 import { useFileModified } from '../../hooks/useFileModified';
@@ -94,7 +94,7 @@ function SideMenu() {
   );
 }
 
-export function EditorLayout({ children }: LayoutProps) {
+export function ToolsetLayout({ children }: LayoutProps) {
   const selectedModName = useAppSelector((s) => s.mods.selected.data?.name);
   const modSuffix = useMemo(
     () => (selectedModName ? ` - ${selectedModName}` : ''),
