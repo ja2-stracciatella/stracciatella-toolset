@@ -6,6 +6,7 @@ import {
   changeSaveMode,
   changeText,
   loadJSON,
+  persistJSON,
 } from '../../../renderer/state/files';
 import { getInvokeMock, InvokeMock } from '../test-utils/invoke';
 import { miniSerializeError } from '@reduxjs/toolkit';
@@ -59,15 +60,22 @@ function resolveJsonRead(
   );
 }
 
+async function setupTestFile(
+  readOutput: Partial<InvokableOutput<JsonReadInvokable>> = {},
+) {
+  const appStore = createAppStore();
+  const invokeMock = getInvokeMock();
+
+  resolveJsonRead(invokeMock, readOutput);
+  await appStore.dispatch(loadJSON(TEST_FILE));
+
+  return { appStore, invokeMock };
+}
+
 describe('files state', () => {
   describe('loadJson', () => {
     it('should load a file without mod values', async () => {
-      const appStore = createAppStore();
-      const invokeMock = getInvokeMock();
-
-      resolveJsonRead(invokeMock);
-
-      await appStore.dispatch(loadJSON(TEST_FILE));
+      const { appStore } = await setupTestFile();
 
       expect(appStore.getState().files.disk[TEST_FILE]).toEqual(
         TEST_DEFAULT_DISK_STATE,
@@ -81,14 +89,9 @@ describe('files state', () => {
     });
 
     it('should load a file with a mod patch', async () => {
-      const appStore = createAppStore();
-      const invokeMock = getInvokeMock();
-
-      resolveJsonRead(invokeMock, {
+      const { appStore } = await setupTestFile({
         patch: TEST_PATCH,
       });
-
-      await appStore.dispatch(loadJSON(TEST_FILE));
 
       expect(appStore.getState().files.disk[TEST_FILE]).toEqual({
         ...TEST_DEFAULT_DISK_STATE,
@@ -107,14 +110,9 @@ describe('files state', () => {
     });
 
     it('should load a file with a mod replacement value', async () => {
-      const appStore = createAppStore();
-      const invokeMock = getInvokeMock();
-
-      resolveJsonRead(invokeMock, {
+      const { appStore } = await setupTestFile({
         value: TEST_REPLACE,
       });
-
-      await appStore.dispatch(loadJSON(TEST_FILE));
 
       expect(appStore.getState().files.disk[TEST_FILE]).toEqual({
         ...TEST_DEFAULT_DISK_STATE,
@@ -154,12 +152,8 @@ describe('files state', () => {
 
   describe('changeJson', () => {
     it('should update a json file and set the modified flag', async () => {
-      const appStore = createAppStore();
-      const invokeMock = getInvokeMock();
+      const { appStore } = await setupTestFile();
 
-      resolveJsonRead(invokeMock);
-
-      await appStore.dispatch(loadJSON(TEST_FILE));
       appStore.dispatch(
         changeJson({
           filename: TEST_FILE,
@@ -254,11 +248,7 @@ describe('files state', () => {
         ({ name, readOutput, expectedNotModified, expectedModified }) => {
           describe(name, () => {
             it('should switch edit mode from visual to text when file was not modified', async () => {
-              const appStore = createAppStore();
-              const invokeMock = getInvokeMock();
-
-              resolveJsonRead(invokeMock, readOutput);
-              await appStore.dispatch(loadJSON(TEST_FILE));
+              const { appStore } = await setupTestFile(readOutput);
 
               appStore.dispatch(
                 changeEditMode({
@@ -273,11 +263,7 @@ describe('files state', () => {
             });
 
             it('should switch edit mode when file was modified', async () => {
-              const appStore = createAppStore();
-              const invokeMock = getInvokeMock();
-
-              resolveJsonRead(invokeMock, readOutput);
-              await appStore.dispatch(loadJSON(TEST_FILE));
+              const { appStore } = await setupTestFile(readOutput);
 
               appStore.dispatch(
                 changeJson({
@@ -396,11 +382,8 @@ describe('files state', () => {
               },
             ].forEach(({ name, value }) => {
               it(`should do nothing if the text is not a valid ${name} value`, async () => {
-                const appStore = createAppStore();
-                const invokeMock = getInvokeMock();
+                const { appStore } = await setupTestFile(readOutput);
 
-                resolveJsonRead(invokeMock, readOutput);
-                await appStore.dispatch(loadJSON(TEST_FILE));
                 appStore.dispatch(
                   changeEditMode({
                     filename: TEST_FILE,
@@ -430,11 +413,8 @@ describe('files state', () => {
             });
 
             it('should switch edit mode for non modified files', async () => {
-              const appStore = createAppStore();
-              const invokeMock = getInvokeMock();
+              const { appStore } = await setupTestFile(readOutput);
 
-              resolveJsonRead(invokeMock, readOutput);
-              await appStore.dispatch(loadJSON(TEST_FILE));
               appStore.dispatch(
                 changeEditMode({
                   filename: TEST_FILE,
@@ -493,11 +473,8 @@ describe('files state', () => {
       async function setup(
         readOutput: Partial<InvokableOutput<JsonReadInvokable>>,
       ) {
-        const appStore = createAppStore();
-        const invokeMock = getInvokeMock();
+        const { appStore, invokeMock } = await setupTestFile(readOutput);
 
-        resolveJsonRead(invokeMock, readOutput);
-        await appStore.dispatch(loadJSON(TEST_FILE));
         expect(appStore.getState().files.open[TEST_FILE]?.saveMode).toBe(
           'patch',
         );
@@ -546,11 +523,8 @@ describe('files state', () => {
         async function setup(
           readOutput: Partial<InvokableOutput<JsonReadInvokable>>,
         ) {
-          const appStore = createAppStore();
-          const invokeMock = getInvokeMock();
+          const { appStore, invokeMock } = await setupTestFile(readOutput);
 
-          resolveJsonRead(invokeMock, readOutput);
-          await appStore.dispatch(loadJSON(TEST_FILE));
           appStore.dispatch(
             changeEditMode({
               filename: TEST_FILE,
@@ -670,11 +644,8 @@ describe('files state', () => {
         async function setup(
           readOutput: Partial<InvokableOutput<JsonReadInvokable>>,
         ) {
-          const appStore = createAppStore();
-          const invokeMock = getInvokeMock();
+          const { appStore, invokeMock } = await setupTestFile(readOutput);
 
-          resolveJsonRead(invokeMock, readOutput);
-          await appStore.dispatch(loadJSON(TEST_FILE));
           appStore.dispatch(
             changeSaveMode({
               filename: TEST_FILE,
@@ -804,6 +775,504 @@ describe('files state', () => {
               });
             });
           });
+        });
+      });
+    });
+  });
+
+  describe('persistJSON', () => {
+    describe('in visual edit mode', () => {
+      describe('in patch save mode', async () => {
+        async function setup(
+          readOutput: Partial<InvokableOutput<JsonReadInvokable>>,
+        ) {
+          const { appStore, invokeMock } = await setupTestFile(readOutput);
+
+          appStore.dispatch(
+            changeSaveMode({
+              filename: TEST_FILE,
+              saveMode: 'patch',
+            }),
+          );
+          expect(appStore.getState().files.open[TEST_FILE]?.saveMode).toBe(
+            'patch',
+          );
+          expect(appStore.getState().files.open[TEST_FILE]?.editMode).toBe(
+            'visual',
+          );
+
+          return {
+            appStore,
+            invokeMock,
+          };
+        }
+
+        [
+          {
+            name: 'without mod data',
+            readOutput: {},
+            expectedNotModified: { patch: null, applied: TEST_VANILLA },
+          },
+          {
+            name: 'with mod patch data',
+            readOutput: { patch: TEST_PATCH },
+            expectedNotModified: {
+              patch: TEST_PATCH,
+              applied: TEST_PATCHED,
+            },
+          },
+          {
+            name: 'with mod replace data',
+            readOutput: { value: TEST_REPLACE },
+            expectedNotModified: {
+              patch: [
+                {
+                  op: 'replace' as const,
+                  path: '/test',
+                  value: TEST_REPLACE.test,
+                },
+              ],
+              applied: TEST_REPLACE,
+            },
+          },
+        ].forEach(({ name, readOutput, expectedNotModified }) => {
+          describe(name, () => {
+            it('should save the correct patch', async () => {
+              const { appStore, invokeMock } = await setup(readOutput);
+
+              invokeMock.resolve(
+                'json/persist',
+                {
+                  file: TEST_FILE,
+                  value: null,
+                  patch: expectedNotModified.patch,
+                },
+                {
+                  schema: TEST_SCHEMA,
+                  vanilla: TEST_VANILLA,
+                  value: null,
+                  patch: expectedNotModified.patch,
+                },
+              );
+              await appStore.dispatch(persistJSON(TEST_FILE));
+
+              expect(
+                appStore.getState().files.disk[TEST_FILE]?.persistingError,
+              ).toBeNull();
+              expect(appStore.getState().files.disk[TEST_FILE]?.data).toEqual({
+                schema: TEST_SCHEMA,
+                itemSchema: null,
+                title: TEST_FILE,
+                description: null,
+                saveMode: 'patch',
+                vanilla: TEST_VANILLA,
+                mod: null,
+                ...expectedNotModified,
+              });
+            });
+
+            it('should save the correct patch after modifications', async () => {
+              const { appStore, invokeMock } = await setup(readOutput);
+              const expectedPatch = [{ op: 'remove' as const, path: '/test' }];
+
+              invokeMock.resolve(
+                'json/persist',
+                {
+                  file: TEST_FILE,
+                  value: null,
+                  patch: expectedPatch,
+                },
+                {
+                  schema: TEST_SCHEMA,
+                  vanilla: TEST_VANILLA,
+                  value: null,
+                  patch: expectedPatch,
+                },
+              );
+              appStore.dispatch(
+                changeJson({
+                  filename: TEST_FILE,
+                  value: {},
+                }),
+              );
+              await appStore.dispatch(persistJSON(TEST_FILE));
+
+              expect(
+                appStore.getState().files.disk[TEST_FILE]?.persistingError,
+              ).toBeNull();
+              expect(appStore.getState().files.disk[TEST_FILE]?.data).toEqual({
+                schema: TEST_SCHEMA,
+                itemSchema: null,
+                title: TEST_FILE,
+                description: null,
+                saveMode: 'patch',
+                vanilla: TEST_VANILLA,
+                mod: null,
+                patch: expectedPatch,
+                applied: {},
+              });
+            });
+          });
+        });
+      });
+
+      describe('in replace save mode', () => {
+        async function setup(
+          readOutput: Partial<InvokableOutput<JsonReadInvokable>>,
+        ) {
+          const { appStore, invokeMock } = await setupTestFile(readOutput);
+
+          appStore.dispatch(
+            changeSaveMode({
+              filename: TEST_FILE,
+              saveMode: 'replace',
+            }),
+          );
+          expect(appStore.getState().files.open[TEST_FILE]?.saveMode).toBe(
+            'replace',
+          );
+          expect(appStore.getState().files.open[TEST_FILE]?.editMode).toBe(
+            'visual',
+          );
+
+          return {
+            appStore,
+            invokeMock,
+          };
+        }
+
+        [
+          {
+            name: 'without mod data',
+            readOutput: {},
+            expectedNotModified: { mod: TEST_VANILLA, applied: TEST_VANILLA },
+          },
+          {
+            name: 'with mod patch data',
+            readOutput: { patch: TEST_PATCH },
+            expectedNotModified: {
+              mod: TEST_PATCHED,
+              applied: TEST_PATCHED,
+            },
+          },
+          {
+            name: 'with mod replace data',
+            readOutput: { value: TEST_REPLACE },
+            expectedNotModified: {
+              mod: TEST_REPLACE,
+              applied: TEST_REPLACE,
+            },
+          },
+        ].forEach(({ name, readOutput, expectedNotModified }) => {
+          describe(name, () => {
+            it('should save the correct patch', async () => {
+              const { appStore, invokeMock } = await setup(readOutput);
+
+              invokeMock.resolve(
+                'json/persist',
+                {
+                  file: TEST_FILE,
+                  value: expectedNotModified.mod,
+                  patch: null,
+                },
+                {
+                  schema: TEST_SCHEMA,
+                  vanilla: TEST_VANILLA,
+                  value: expectedNotModified.mod,
+                  patch: null,
+                },
+              );
+              await appStore.dispatch(persistJSON(TEST_FILE));
+
+              expect(
+                appStore.getState().files.disk[TEST_FILE]?.persistingError,
+              ).toBeNull();
+              expect(appStore.getState().files.disk[TEST_FILE]?.data).toEqual({
+                schema: TEST_SCHEMA,
+                itemSchema: null,
+                title: TEST_FILE,
+                description: null,
+                saveMode: 'replace',
+                vanilla: TEST_VANILLA,
+                patch: null,
+                ...expectedNotModified,
+              });
+            });
+
+            it('should save the correct patch after modifications', async () => {
+              const { appStore, invokeMock } = await setup(readOutput);
+
+              invokeMock.resolve(
+                'json/persist',
+                {
+                  file: TEST_FILE,
+                  value: {},
+                  patch: null,
+                },
+                {
+                  schema: TEST_SCHEMA,
+                  vanilla: TEST_VANILLA,
+                  value: {},
+                  patch: null,
+                },
+              );
+              appStore.dispatch(
+                changeJson({
+                  filename: TEST_FILE,
+                  value: {},
+                }),
+              );
+              await appStore.dispatch(persistJSON(TEST_FILE));
+
+              expect(
+                appStore.getState().files.disk[TEST_FILE]?.persistingError,
+              ).toBeNull();
+              expect(appStore.getState().files.disk[TEST_FILE]?.data).toEqual({
+                schema: TEST_SCHEMA,
+                itemSchema: null,
+                title: TEST_FILE,
+                description: null,
+                saveMode: 'replace',
+                vanilla: TEST_VANILLA,
+                mod: {},
+                patch: null,
+                applied: {},
+              });
+            });
+          });
+        });
+      });
+    });
+
+    describe('in text edit mode', () => {
+      describe('in patch mode', () => {
+        async function setup(
+          readOutput: Partial<InvokableOutput<JsonReadInvokable>>,
+        ) {
+          const { appStore, invokeMock } = await setupTestFile(readOutput);
+
+          appStore.dispatch(
+            changeEditMode({
+              filename: TEST_FILE,
+              editMode: 'text',
+            }),
+          );
+          expect(appStore.getState().files.open[TEST_FILE]?.saveMode).toBe(
+            'patch',
+          );
+          expect(appStore.getState().files.open[TEST_FILE]?.editMode).toBe(
+            'text',
+          );
+
+          return {
+            appStore,
+            invokeMock,
+          };
+        }
+
+        [
+          {
+            name: 'valid json',
+            value: 'test',
+            expected: 'current editor value is not valid JSON',
+          },
+          {
+            name: 'a valid json patch',
+            value: '{}',
+            expected: 'current editor value is not a valid JSON patch',
+          },
+        ].forEach(({ name, value, expected }) => {
+          it(`should throw an error when the editor value is not ${name}`, async () => {
+            const { appStore } = await setup({});
+            appStore.dispatch(
+              changeText({
+                filename: TEST_FILE,
+                value,
+              }),
+            );
+            await appStore.dispatch(persistJSON(TEST_FILE));
+
+            expect(
+              appStore.getState().files.disk[TEST_FILE]?.persistingError
+                ?.message,
+            ).toContain(expected);
+            expect(appStore.getState().files.open[TEST_FILE]?.modified).toBe(
+              true,
+            );
+          });
+        });
+
+        it('should persist the current editor value', async () => {
+          const { appStore, invokeMock } = await setup({});
+          const patch = [
+            {
+              op: 'add' as const,
+              path: '/test',
+              value: 'test',
+            },
+          ];
+
+          invokeMock.resolve(
+            'json/persist',
+            {
+              file: TEST_FILE,
+              value: null,
+              patch,
+            },
+            {
+              vanilla: TEST_VANILLA,
+              schema: TEST_SCHEMA,
+              value: null,
+              patch,
+            },
+          );
+
+          appStore.dispatch(
+            changeText({
+              filename: TEST_FILE,
+              value: JSON.stringify(patch),
+            }),
+          );
+          await appStore.dispatch(persistJSON(TEST_FILE));
+
+          expect(
+            appStore.getState().files.disk[TEST_FILE]?.persistingError,
+          ).toBeNull();
+          expect(appStore.getState().files.disk[TEST_FILE]?.data).toEqual({
+            title: TEST_FILE,
+            description: null,
+            vanilla: TEST_VANILLA,
+            schema: TEST_SCHEMA,
+            itemSchema: null,
+            saveMode: 'patch',
+            mod: null,
+            patch,
+            applied: {
+              test: 'test',
+            },
+          });
+          expect(appStore.getState().files.open[TEST_FILE]).toEqual({
+            editMode: 'text',
+            saveMode: 'patch',
+            modified: false,
+            value: JSON.stringify(patch),
+          });
+        });
+      });
+    });
+
+    describe('in replace mode', () => {
+      async function setup(
+        readOutput: Partial<InvokableOutput<JsonReadInvokable>>,
+      ) {
+        const { appStore, invokeMock } = await setupTestFile(readOutput);
+
+        appStore.dispatch(
+          changeSaveMode({
+            filename: TEST_FILE,
+            saveMode: 'replace',
+          }),
+        );
+        appStore.dispatch(
+          changeEditMode({
+            filename: TEST_FILE,
+            editMode: 'text',
+          }),
+        );
+        expect(appStore.getState().files.open[TEST_FILE]?.saveMode).toBe(
+          'replace',
+        );
+        expect(appStore.getState().files.open[TEST_FILE]?.editMode).toBe(
+          'text',
+        );
+
+        return {
+          appStore,
+          invokeMock,
+        };
+      }
+
+      [
+        {
+          name: 'valid json',
+          value: 'test',
+          expected: 'current editor value is not valid JSON',
+        },
+        {
+          name: 'a valid json root',
+          value: '1',
+          expected: 'current editor value is not a valid JSON root',
+        },
+      ].forEach(({ name, value, expected }) => {
+        it(`should throw an error when the editor value is not ${name}`, async () => {
+          const { appStore } = await setup({});
+          appStore.dispatch(
+            changeText({
+              filename: TEST_FILE,
+              value,
+            }),
+          );
+          await appStore.dispatch(persistJSON(TEST_FILE));
+
+          expect(
+            appStore.getState().files.disk[TEST_FILE]?.persistingError?.message,
+          ).toContain(expected);
+          expect(appStore.getState().files.open[TEST_FILE]?.modified).toBe(
+            true,
+          );
+        });
+      });
+
+      it('should persist the current editor value', async () => {
+        const { appStore, invokeMock } = await setup({});
+        const value = {
+          test: 'test',
+        };
+
+        invokeMock.resolve(
+          'json/persist',
+          {
+            file: TEST_FILE,
+            value,
+            patch: null,
+          },
+          {
+            vanilla: TEST_VANILLA,
+            schema: TEST_SCHEMA,
+            value,
+            patch: null,
+          },
+        );
+
+        appStore.dispatch(
+          changeText({
+            filename: TEST_FILE,
+            value: JSON.stringify(value),
+          }),
+        );
+        await appStore.dispatch(persistJSON(TEST_FILE));
+
+        expect(
+          appStore.getState().files.disk[TEST_FILE]?.persistingError,
+        ).toBeNull();
+        expect(appStore.getState().files.disk[TEST_FILE]?.data).toEqual({
+          title: TEST_FILE,
+          description: null,
+          vanilla: TEST_VANILLA,
+          schema: TEST_SCHEMA,
+          itemSchema: null,
+          saveMode: 'replace',
+          mod: value,
+          patch: null,
+          applied: {
+            test: 'test',
+          },
+        });
+        expect(appStore.getState().files.open[TEST_FILE]).toEqual({
+          editMode: 'text',
+          saveMode: 'replace',
+          modified: false,
+          value: JSON.stringify(value),
         });
       });
     });

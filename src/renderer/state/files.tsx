@@ -23,6 +23,7 @@ import {
 } from '../../common/invokables/jsons';
 import { InvokableOutput } from 'src/common/invokables';
 import { isArray, omit, splice } from 'remeda';
+import { ZodError } from 'zod';
 
 export type SaveMode = 'patch' | 'replace';
 
@@ -92,15 +93,46 @@ export const persistJSON = createAsyncThunk(
     let patch: JsonPatch | null = null;
     if (open.editMode === 'visual') {
       if (open.saveMode == 'patch') {
-        patch = generatePatch(disk.vanilla, open.value);
+        const p = generatePatch(disk.vanilla, open.value);
+        if (p.length !== 0) {
+          patch = p;
+        }
       } else {
         value = open.value;
       }
     } else {
       if (open.saveMode === 'patch') {
-        patch = JSON.parse(open.value);
+        try {
+          patch = JSON_PATCH_SCHEMA.parse(JSON.parse(open.value));
+        } catch (error) {
+          if (error instanceof ZodError) {
+            throw new Error(
+              `current editor value is not a valid JSON patch: ${error.message}`,
+            );
+          }
+          if (error instanceof Error) {
+            throw new Error(
+              `current editor value is not valid JSON: ${error.message}`,
+            );
+          }
+          throw error;
+        }
       } else {
-        value = JSON.parse(open.value);
+        try {
+          value = JSON_ROOT_SCHEMA.parse(JSON.parse(open.value));
+        } catch (error) {
+          if (error instanceof ZodError) {
+            throw new Error(
+              `current editor value is not a valid JSON root: ${error.message}`,
+            );
+          }
+          if (error instanceof Error) {
+            throw new Error(
+              `current editor value is not valid JSON: ${error.message}`,
+            );
+          }
+          throw error;
+        }
       }
     }
 

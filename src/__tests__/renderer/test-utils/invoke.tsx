@@ -35,7 +35,9 @@ export class InvokeMock {
     this.expectedCalls = [];
   }
 
-  mockImplementation(payload: Parameters<typeof window.electronAPI.invoke>[0]) {
+  private mockImplementation(
+    payload: Parameters<typeof window.electronAPI.invoke>[0],
+  ) {
     for (const call of this.expectedCalls) {
       if (
         isDeepEqual(payload, {
@@ -49,7 +51,9 @@ export class InvokeMock {
         throw call.result.error;
       }
     }
-    throw new Error(`Unexpected invoke call to ${payload.name}`);
+    throw new Error(
+      `Unexpected invoke call to ${payload.name} with input ${JSON.stringify(payload.input)}`,
+    );
   }
 
   resolve<T extends AnyInvokableName>(
