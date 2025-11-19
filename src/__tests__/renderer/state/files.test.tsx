@@ -3,6 +3,7 @@ import { createAppStore } from '../../../renderer/state/store';
 import {
   changeEditMode,
   changeJson,
+  changeSaveMode,
   changeText,
   loadJSON,
 } from '../../../renderer/state/files';
@@ -484,6 +485,327 @@ describe('files state', () => {
           });
         },
       );
+    });
+  });
+
+  describe('changeSaveMode', () => {
+    describe('in visual edit mode', () => {
+      async function setup(
+        readOutput: Partial<InvokableOutput<JsonReadInvokable>>,
+      ) {
+        const appStore = createAppStore();
+        const invokeMock = getInvokeMock();
+
+        resolveJsonRead(invokeMock, readOutput);
+        await appStore.dispatch(loadJSON(TEST_FILE));
+        expect(appStore.getState().files.open[TEST_FILE]?.saveMode).toBe(
+          'patch',
+        );
+
+        return { appStore, invokeMock };
+      }
+
+      [
+        {
+          name: 'without mod values',
+          readOutput: {},
+          expectedValue: TEST_VANILLA,
+        },
+        {
+          name: 'with patch mod value',
+          readOutput: {
+            patch: TEST_PATCH,
+          },
+          expectedValue: TEST_PATCHED,
+        },
+      ].forEach(({ name, readOutput, expectedValue }) => {
+        describe(name, () => {
+          it('should change modified state', async () => {
+            const { appStore } = await setup(readOutput);
+
+            appStore.dispatch(
+              changeSaveMode({
+                filename: TEST_FILE,
+                saveMode: 'replace',
+              }),
+            );
+
+            expect(appStore.getState().files.open[TEST_FILE]).toEqual({
+              editMode: 'visual',
+              saveMode: 'replace',
+              modified: true,
+              value: expectedValue,
+            });
+          });
+        });
+      });
+    });
+
+    describe('in text edit mode', () => {
+      describe('patch to replace', () => {
+        async function setup(
+          readOutput: Partial<InvokableOutput<JsonReadInvokable>>,
+        ) {
+          const appStore = createAppStore();
+          const invokeMock = getInvokeMock();
+
+          resolveJsonRead(invokeMock, readOutput);
+          await appStore.dispatch(loadJSON(TEST_FILE));
+          appStore.dispatch(
+            changeEditMode({
+              filename: TEST_FILE,
+              editMode: 'text',
+            }),
+          );
+          expect(appStore.getState().files.open[TEST_FILE]?.saveMode).toBe(
+            'patch',
+          );
+          expect(appStore.getState().files.open[TEST_FILE]?.editMode).toBe(
+            'text',
+          );
+
+          return {
+            appStore,
+            invokeMock,
+          };
+        }
+
+        [
+          { name: 'without mod data', readOutput: {}, expected: TEST_VANILLA },
+          {
+            name: 'with mod data',
+            readOutput: {
+              patch: TEST_PATCH,
+            },
+            expected: TEST_PATCHED,
+          },
+        ].forEach(({ name, readOutput, expected }) => {
+          describe(name, () => {
+            [
+              {
+                name: 'json',
+                value: 'foobar',
+              },
+              {
+                name: 'patch',
+                value: '"foobar"',
+              },
+            ].forEach(({ name, value }) => {
+              it(`should do nothing if value is not ${name}`, async () => {
+                const { appStore } = await setup(readOutput);
+
+                appStore.dispatch(
+                  changeText({
+                    filename: TEST_FILE,
+                    value,
+                  }),
+                );
+                appStore.dispatch(
+                  changeSaveMode({
+                    filename: TEST_FILE,
+                    saveMode: 'replace',
+                  }),
+                );
+
+                expect(appStore.getState().files.open[TEST_FILE]).toEqual({
+                  editMode: 'text',
+                  saveMode: 'patch',
+                  modified: true,
+                  value,
+                });
+              });
+            });
+
+            it(`should change editor value to full value`, async () => {
+              const { appStore } = await setup(readOutput);
+
+              appStore.dispatch(
+                changeSaveMode({
+                  filename: TEST_FILE,
+                  saveMode: 'replace',
+                }),
+              );
+
+              expect(appStore.getState().files.open[TEST_FILE]).toEqual({
+                editMode: 'text',
+                saveMode: 'replace',
+                modified: true,
+                value: JSON.stringify(expected, null, 4),
+              });
+            });
+
+            it(`should change editor value to full value when modified`, async () => {
+              const { appStore } = await setup(readOutput);
+              appStore.dispatch(
+                changeText({
+                  filename: TEST_FILE,
+                  value: JSON.stringify([
+                    {
+                      ...TEST_PATCH[0],
+                      value: 'other patch',
+                    },
+                  ]),
+                }),
+              );
+
+              appStore.dispatch(
+                changeSaveMode({
+                  filename: TEST_FILE,
+                  saveMode: 'replace',
+                }),
+              );
+
+              expect(appStore.getState().files.open[TEST_FILE]).toEqual({
+                editMode: 'text',
+                saveMode: 'replace',
+                modified: true,
+                value: JSON.stringify({ test: 'other patch' }, null, 4),
+              });
+            });
+          });
+        });
+      });
+
+      describe('replace to patch', () => {
+        async function setup(
+          readOutput: Partial<InvokableOutput<JsonReadInvokable>>,
+        ) {
+          const appStore = createAppStore();
+          const invokeMock = getInvokeMock();
+
+          resolveJsonRead(invokeMock, readOutput);
+          await appStore.dispatch(loadJSON(TEST_FILE));
+          appStore.dispatch(
+            changeSaveMode({
+              filename: TEST_FILE,
+              saveMode: 'replace',
+            }),
+          );
+          appStore.dispatch(
+            changeEditMode({
+              filename: TEST_FILE,
+              editMode: 'text',
+            }),
+          );
+          expect(appStore.getState().files.open[TEST_FILE]?.saveMode).toBe(
+            'replace',
+          );
+          expect(appStore.getState().files.open[TEST_FILE]?.editMode).toBe(
+            'text',
+          );
+
+          return {
+            appStore,
+            invokeMock,
+          };
+        }
+
+        [
+          {
+            name: 'without mod data',
+            readOutput: {},
+            expectedModified: false,
+            expected: [],
+          },
+          {
+            name: 'with mod data',
+            readOutput: {
+              value: TEST_REPLACE,
+            },
+            expectedModified: true,
+            expected: [
+              {
+                op: 'replace',
+                path: '/test',
+                value: 'replace value',
+              },
+            ],
+          },
+        ].forEach(({ name, readOutput, expectedModified, expected }) => {
+          describe(name, () => {
+            [
+              {
+                name: 'json',
+                value: 'foobar',
+              },
+              {
+                name: 'json root',
+                value: '"foobar"',
+              },
+            ].forEach(({ name, value }) => {
+              it(`should do nothing if value is not ${name}`, async () => {
+                const { appStore } = await setup(readOutput);
+
+                appStore.dispatch(
+                  changeText({
+                    filename: TEST_FILE,
+                    value,
+                  }),
+                );
+                appStore.dispatch(
+                  changeSaveMode({
+                    filename: TEST_FILE,
+                    saveMode: 'patch',
+                  }),
+                );
+
+                expect(appStore.getState().files.open[TEST_FILE]).toEqual({
+                  editMode: 'text',
+                  saveMode: 'replace',
+                  modified: true,
+                  value,
+                });
+              });
+            });
+
+            it(`should change editor value to patch value`, async () => {
+              const { appStore } = await setup(readOutput);
+
+              appStore.dispatch(
+                changeSaveMode({
+                  filename: TEST_FILE,
+                  saveMode: 'patch',
+                }),
+              );
+
+              expect(appStore.getState().files.open[TEST_FILE]).toEqual({
+                editMode: 'text',
+                saveMode: 'patch',
+                modified: expectedModified,
+                value: JSON.stringify(expected, null, 4),
+              });
+            });
+
+            it(`should change editor value to patch value after modification`, async () => {
+              const { appStore } = await setup(readOutput);
+
+              appStore.dispatch(
+                changeText({
+                  filename: TEST_FILE,
+                  value: '{}',
+                }),
+              );
+              appStore.dispatch(
+                changeSaveMode({
+                  filename: TEST_FILE,
+                  saveMode: 'patch',
+                }),
+              );
+
+              expect(appStore.getState().files.open[TEST_FILE]).toEqual({
+                editMode: 'text',
+                saveMode: 'patch',
+                modified: true,
+                value: JSON.stringify(
+                  [{ op: 'remove', path: '/test' }],
+                  null,
+                  4,
+                ),
+              });
+            });
+          });
+        });
+      });
     });
   });
 });

@@ -241,23 +241,14 @@ const filesSlice = createSlice({
       if (!open || !disk || open.saveMode === saveMode) {
         return;
       }
-      if (open.editMode === 'text') {
-        try {
-          if (open.saveMode === 'patch') {
-            JSON_PATCH_SCHEMA.parse(JSON.parse(open.value));
-          }
-        } catch {
-          return;
-        }
-      }
       try {
         if (open.editMode === 'text') {
-          if (open.saveMode === 'patch') {
+          if (open.saveMode === 'replace') {
             const value = JSON_ROOT_SCHEMA.parse(JSON.parse(open.value));
             open.value = jsonToString(generatePatch(disk.vanilla, value));
           } else {
             const patch = JSON_PATCH_SCHEMA.parse(JSON.parse(open.value));
-            open.value = jsonToString(applyPatch(disk.applied, patch));
+            open.value = jsonToString(applyPatch(disk.vanilla, patch));
           }
         }
       } catch {
