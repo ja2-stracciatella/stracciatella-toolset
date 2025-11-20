@@ -1,12 +1,21 @@
 # Stracciatella Toolset
 
-This is a prototye desktop application with the goal of being an editor for mods for JA2 Stracciatella.
+A desktop application to create mods for JA2 Straccatella.
+
+![Screenshow](docs/screenshot.jpg)
 
 ## Features
 
-This app currently allows editing json data for JA2 Stracciatella only. Some JSONs might still be missing or broken.
+This app currently allows editing json data for JA2 Stracciatella. Most json files are supported, although some might still be missing. Known missing files are:
+
+- Dealer Inventories
+- Translations
 
 ## Install
+
+The best way to install the app is to download the latest release from the [releases page](https://github.com/ja2-stracciatella/stracciatella-toolset/releases).
+
+## Development Setup
 
 Install build dependencies:
 
@@ -19,7 +28,7 @@ Clone the repo and install node dependencies:
 npm install
 ```
 
-## Starting Development
+## Starting the App for Development
 
 Start the app in the `dev` environment:
 
@@ -27,18 +36,26 @@ Start the app in the `dev` environment:
 npm start
 ```
 
-## Linting & Formatting
+## Testing
+
+You can run the following commands:
+
+Typechecking:
+
+```bash
+npm run tsc:check
+```
 
 Linting:
 
-```
+```bash
 npm run lint
 ```
 
-Auto-fix:
+Tests (in watch mode):
 
-```
-npm run lint -- --fix
+```bash
+npm run test:watch
 ```
 
 ## Packaging the App

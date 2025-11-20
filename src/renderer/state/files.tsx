@@ -23,6 +23,7 @@ import {
 } from '../../common/invokables/jsons';
 import { InvokableOutput } from 'src/common/invokables';
 import { isArray, omit, splice } from 'remeda';
+import { ZodError } from 'zod';
 
 export type SaveMode = 'patch' | 'replace';
 
@@ -92,15 +93,46 @@ export const persistJSON = createAsyncThunk(
     let patch: JsonPatch | null = null;
     if (open.editMode === 'visual') {
       if (open.saveMode == 'patch') {
-        patch = generatePatch(disk.vanilla, open.value);
+        const p = generatePatch(disk.vanilla, open.value);
+        if (p.length !== 0) {
+          patch = p;
+        }
       } else {
         value = open.value;
       }
     } else {
       if (open.saveMode === 'patch') {
-        patch = JSON.parse(open.value);
+        try {
+          patch = JSON_PATCH_SCHEMA.parse(JSON.parse(open.value));
+        } catch (error) {
+          if (error instanceof ZodError) {
+            throw new Error(
+              `current editor value is not a valid JSON patch: ${error.message}`,
+            );
+          }
+          if (error instanceof Error) {
+            throw new Error(
+              `current editor value is not valid JSON: ${error.message}`,
+            );
+          }
+          throw error;
+        }
       } else {
-        value = JSON.parse(open.value);
+        try {
+          value = JSON_ROOT_SCHEMA.parse(JSON.parse(open.value));
+        } catch (error) {
+          if (error instanceof ZodError) {
+            throw new Error(
+              `current editor value is not a valid JSON root: ${error.message}`,
+            );
+          }
+          if (error instanceof Error) {
+            throw new Error(
+              `current editor value is not valid JSON: ${error.message}`,
+            );
+          }
+          throw error;
+        }
       }
     }
 
@@ -241,23 +273,14 @@ const filesSlice = createSlice({
       if (!open || !disk || open.saveMode === saveMode) {
         return;
       }
-      if (open.editMode === 'text') {
-        try {
-          if (open.saveMode === 'patch') {
-            JSON_PATCH_SCHEMA.parse(JSON.parse(open.value));
-          }
-        } catch {
-          return;
-        }
-      }
       try {
         if (open.editMode === 'text') {
-          if (open.saveMode === 'patch') {
+          if (open.saveMode === 'replace') {
             const value = JSON_ROOT_SCHEMA.parse(JSON.parse(open.value));
             open.value = jsonToString(generatePatch(disk.vanilla, value));
           } else {
             const patch = JSON_PATCH_SCHEMA.parse(JSON.parse(open.value));
-            open.value = jsonToString(applyPatch(disk.applied, patch));
+            open.value = jsonToString(applyPatch(disk.vanilla, patch));
           }
         }
       } catch {
@@ -280,7 +303,7 @@ const filesSlice = createSlice({
       if (open.editMode === 'text') {
         try {
           if (open.saveMode === 'patch') {
-            const patch = JSON.parse(open.value);
+            const patch = JSON_PATCH_SCHEMA.parse(JSON.parse(open.value));
             const applied = applyPatch(disk.applied, patch);
             state.open[filename] = {
               ...open,
@@ -288,7 +311,7 @@ const filesSlice = createSlice({
               value: applied,
             };
           } else {
-            const value = JSON.parse(open.value);
+            const value = JSON_ROOT_SCHEMA.parse(JSON.parse(open.value));
             state.open[filename] = {
               ...open,
               editMode: editMode as 'visual',
@@ -301,7 +324,7 @@ const filesSlice = createSlice({
       } else {
         if (open.saveMode === 'patch') {
           const value = open.value;
-          const patch = generatePatch(disk.applied, value);
+          const patch = generatePatch(disk.vanilla, value);
           state.open[filename] = {
             ...open,
             editMode: editMode as 'text',

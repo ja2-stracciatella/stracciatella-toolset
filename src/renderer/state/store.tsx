@@ -10,9 +10,12 @@ const reducer = combineReducers({
   files,
 });
 
-export const appStore = configureStore({
-  reducer,
-});
+export const createAppStore = () =>
+  configureStore({
+    reducer,
+  });
 
-export type AppState = ReturnType<typeof appStore.getState>;
-export type AppDispatch = typeof appStore.dispatch;
+export type AppState = ReturnType<
+  ReturnType<typeof createAppStore>['getState']
+>;
+export type AppDispatch = ReturnType<typeof createAppStore>['dispatch'];

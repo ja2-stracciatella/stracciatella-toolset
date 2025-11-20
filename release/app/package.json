@@ -1,12 +1,11 @@
 {
-  "name": "electron-react-boilerplate",
-  "version": "4.6.0",
-  "description": "A foundation for scalable desktop apps",
+  "name": "stracciatella-toolset",
+  "version": "0.22.0",
+  "description": "A desktop application to create mods for JA2 Straccatella.",
   "license": "MIT",
   "author": {
-    "name": "Electron React Boilerplate Maintainers",
-    "email": "electronreactboilerplate@gmail.com",
-    "url": "https://github.com/electron-react-boilerplate"
+    "name": "JA2 Stracciatella Team",
+    "url": "https://github.com/ja2-stracciatella"
   },
   "main": "./dist/main/main.js",
   "scripts": {

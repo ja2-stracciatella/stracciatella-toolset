@@ -4,7 +4,15 @@ import {
   FileOutlined,
   ArrowUpOutlined,
 } from '@ant-design/icons';
-import { Button, List, Breadcrumb, Flex, Splitter } from 'antd';
+import {
+  Button,
+  List,
+  Breadcrumb,
+  Flex,
+  Splitter,
+  Typography,
+  Checkbox,
+} from 'antd';
 import Modal from 'antd/lib/modal/Modal';
 import {
   useCallback,
@@ -26,10 +34,14 @@ const Breadcrumbs = memo(function Breadcrumbs({
   pathPrefix,
   currentDir,
   switchDir,
+  filterModOnly,
+  setFilterModOnly,
 }: {
   pathPrefix: string[];
   currentDir: string[];
   switchDir: (currentDir: string[]) => void;
+  filterModOnly: boolean;
+  setFilterModOnly: (filterModOnly: boolean) => unknown;
 }) {
   const setToParentDir = useCallback(() => {
     if (currentDir.length === pathPrefix.length) {
@@ -63,15 +75,24 @@ const Breadcrumbs = memo(function Breadcrumbs({
   }, [currentDir, pathPrefix, switchDir]);
 
   return (
-    <Flex gap="middle" align="center">
-      <Button
-        size="small"
-        onClick={setToParentDir}
-        disabled={currentDir.length === pathPrefix.length}
+    <Flex justify="space-between" align="center">
+      <Flex gap="middle" align="center">
+        <Button
+          size="small"
+          onClick={setToParentDir}
+          disabled={currentDir.length === pathPrefix.length}
+        >
+          <ArrowUpOutlined />
+        </Button>
+        <Breadcrumb items={items} />
+      </Flex>
+      <Checkbox
+        id="filter-mod-only"
+        checked={filterModOnly}
+        onChange={(ev) => setFilterModOnly(ev.target.checked)}
       >
-        <ArrowUpOutlined />
-      </Button>
-      <Breadcrumb items={items} />
+        Show only resources from mod
+      </Checkbox>
     </Flex>
   );
 });
@@ -149,6 +170,7 @@ export function ResourceSelectorModal({
   onSelect: (value: string) => unknown;
   onCancel: () => unknown;
 }) {
+  const [filterModOnly, setFilterModOnly] = useState(false);
   const [currentDir, setCurrentDir] = useState(initialDir ?? pathPrefix ?? []);
   const [selectedEntry, setSelectedEntry] = useState<ResourceEntry | null>(
     null,
@@ -162,7 +184,7 @@ export function ResourceSelectorModal({
     loading,
     error,
     refresh,
-  } = useDirEntries(currentDir.join('/'), resourceType);
+  } = useDirEntries(currentDir.join('/'), resourceType, filterModOnly);
   const modalOnOk = useCallback(() => {
     if (selectedEntry !== null && selectedEntry.type === 'File') {
       if (currentDir.length === 0) {
@@ -225,6 +247,9 @@ export function ResourceSelectorModal({
     },
     [loading, onItemClick, selectedEntry],
   );
+  const title = useMemo(() => {
+    return <Typography.Title level={3}>Select resource</Typography.Title>;
+  }, []);
   const content = useMemo(() => {
     if (error) {
       return <ErrorAlert error={error} />;
@@ -244,7 +269,7 @@ export function ResourceSelectorModal({
 
   return (
     <Modal
-      title="Select resource"
+      title={title}
       open={isOpen}
       onOk={modalOnOk}
       onCancel={modalOnCancel}
@@ -257,6 +282,8 @@ export function ResourceSelectorModal({
           pathPrefix={pathPrefix}
           currentDir={currentDir}
           switchDir={switchDir}
+          filterModOnly={filterModOnly}
+          setFilterModOnly={setFilterModOnly}
         />
         <div style={{ flexGrow: 1, overflowY: 'auto' }}>
           <Splitter>

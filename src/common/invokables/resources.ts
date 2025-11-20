@@ -17,7 +17,8 @@ const RESOURCE_ENTRY_SCHEMA = z.union([
 export type ResourceEntry = z.infer<typeof RESOURCE_ENTRY_SCHEMA>;
 
 const LIST_INPUT_SCHEMA = z.object({
-  path: z.nullable(z.string()),
+  path: z.string(),
+  modOnly: z.optional(z.boolean()),
 });
 
 const LIST_OUTPUT_SCHEMA = z.array(RESOURCE_ENTRY_SCHEMA);

@@ -1,5 +1,5 @@
 {
-  "description": "A foundation for scalable desktop apps",
+  "description": "A desktop application to create mods for JA2 Straccatella.",
   "license": "MIT",
   "version": "0.22.0",
   "main": "./.erb/dll/main.bundle.dev.js",
@@ -19,7 +19,8 @@
     "start:main": "concurrently -k \"cross-env NODE_ENV=development webpack --watch --config ./.erb/configs/webpack.config.main.dev.mts\" \"electronmon .\"",
     "start:preload": "cross-env NODE_ENV=development webpack --config ./.erb/configs/webpack.config.preload.dev.mts",
     "start:renderer": "cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.mts",
-    "test": "cross-env NODE_ENV=development vitest --run"
+    "test": "cross-env NODE_ENV=development vitest run",
+    "test:watch": "cross-env NODE_ENV=development vitest watch"
   },
   "browserslist": [],
   "prettier": {

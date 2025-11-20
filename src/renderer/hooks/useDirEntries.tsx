@@ -10,7 +10,11 @@ const filterFunctions = {
   [ResourceType.Graphics]: (e: ResourceEntry) => e.path.endsWith('.sti'),
 };
 
-export function useDirEntries(dir: string, resourceType: ResourceType) {
+export function useDirEntries(
+  dir: string,
+  resourceType: ResourceType,
+  modOnly: boolean,
+) {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
   const [data, setData] = useState<ResourceEntry[] | null>(null);
@@ -19,6 +23,7 @@ export function useDirEntries(dir: string, resourceType: ResourceType) {
     try {
       const result = await invoke('resources/list', {
         path: dir,
+        modOnly,
       });
       const filterFn = filterFunctions[resourceType];
       const entries = result.filter((e) => {
@@ -51,7 +56,7 @@ export function useDirEntries(dir: string, resourceType: ResourceType) {
     } finally {
       setLoading(false);
     }
-  }, [dir, resourceType]);
+  }, [dir, modOnly, resourceType]);
 
   return {
     loading,

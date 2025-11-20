@@ -65,12 +65,10 @@ export function StringReferenceWidget({
   );
 
   useEffect(() => {
-    files.forEach((file, idx) => {
-      if (!values[idx] && !error) {
-        loadFile(file);
-      }
+    references.forEach((reference) => {
+      loadFile(reference.file);
     });
-  }, [error, files, loadFile, values]);
+  }, [loadFile, references]);
 
   if (loading) {
     return (
@@ -106,19 +104,15 @@ export function stringReferenceTo(
   property: string,
   preview?: PreviewFn,
 ) {
+  const references = [
+    {
+      property,
+      file,
+      preview,
+    },
+  ];
   return function StringReference(props: WidgetProps) {
-    return (
-      <StringReferenceWidget
-        references={[
-          {
-            property,
-            file,
-            preview,
-          },
-        ]}
-        {...props}
-      />
-    );
+    return <StringReferenceWidget references={references} {...props} />;
   };
 }
 

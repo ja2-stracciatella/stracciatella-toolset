@@ -13,8 +13,10 @@ pub enum ResourceEntry {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct List {
     path: String,
+    mod_only: Option<bool>,
 }
 
 impl Invokable for List {
@@ -36,26 +38,28 @@ impl Invokable for List {
         let selected_mod = state.try_selected_mod()?;
         let mut result = HashSet::new();
 
-        let candidates = selected_mod.vfs.read_dir(&Nfc::caseless(&self.path)).ok();
-        for candidate in candidates.iter().flatten() {
-            let path = if self.path.is_empty() {
-                candidate.clone()
-            } else {
-                Nfc::caseless(&format!("{}/{}", self.path, candidate))
-            };
-            // Workaround to determine whether the candidate is a file
-            let is_file = selected_mod.vfs.open(&path).is_ok();
-            let entry = if is_file {
-                ResourceEntry::File {
-                    path: candidate.to_string().to_lowercase(),
-                }
-            } else {
-                ResourceEntry::Dir {
-                    path: candidate.to_string().to_lowercase(),
-                }
-            };
+        if !self.mod_only.unwrap_or(true) {
+            let candidates = selected_mod.vfs.read_dir(&Nfc::caseless(&self.path)).ok();
+            for candidate in candidates.iter().flatten() {
+                let path = if self.path.is_empty() {
+                    candidate.clone()
+                } else {
+                    Nfc::caseless(&format!("{}/{}", self.path, candidate))
+                };
+                // Workaround to determine whether the candidate is a file
+                let is_file = selected_mod.vfs.open(&path).is_ok();
+                let entry = if is_file {
+                    ResourceEntry::File {
+                        path: candidate.to_string().to_lowercase(),
+                    }
+                } else {
+                    ResourceEntry::Dir {
+                        path: candidate.to_string().to_lowercase(),
+                    }
+                };
 
-            result.insert(entry);
+                result.insert(entry);
+            }
         }
 
         let dir = selected_mod.data_path(&self.path);
