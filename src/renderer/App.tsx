@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import 'antd/dist/reset.css';
 import '@ant-design/v5-patch-for-react-19';
 import { useMemo } from 'react';
@@ -26,7 +26,13 @@ export function AppWithoutProviders() {
         <WithSelectedMod>
           <BrowserRouter>
             <ToolsetLayout>
-              <Routes>{routes}</Routes>
+              <Routes>
+                {routes}
+                <Route
+                  path="*"
+                  element={<Navigate to="/dashboard" replace />}
+                />
+              </Routes>
             </ToolsetLayout>
           </BrowserRouter>
         </WithSelectedMod>
