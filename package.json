@@ -1,5 +1,5 @@
 {
-  "description": "A foundation for scalable desktop apps",
+  "description": "A desktop application to create mods for JA2 Straccatella.",
   "license": "MIT",
   "version": "0.22.0",
   "main": "./.erb/dll/main.bundle.dev.js",
