@@ -10,8 +10,9 @@ import { useSelectedMod } from '../../hooks/useSelectedMod';
 import { selectStracciatellaHome } from '../../state/selectors';
 import { toJSONSchema } from 'zod';
 import { MOD_SCHEMA, Mod } from '../../../common/invokables/mods';
+import { omit } from 'remeda';
 
-const MOD_JSON_SCHEMA = toJSONSchema(MOD_SCHEMA);
+const MOD_JSON_SCHEMA = omit(toJSONSchema(MOD_SCHEMA), ['$schema']);
 
 export function NewMod({ onCancel }: { onCancel: () => void }) {
   const {

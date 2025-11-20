@@ -13,8 +13,11 @@ import {
   PartialToolsetConfig,
 } from '../../common/invokables/toolset';
 import jsonSchemaValidator from '@rjsf/validator-ajv8';
+import { omit } from 'remeda';
 
-const CONFIG_JSON_SCHEMA = toJSONSchema(FULL_TOOLSET_CONFIG_SCHEMA);
+const CONFIG_JSON_SCHEMA = omit(toJSONSchema(FULL_TOOLSET_CONFIG_SCHEMA), [
+  '$schema',
+]);
 const CONFIG_UI_SCHEMA = {
   stracciatellaHome: {
     'ui:widget': HostPathWidget,
@@ -52,14 +55,12 @@ function Configure() {
   useEffect(() => {
     if (data) {
       setTimeout(() => {
-        setState(data.config);
-
-        setValid(
-          !jsonSchemaValidator.rawValidation(
-            CONFIG_JSON_SCHEMA as any,
-            data.config,
-          ).validationError,
+        const { validationError } = jsonSchemaValidator.rawValidation(
+          CONFIG_JSON_SCHEMA as any,
+          data.config,
         );
+        setState(data.config);
+        setValid(!validationError);
       }, 0);
     }
   }, [data]);
