@@ -304,7 +304,7 @@ const filesSlice = createSlice({
         try {
           if (open.saveMode === 'patch') {
             const patch = JSON_PATCH_SCHEMA.parse(JSON.parse(open.value));
-            const applied = applyPatch(disk.applied, patch);
+            const applied = applyPatch(disk.vanilla, patch);
             state.open[filename] = {
               ...open,
               editMode: editMode as 'visual',

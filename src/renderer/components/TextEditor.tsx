@@ -9,8 +9,11 @@ import { useFileJsonSchema } from '../hooks/useFileJsonSchema';
 import { useFileTextValue } from '../hooks/useFileTextValue';
 import { useFileTextUpdate } from '../hooks/useFileTextUpdate';
 import { useFileEditMode } from '../hooks/useFileEditMode';
+import { omit } from 'remeda';
 
-const JSON_PATCH_JSON_SCHEMA = toJSONSchema(JSON_PATCH_SCHEMA);
+const JSON_PATCH_JSON_SCHEMA = omit(toJSONSchema(JSON_PATCH_SCHEMA), [
+  '$schema',
+]);
 
 const MONACO_OPTIONS = { fixedOverflowWidgets: true };
 
