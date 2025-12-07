@@ -187,13 +187,13 @@ export function ResourceSelectorModal({
   } = useDirEntries(currentDir.join('/'), resourceType, filterModOnly);
   const modalOnOk = useCallback(() => {
     if (selectedEntry !== null && selectedEntry.type === 'File') {
-      if (currentDir.length === 0) {
+      if (currentDir.length === pathPrefix.length) {
         onSelect(selectedEntry.path);
       } else {
         onSelect(`${currentDir}/${selectedEntry.path}`);
       }
     }
-  }, [currentDir, onSelect, selectedEntry]);
+  }, [currentDir, onSelect, pathPrefix, selectedEntry]);
   const modalOnCancel = useCallback(() => {
     setSelectedEntry(null);
     onCancel();

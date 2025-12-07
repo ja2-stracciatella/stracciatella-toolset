@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import 'antd/dist/reset.css';
 import '@ant-design/v5-patch-for-react-19';
 import { useMemo } from 'react';
@@ -24,7 +24,7 @@ export function AppWithoutProviders() {
       <ListenAll />
       <WithToolsetConfig>
         <WithSelectedMod>
-          <BrowserRouter>
+          <HashRouter>
             <ToolsetLayout>
               <Routes>
                 {routes}
@@ -34,7 +34,7 @@ export function AppWithoutProviders() {
                 />
               </Routes>
             </ToolsetLayout>
-          </BrowserRouter>
+          </HashRouter>
         </WithSelectedMod>
       </WithToolsetConfig>
     </>
