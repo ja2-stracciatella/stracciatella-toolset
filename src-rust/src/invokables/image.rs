@@ -2,6 +2,7 @@ use crate::{invokables::Invokable, state::AppState};
 use anyhow::{anyhow, Context, Result};
 use image::RgbaImage;
 use serde::{Deserialize, Serialize};
+use std::io::BufReader;
 use stracciatella::file_formats::stci::{Stci, StciRgb888};
 
 #[derive(Debug)]
@@ -61,7 +62,7 @@ impl Invokable for Render {
 
     fn invoke(&self, state: &AppState) -> Result<Self::Output> {
         let state = state.read();
-        let mut f = state.open_file(&self.file).context("failed to read file")?;
+        let mut f = BufReader::new(state.open_file(&self.file).context("failed to read file")?);
         let stci = Stci::from_input(&mut f)?;
         let sub_image = self.subimage.unwrap_or(0);
         let size = match &stci {
@@ -162,7 +163,7 @@ impl Invokable for ReadMetadata {
 
     fn invoke(&self, state: &AppState) -> Result<Self::Output> {
         let state = state.read();
-        let mut f = state.open_file(&self.file).context("failed to read file")?;
+        let mut f = BufReader::new(state.open_file(&self.file).context("failed to read file")?);
         let stci = Stci::from_input(&mut f)?;
         let images = match stci {
             Stci::Indexed { sub_images, .. } => sub_images
