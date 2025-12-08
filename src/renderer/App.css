@@ -2,10 +2,3 @@ body {
   overflow-x: hidden;
   overflow-y: hidden;
 }
-
-/* Fix cursor turning white while transitioning the input border color on Windows */
-body .ant-input-outlined,
-body .ant-input-number-outlined,
-body .ant-select-outlined .ant-select-selector {
-  transition: none !important;
-}
