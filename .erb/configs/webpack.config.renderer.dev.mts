@@ -109,18 +109,21 @@ const configuration: webpack.Configuration = {
     __dirname: false,
     __filename: false,
   },
-
   devServer: {
     port,
     compress: true,
     hot: true,
     headers: { 'Access-Control-Allow-Origin': '*' },
+    devMiddleware: {
+      writeToDisk: true,
+    },
     static: {
       publicPath: '/',
     },
     historyApiFallback: {
       verbose: true,
     },
+
     setupMiddlewares(middlewares) {
       console.log('Starting preload.js builder...');
       const preloadProcess = spawn('npm', ['run', 'start:preload'], {
