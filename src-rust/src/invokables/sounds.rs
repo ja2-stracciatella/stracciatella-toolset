@@ -1,6 +1,7 @@
 use crate::{invokables::Invokable, state};
 use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
+use std::io::{BufReader, Read as _};
 
 #[derive(Debug)]
 pub enum Base64Sound {
@@ -47,7 +48,7 @@ impl Invokable for Read {
 
     fn invoke(&self, state: &state::AppState) -> Result<Self::Output> {
         let state = state.read();
-        let mut f = state.open_file(&self.file).context("failed to open file")?;
+        let mut f = BufReader::new(state.open_file(&self.file).context("failed to open file")?);
         let mut content = vec![];
 
         f.read_to_end(&mut content).context("failed to read file")?;

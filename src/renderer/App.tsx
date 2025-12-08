@@ -44,6 +44,8 @@ export function AppWithoutProviders() {
 const appStore = createAppStore();
 const THEME_CONFIG: ThemeConfig = {
   token: {
+    // Disable all animations because of https://issues.chromium.org/issues/40239916
+    motion: false,
     colorPrimary: '#9d1e1c',
   },
 };
