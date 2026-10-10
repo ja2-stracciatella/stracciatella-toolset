@@ -6,6 +6,8 @@ type Category = 'image';
 const RENDER_INPUT_SCHEMA = z.object({
   file: z.string(),
   subimage: z.nullable(z.number()),
+  /** Makes the outline pixels of item graphics transparent */
+  transparentOutline: z.boolean().optional(),
 });
 
 const RENDER_OUTPUT_SCHEMA = z.string();

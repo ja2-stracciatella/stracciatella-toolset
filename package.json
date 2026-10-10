@@ -6,15 +6,16 @@
   "scripts": {
     "build": "concurrently \"npm run build:main\" \"npm run build:renderer\"",
     "build:main": "npm run rebuild:rust && cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.main.prod.mts",
-    "build:renderer": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.renderer.prod.mts",
+    "build:renderer": "npm run rebuild:map-editor -- --dist && cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.renderer.prod.mts",
     "postinstall": "node .erb/scripts/check-native-dep.mts && electron-builder install-app-deps && cross-env NODE_ENV=development webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.mts",
     "lint": "cross-env NODE_ENV=development eslint . --ext .js,.jsx,.ts,.tsx,.mts,.mtsx",
     "tsc": "cross-env NODE_ENV=development tsc",
     "tsc:check": "cross-env NODE_ENV=development tsc --noEmit && cross-env NODE_ENV=development tsc --project ./.erb",
     "package": "node ./.erb/scripts/clean.mts dist && npm run build && electron-builder build --publish never",
     "rebuild": "npm run rebuild:rust && electron-rebuild --parallel --types prod,dev,optional --module-dir release/app",
+    "rebuild:map-editor": "node ./.erb/scripts/build-map-editor.mts",
     "rebuild:rust": "node ./.erb/scripts/ensure-rust-dep.mts",
-    "prestart": "npm run rebuild:rust && cross-env NODE_ENV=development webpack --config ./.erb/configs/webpack.config.main.dev.mts",
+    "prestart": "npm run rebuild:rust && npm run rebuild:map-editor && cross-env NODE_ENV=development webpack --config ./.erb/configs/webpack.config.main.dev.mts",
     "start": "node ./.erb/scripts/check-port-in-use.mts && npm run prestart && npm run start:renderer",
     "start:main": "concurrently -k \"cross-env NODE_ENV=development webpack --watch --config ./.erb/configs/webpack.config.main.dev.mts\" \"electronmon .\"",
     "start:preload": "cross-env NODE_ENV=development webpack --config ./.erb/configs/webpack.config.preload.dev.mts",
@@ -47,7 +48,7 @@
     "@rjsf/utils": "^6.1.1",
     "@rjsf/validator-ajv8": "^6.1.1",
     "antd": "^5.25.2",
-    "electron-debug": "^4.0.0",
+    "electron-debug": "^5.0.0",
     "fast-json-patch": "^3.1.1",
     "monaco-editor-webpack-plugin": "^7.1.1",
     "proxy-memoize": "^3.0.1",
@@ -63,7 +64,7 @@
   },
   "devDependencies": {
     "@electron/notarize": "^3.0.1",
-    "@electron/rebuild": "^4.0.1",
+    "@electron/rebuild": "^4.2.0",
     "@eslint/js": "^9.39.1",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.6.1",
     "@svgr/webpack": "^8.1.0",
@@ -71,7 +72,7 @@
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
-    "@types/node": "^24.5.2",
+    "@types/node": "^24.9.0",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "@types/source-map-support": "^0.5.2",
@@ -88,8 +89,8 @@
     "css-loader": "^7.1.2",
     "css-minimizer-webpack-plugin": "^7.0.0",
     "detect-port": "^2.1.0",
-    "electron": "^38.1.2",
-    "electron-builder": "^26.0.12",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
     "electron-devtools-installer": "^4.0.0",
     "electronmon": "^2.0.3",
     "eslint": "^9.39.1",
@@ -190,5 +191,12 @@
       ".erb/dll/**"
     ],
     "logLevel": "quiet"
+  },
+  "allowScripts": {
+    "electron-winstaller@5.4.0": true,
+    "esbuild@0.25.10": true,
+    "core-js-pure@3.45.1": true,
+    "@swc/core@1.13.5": true,
+    "@parcel/watcher@2.5.1": true
   }
 }

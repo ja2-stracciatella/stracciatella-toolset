@@ -43,7 +43,51 @@ const EDIT_MODE_SELECT_OPTIONS = [
 
 interface ContentProps {
   file?: string;
+  /** Shown above the content like the header of a file, e.g. a `SaveButton` */
+  header?: ReactNode;
   children: ReactNode;
+}
+
+interface SaveButtonProps {
+  /** Whether there is anything to save */
+  modified: boolean;
+  saving: boolean;
+  error: { message?: string } | null;
+  onSave: () => void;
+}
+
+/** Saves with a click or Ctrl+S while `modified` and not `saving` */
+export function SaveButton({
+  modified,
+  saving,
+  error,
+  onSave,
+}: SaveButtonProps) {
+  const {
+    token: { colorError },
+  } = theme.useToken();
+  const errorStyle = useMemo(() => ({ color: colorError }), [colorError]);
+  const save = useCallback(() => {
+    if (modified && !saving) {
+      onSave();
+    }
+  }, [modified, onSave, saving]);
+
+  useHotkeys('ctrl+s', save, {
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
+
+  return (
+    <Flex gap="small" align="center">
+      <Button aria-label="Save" disabled={!modified || saving} onClick={save}>
+        {saving ? <Loader /> : <SaveOutlined />}
+      </Button>
+      {error ? (
+        <ExclamationCircleOutlined title={error.message} style={errorStyle} />
+      ) : null}
+    </Flex>
+  );
 }
 
 function EditorContentSaveButton({ file }: { file: string }) {
@@ -51,31 +95,15 @@ function EditorContentSaveButton({ file }: { file: string }) {
   const saving = useFileSaving(file);
   const loading = useFileLoading(file);
   const error = useFileSavingError(file);
-  const {
-    token: { colorError },
-  } = theme.useToken();
-  const errorStyle = useMemo(() => ({ color: colorError }), [colorError]);
   const save = useFileSave(file);
-  const saveFile = useCallback(() => {
-    if (modified && !saving && !loading) {
-      save();
-    }
-  }, [loading, modified, save, saving]);
-
-  useHotkeys('ctrl+s', saveFile, {
-    enableOnFormTags: true,
-    preventDefault: true,
-  });
 
   return (
-    <Flex gap="small">
-      <Button disabled={!modified || saving || loading}>
-        {saving ? <Loader /> : <SaveOutlined onClick={saveFile} />}
-      </Button>
-      {error ? (
-        <ExclamationCircleOutlined title={error.message} style={errorStyle} />
-      ) : null}
-    </Flex>
+    <SaveButton
+      modified={modified && !loading}
+      saving={saving}
+      error={error}
+      onSave={save}
+    />
   );
 }
 
@@ -137,6 +165,7 @@ function EditorContentHeader({ file }: { file: string }) {
 
 export const EditorContent = function EditorContent({
   file,
+  header: customHeader,
   children,
 }: ContentProps) {
   const flexStyle = useMemo(
@@ -168,7 +197,8 @@ export const EditorContent = function EditorContent({
     [],
   );
   const header = useMemo(() => {
-    if (!file) return null;
+    const content = file ? <EditorContentHeader file={file} /> : customHeader;
+    if (!content) return null;
     return (
       <div
         style={{
@@ -177,10 +207,10 @@ export const EditorContent = function EditorContent({
           paddingRight: '10px',
         }}
       >
-        <EditorContentHeader file={file} />
+        {content}
       </div>
     );
-  }, [file]);
+  }, [customHeader, file]);
 
   return (
     <Flex vertical style={flexStyle}>

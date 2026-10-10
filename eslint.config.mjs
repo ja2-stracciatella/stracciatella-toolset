@@ -13,6 +13,7 @@ export default defineConfig(
     'release/**/*',
     'target/**/*',
     'src-rust/target/**/*',
+    'src-map-editor/pkg/**/*',
     '.erb/dll/**/*',
   ]),
   eslint.configs.recommended,

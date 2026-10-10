@@ -54,6 +54,12 @@ if (isDebug) {
   debug();
 }
 
+// The tactical map viewer renders with WebGPU. On Linux, Chromium only offers a WebGPU adapter for
+// most GPUs when it may use Vulkan.
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('enable-features', 'Vulkan');
+}
+
 const installExtensions = async () => {
   const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
 

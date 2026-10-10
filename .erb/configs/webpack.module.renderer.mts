@@ -34,6 +34,11 @@ const rendererModuleConfig: webpack.ModuleOptions = {
       test: /\.(png|jpg|jpeg|gif)$/i,
       type: 'asset/resource',
     },
+    // WebAssembly, loaded by the wasm-bindgen glue of the tactical map viewer
+    {
+      test: /\.wasm$/,
+      type: 'asset/resource',
+    },
     // SVG
     {
       test: /\.svg$/,

@@ -25,6 +25,13 @@ const distRendererPath = path.join(distPath, 'renderer');
 
 const buildPath = path.join(releasePath, 'build');
 
+const mapEditorGluePath = path.join(
+  rootPath,
+  'src-map-editor',
+  'pkg',
+  'ja2_map_editor.js',
+);
+
 export default {
   rootPath,
   erbNodeModulesPath,
@@ -41,4 +48,5 @@ export default {
   distMainPath,
   distRendererPath,
   buildPath,
+  mapEditorGluePath,
 };

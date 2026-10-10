@@ -20,7 +20,12 @@ import {
   modReadSelectedInvokableDefinition,
   modUpdateSelectedInvokableDefinition,
 } from './mods';
-import { resourcesListInvokableDefinition } from './resources';
+import {
+  resourcesListInvokableDefinition,
+  resourcesReadInvokableDefinition,
+  resourcesExistsInvokableDefinition,
+  resourcesPersistInvokableDefinition,
+} from './resources';
 import { soundReadInvokableDefinition } from './sounds';
 
 export const INVOKE_CHANNEL = 'invoke';
@@ -67,6 +72,9 @@ const ALL_INVOKABLES = [
   modCreateInvokableDefinition,
 
   resourcesListInvokableDefinition,
+  resourcesReadInvokableDefinition,
+  resourcesExistsInvokableDefinition,
+  resourcesPersistInvokableDefinition,
 
   soundReadInvokableDefinition,
 

@@ -1,0 +1,31 @@
+[workspace]
+resolver = "2"
+members = ["src-rust", "src-map-editor"]
+# Plain `cargo build` should not build Bevy natively, the map editor is built for wasm only
+default-members = ["src-rust"]
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.97.1"
+
+[workspace.dependencies]
+stracciatella = { git = "https://github.com/ja2-stracciatella/ja2-stracciatella.git", rev = "11e9430b67d788b73f7a57d22166e8b500c23dab" }
+
+# Bevy is very slow without optimizations, keep our own code quick to compile
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+# Keep the wasm binary small
+[profile.release.package.ja2-map-editor]
+opt-level = "s"
+strip = true
+
+# Smaller wasm for packaging, but much slower to build than `release`
+[profile.wasm-dist]
+inherits = "release"
+opt-level = "s"
+lto = true
+codegen-units = 1

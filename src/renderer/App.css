@@ -2,3 +2,11 @@ body {
   overflow-x: hidden;
   overflow-y: hidden;
 }
+
+/* A Segmented whose items wrap onto more lines, each line filling the width */
+.wrapping-segmented .ant-segmented-group {
+  flex-wrap: wrap;
+}
+.wrapping-segmented .ant-segmented-item {
+  flex: 0 1 auto;
+}
