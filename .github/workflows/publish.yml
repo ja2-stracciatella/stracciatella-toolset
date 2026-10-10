@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  pull_request:
 
 jobs:
   publish:
@@ -22,6 +23,11 @@ jobs:
         with:
           node-version: 22
           cache: npm
+
+      # Needed to build the tactical map viewer, must match the version in src-map-editor/Cargo.toml
+      - name: Install wasm-bindgen CLI
+        run: |
+          cargo install wasm-bindgen-cli --version 0.2.129 --locked
 
       - name: Install and build
         run: |
