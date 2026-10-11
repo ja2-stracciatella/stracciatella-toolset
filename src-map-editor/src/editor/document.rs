@@ -237,7 +237,7 @@ impl<'a> EditContext<'a> {
         let mut inverse = UndoCommand::default();
         for (grid_no, tile) in command.tiles {
             let previous = std::mem::replace(&mut self.map.tiles[grid_no], tile);
-            inverse.tiles.insert(grid_no, previous);
+            inverse.tiles.push(grid_no, previous);
             self.changed.insert(grid_no);
         }
         if let Some(background) = command.background {

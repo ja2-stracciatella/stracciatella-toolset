@@ -21,11 +21,11 @@ use crate::{
     map::TacticalMap,
     map_requested,
     render::{
-        atlas::{current_animation_frames, RegionScene, SceneAtlas, DRAW_WORDS},
+        atlas::{current_animation_frames, PackedDraws, SceneAtlas, DRAW_WORDS},
         palette::pack_rgba,
         radar::{light_for_radar, overhead_draws, radar_map, radar_rect},
         replay_material::{
-            PendingRadarMaterial, ReadyRadarMaterial, ReplayMaterial, ReplayParams,
+            storage_buffer, PendingRadarMaterial, ReadyRadarMaterial, ReplayMaterial, ReplayParams,
         },
         sprite_sheets,
         world::MapWorld,
@@ -35,14 +35,14 @@ use crate::{
         loading::{LoadingError, MapAssets, MapToLoad},
         AppState, LoadingPhase,
     },
-    systems::bake::storage_buffer,
     tileset::{StciSheet, Tileset},
 };
 
 /// Render layer of the radar quad, only seen by the radar camera
 const RADAR_LAYER: usize = 3;
 
-/// How many frames the camera renders once the material is ready, see `BAKE_FRAMES`
+/// How many frames the camera renders once the material is ready. More than one, in case a
+/// pipeline only becomes ready a frame later.
 const RENDER_FRAMES: u32 = 2;
 
 /// Where a radar map render is
@@ -108,9 +108,10 @@ fn map_readiness(
     }
     match (state, phase) {
         (AppState::Map, _) => MapReadiness::Ready,
-        (AppState::Loading, Some(LoadingPhase::Failed)) => MapReadiness::Failed(
-            error.map_or_else(|| format!("The map {} could not be loaded", map), |e| e.0.clone()),
-        ),
+        (AppState::Loading, Some(LoadingPhase::Failed)) => MapReadiness::Failed(error.map_or_else(
+            || format!("The map {} could not be loaded", map),
+            |e| e.0.clone(),
+        )),
         (AppState::Loading, _) => MapReadiness::Waiting,
         (AppState::Idle, _) => MapReadiness::Failed(format!("The map {} is not loaded", map)),
     }
@@ -288,27 +289,32 @@ fn start_job(
     let draws = overhead_draws(&world, |key| sheets.geometry(key));
     let rect = radar_rect();
     let mut atlas = SceneAtlas::new(lighting.light_color);
-    let region = RegionScene::build(&draws, rect, &mut atlas, &sheets);
+    let packed = PackedDraws::build(&draws, rect, &mut atlas, &sheets);
     let shared = atlas.shared_buffers();
     let frames = current_animation_frames(&shared.animations, tileset);
-    debug!("Rendering the radar map of {} with {} draws", map_path, draws.len());
+    debug!(
+        "Rendering the radar map of {} with {} draws",
+        map_path,
+        draws.len()
+    );
 
     let buffers = &mut sources.buffers;
     let material = sources.materials.add(ReplayMaterial {
         params: ReplayParams {
-            region_origin: rect.min,
-            bins_origin: region.bins_origin,
-            bins_count: region.bins_count,
-            bin_indices_offset: region.bin_indices_offset,
+            origin: rect.min,
+            bins_origin: packed.bins_origin,
+            bins_count: packed.bins_count,
+            bin_indices_offset: packed.bin_indices_offset,
             animations_offset: shared.animations_offset,
             clear_color: pack_rgba([0, 0, 0]),
         },
-        draws: storage_buffer(buffers, &region.draws, DRAW_WORDS),
-        bins: storage_buffer(buffers, &region.bins, 1),
+        draws: storage_buffer(buffers, &packed.draws, DRAW_WORDS),
+        bins: storage_buffer(buffers, &packed.bins, 1),
         atlas: storage_buffer(buffers, &shared.atlas, 1),
         palettes: storage_buffer(buffers, &shared.palettes, 1),
         sprites: storage_buffer(buffers, &shared.sprites, 1),
         animation_frames: storage_buffer(buffers, &frames, 1),
+        view: false,
     });
     sources.pending.generation = sources.pending.generation.wrapping_add(1);
     sources.pending.material = Some(material.id());
@@ -318,6 +324,7 @@ fn start_job(
     image.texture_descriptor.usage |= TextureUsages::COPY_SRC;
     image.sampler = ImageSampler::nearest();
     image.data = None;
+    image.copy_on_resize = false;
     let image = sources.images.add(image);
 
     let center = game_rect_to_world(rect.min, rect.max).center();
@@ -325,7 +332,7 @@ fn start_job(
         .spawn((
             Camera2d,
             Camera {
-                // Before the bake cameras, it doesn't matter
+                // Before the world camera, the order doesn't matter
                 order: -3,
                 is_active: false,
                 clear_color: ClearColorConfig::Custom(Color::BLACK),

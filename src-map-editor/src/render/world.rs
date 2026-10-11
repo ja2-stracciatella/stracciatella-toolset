@@ -624,7 +624,11 @@ impl MapWorld {
         map: &TacticalMap,
         changed: &BTreeSet<GridNo>,
     ) -> BTreeSet<GridNo> {
-        let mut touched = changed.clone();
+        let mut is_changed = GridArray::filled(false);
+        for &grid_no in changed {
+            is_changed[grid_no] = true;
+        }
+        let mut touched = is_changed.clone();
 
         // Whether a struct is placed depends on the structs placed before it, so the structs of
         // the tiles whose structs overlap those of the changed tiles are placed again as well
@@ -632,7 +636,7 @@ impl MapWorld {
 
         // The structures that the nodes of these tiles placed, on all tiles they cover
         for &grid_no in &restacked {
-            let layers = if changed.contains(&grid_no) {
+            let layers = if is_changed[grid_no] {
                 STRUCTURE_LAYERS
             } else {
                 1
@@ -646,16 +650,16 @@ impl MapWorld {
             for (id, node_tile) in placed {
                 for covered in structure_footprint(grid_no, &node_tile) {
                     self.tiles[covered].structures.retain(|s| s.id != id);
-                    touched.insert(covered);
+                    touched[covered] = true;
                 }
             }
-            touched.insert(grid_no);
+            touched[grid_no] = true;
         }
 
         // Items are placed again later, on their own tiles or on those of the structures they
         // lie on
         let mut removed_items = BTreeSet::new();
-        for &grid_no in &touched {
+        for grid_no in touched.flagged() {
             removed_items.extend(self.take_items_from(grid_no));
         }
         let cleared = touched.clone();
@@ -693,7 +697,9 @@ impl MapWorld {
         for &grid_no in &restacked {
             for structure in &map.tiles[grid_no].structs {
                 if self.add_struct_to_tail(grid_no, structure).is_ok() {
-                    touched.extend(structure_footprint(grid_no, structure));
+                    for covered in structure_footprint(grid_no, structure) {
+                        touched[covered] = true;
+                    }
                 }
             }
         }
@@ -708,7 +714,9 @@ impl MapWorld {
             for roof in &map.tiles[grid_no].roofs {
                 if let Ok(node) = self.add_node_to_world(grid_no, roof, Level::Roof) {
                     self.tiles[grid_no].roofs.push(node);
-                    touched.extend(structure_footprint(grid_no, roof));
+                    for covered in structure_footprint(grid_no, roof) {
+                        touched[covered] = true;
+                    }
                 }
             }
         }
@@ -716,11 +724,13 @@ impl MapWorld {
             for on_roof in &map.tiles[grid_no].on_roofs {
                 if let Ok(node) = self.add_node_to_world(grid_no, on_roof, Level::Roof) {
                     self.tiles[grid_no].on_roofs.push(node);
-                    touched.extend(structure_footprint(grid_no, on_roof));
+                    for covered in structure_footprint(grid_no, on_roof) {
+                        touched[covered] = true;
+                    }
                 }
             }
         }
-        for &grid_no in &touched {
+        for grid_no in touched.flagged() {
             self.sort_structures(grid_no);
         }
 
@@ -728,28 +738,26 @@ impl MapWorld {
 
         // Shadows of trees next to changed structures, `OptimizeMapForShadows` might have
         // removed them or would remove them now
-        let neighbours: BTreeSet<GridNo> = touched
-            .iter()
-            .flat_map(|&grid_no| {
-                Direction::ALL
-                    .into_iter()
-                    .map(move |direction| grid_no.step(direction))
-                    .chain([grid_no])
-            })
-            .collect();
-        for grid_no in neighbours {
-            if !changed.contains(&grid_no) {
+        let mut is_neighbour = GridArray::filled(false);
+        for grid_no in touched.flagged() {
+            is_neighbour[grid_no] = true;
+            for direction in Direction::ALL {
+                is_neighbour[grid_no.step(direction)] = true;
+            }
+        }
+        for grid_no in is_neighbour.flagged() {
+            if !is_changed[grid_no] {
                 let before = shadow_ids(&self.tiles[grid_no]);
                 self.restore_shadows(map, grid_no);
                 self.optimize_tile_for_shadows(grid_no);
                 if shadow_ids(&self.tiles[grid_no]) != before {
-                    touched.insert(grid_no);
+                    touched[grid_no] = true;
                 }
             } else {
                 self.optimize_tile_for_shadows(grid_no);
             }
         }
-        touched
+        touched.flagged().collect()
     }
 
     /// The changed tiles and the tiles whose structs could overlap those of the changed tiles,
@@ -768,8 +776,18 @@ impl MapWorld {
                 .iter()
                 .flat_map(move |tile| structure_footprint(grid_no, tile))
         };
-        let mut result = changed.clone();
-        let mut covered: BTreeSet<GridNo> = BTreeSet::new();
+        // Dense flags instead of set lookups, the scan below checks hundreds of candidates for
+        // every covered tile
+        let mut in_result = GridArray::filled(false);
+        for &grid_no in changed {
+            in_result[grid_no] = true;
+        }
+        let mut covered = GridArray::filled(false);
+        let cover = |covered: &mut GridArray<bool>, tile: GridNo, new: &mut Vec<GridNo>| {
+            if !std::mem::replace(&mut covered[tile], true) {
+                new.push(tile);
+            }
+        };
         let mut new: Vec<GridNo> = vec![];
         for &grid_no in changed {
             let placed = self.tiles[grid_no]
@@ -777,11 +795,10 @@ impl MapWorld {
                 .iter()
                 .flat_map(|node| structure_footprint(grid_no, &node.tile));
             for covered_tile in map_footprints(grid_no).chain(placed) {
-                if covered.insert(covered_tile) {
-                    new.push(covered_tile);
-                }
+                cover(&mut covered, covered_tile, &mut new);
             }
         }
+        let mut added: Vec<GridNo> = vec![];
         while let Some(covered_tile) = new.pop() {
             let reach = MAX_STRUCTURE_REACH;
             for dy in -reach..=reach {
@@ -789,20 +806,22 @@ impl MapWorld {
                     let Some(candidate) = covered_tile.offset(dy * 160 + dx) else {
                         continue;
                     };
-                    if result.contains(&candidate)
-                        || !map_footprints(candidate).any(|tile| covered.contains(&tile))
+                    if in_result[candidate]
+                        || map.tiles[candidate].structs.is_empty()
+                        || !map_footprints(candidate).any(|tile| covered[tile])
                     {
                         continue;
                     }
-                    result.insert(candidate);
+                    in_result[candidate] = true;
+                    added.push(candidate);
                     for tile in map_footprints(candidate) {
-                        if covered.insert(tile) {
-                            new.push(tile);
-                        }
+                        cover(&mut covered, tile, &mut new);
                     }
                 }
             }
         }
+        let mut result = changed.clone();
+        result.extend(added);
         result
     }
 
@@ -823,15 +842,15 @@ impl MapWorld {
             })
             .map(|(grid_no, _)| grid_no)
             .collect();
-        let mut touched = BTreeSet::new();
+        let mut touched = GridArray::filled(false);
         for grid_no in holding {
             self.take_items_from(grid_no);
-            touched.insert(grid_no);
+            touched[grid_no] = true;
         }
         let all = (0..map.items.len()).map(|index| index as u16).collect();
         let cleared = touched.clone();
         self.replace_items(map, &mut touched, cleared, all);
-        touched
+        touched.flagged().collect()
     }
 
     /// Removes the item nodes of a tile together with their structures
@@ -859,13 +878,13 @@ impl MapWorld {
     fn replace_items(
         &mut self,
         map: &TacticalMap,
-        touched: &mut BTreeSet<GridNo>,
-        mut cleared: BTreeSet<GridNo>,
+        touched: &mut GridArray<bool>,
+        mut cleared: GridArray<bool>,
         mut removed: BTreeSet<u16>,
     ) {
         // Structures were placed onto these tiles since the items were removed
-        for &grid_no in touched.iter() {
-            if cleared.insert(grid_no) {
+        for grid_no in touched.flagged() {
+            if !std::mem::replace(&mut cleared[grid_no], true) {
                 removed.extend(self.take_items_from(grid_no));
             }
         }
@@ -896,14 +915,14 @@ impl MapWorld {
                 let index = index as u16;
                 let current = item_tiles.get(&index).copied();
                 let affected = removed.contains(&index)
-                    || touched.contains(&target)
-                    || current.is_some_and(|current| touched.contains(&current));
+                    || touched[target]
+                    || current.is_some_and(|current| touched[current]);
                 if !affected {
                     continue;
                 }
                 removed.insert(index);
                 for grid_no in [Some(target), current].into_iter().flatten() {
-                    if !cleared.contains(&grid_no) {
+                    if !cleared[grid_no] {
                         more.insert(grid_no);
                     }
                 }
@@ -916,8 +935,8 @@ impl MapWorld {
                     item_tiles.remove(&item);
                     removed.insert(item);
                 }
-                cleared.insert(grid_no);
-                touched.insert(grid_no);
+                cleared[grid_no] = true;
+                touched[grid_no] = true;
             }
         }
         for &index in &removed {

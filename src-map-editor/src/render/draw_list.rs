@@ -473,8 +473,7 @@ impl<S: Fn(SpriteKey) -> Option<SpriteGeometry>> DrawContext<'_, S> {
     }
 }
 
-/// The draws of every tile of the map, the source of the draw lists of the whole map and of
-/// parts of it
+/// The draws of every tile of the map, the source of the draw list that is updated tile by tile
 #[derive(Clone, Debug, Default)]
 pub struct DrawCache {
     tiles: Vec<TileDraws>,
@@ -490,26 +489,14 @@ impl DrawCache {
         }
     }
 
-    pub fn tile(&self, grid_no: GridNo) -> &TileDraws {
-        &self.tiles[grid_no.index()]
-    }
-
-    /// Replaces the draws of a tile, returns the area whose pixels change, `None` if nothing
-    /// changed
-    ///
-    /// The area is the union of the old and the new bounds, so it also covers draws that moved
-    /// or were removed.
-    pub fn replace(&mut self, grid_no: GridNo, draws: TileDraws) -> Option<IRect> {
+    /// Replaces the draws of a tile, returns whether they changed
+    pub fn replace(&mut self, grid_no: GridNo, draws: TileDraws) -> bool {
         let old = &mut self.tiles[grid_no.index()];
         if *old == draws {
-            return None;
+            return false;
         }
-        let changed = match (old.bounds, draws.bounds) {
-            (Some(a), Some(b)) => Some(a.union(b)),
-            (a, b) => a.or(b),
-        };
         *old = draws;
-        changed
+        true
     }
 
     /// Union of the bounds of all draws, empty without draws
@@ -523,26 +510,7 @@ impl DrawCache {
 
     /// The draws of the map in draw list order
     pub fn all(&self) -> Vec<Draw> {
-        self.collect(|_| true)
-    }
-
-    /// The draws that overlap `rect`, in draw list order
-    ///
-    /// A pixel only depends on the draws that cover it, in the order of the draw list. The draws
-    /// that overlap `rect` in the order of the whole draw list therefore give the same pixels
-    /// in `rect` as the whole draw list.
-    pub fn ordered(&self, rect: IRect) -> Vec<Draw> {
-        self.collect(|bounds| !bounds.intersect(rect).is_empty())
-    }
-
-    fn collect(&self, overlaps: impl Fn(IRect) -> bool) -> Vec<Draw> {
-        let mut draws: Vec<&(u64, Draw)> = self
-            .tiles
-            .iter()
-            .filter(|tile| tile.bounds.is_some_and(&overlaps))
-            .flat_map(|tile| &tile.draws)
-            .filter(|(_, draw)| overlaps(draw.bounds))
-            .collect();
+        let mut draws: Vec<&(u64, Draw)> = self.tiles.iter().flat_map(|tile| &tile.draws).collect();
         draws.sort_unstable_by_key(|(key, _)| *key);
         draws.into_iter().map(|(_, draw)| draw.clone()).collect()
     }
@@ -1325,7 +1293,7 @@ mod tests {
     }
 
     #[test]
-    fn draws_of_a_rect_keep_the_order_of_the_draw_list() {
+    fn cached_draws_are_the_draw_list() {
         let tileset = test_tileset();
         let world = busy_world(&tileset);
         let cache = DrawCache::build(&DrawContext {
@@ -1339,19 +1307,6 @@ mod tests {
             all,
             build_draw_list(&world, &tileset, tile_sprites, options(true))
         );
-        for rect in [
-            IRect::new(-50, 0, 30, 40),
-            IRect::new(10, 35, 11, 36),
-            IRect::new(-500, -500, 500, 500),
-            IRect::new(1000, 1000, 1010, 1010),
-        ] {
-            let expected: Vec<_> = all
-                .iter()
-                .filter(|draw| !draw.bounds.intersect(rect).is_empty())
-                .cloned()
-                .collect();
-            assert_eq!(cache.ordered(rect), expected);
-        }
         assert_eq!(
             cache.bounds(),
             all.iter()
@@ -1362,7 +1317,7 @@ mod tests {
     }
 
     #[test]
-    fn replacing_tile_draws_reports_the_changed_area() {
+    fn replacing_tile_draws_reports_changes() {
         let tileset = test_tileset();
         let mut world = busy_world(&tileset);
         let mut cache = DrawCache::build(&DrawContext {
@@ -1382,24 +1337,26 @@ mod tests {
             .tile_draws(changed)
         };
         let same = tile_draws(&world);
-        assert_eq!(cache.replace(changed, same), None);
+        assert!(!cache.replace(changed, same));
 
         // Raising the tile moves its draws up
         world.tiles[changed].height = 30;
         let raised = tile_draws(&world);
-        let old = cache.tile(changed).bounds.unwrap();
-        let new = raised.bounds.unwrap();
-        assert_eq!(cache.replace(changed, raised), Some(old.union(new)));
+        assert!(cache.replace(changed, raised));
         assert_eq!(
             cache.all(),
             build_draw_list(&world, &tileset, tile_sprites, options(true))
         );
 
-        // Removing everything leaves the old area
+        // Removing everything
         world.tiles[changed] = WorldTile::default();
         let empty = tile_draws(&world);
         assert_eq!(empty.bounds, None);
-        assert_eq!(cache.replace(changed, empty), Some(new));
+        assert!(cache.replace(changed, empty));
+        assert_eq!(
+            cache.all(),
+            build_draw_list(&world, &tileset, tile_sprites, options(true))
+        );
     }
 
     #[test]

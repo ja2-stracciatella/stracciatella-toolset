@@ -53,6 +53,9 @@ mod states;
 mod systems;
 pub mod tileset;
 
+#[cfg(all(feature = "bench", not(target_arch = "wasm32")))]
+pub mod bench;
+
 /// Map that should be loaded next, set by [`load_map`] or [`new_map`] and picked up by the app
 static REQUESTED_MAP: Mutex<Option<MapRequest>> = Mutex::new(None);
 /// Render options that should be applied next, set by [`set_render_options`]
@@ -154,57 +157,75 @@ pub fn start(
 ) {
     host::set_callbacks(read_file, files_exist, on_status, on_editor_event);
 
-    App::new()
+    let mut app = App::new();
+    build_app(
+        &mut app,
+        Window {
+            title: "Ja2 Map Viewer".into(),
+            canvas: Some(canvas_selector),
+            fit_canvas_to_parent: true,
+            // Keep keyboard input working in the rest of the page
+            prevent_default_event_handling: false,
+            ..default()
+        },
+        true,
+    );
+    // Returns immediately on wasm, the event loop is driven by the browser
+    app.run();
+}
+
+/// Adds the plugins, states and resources of the viewer to `app`
+///
+/// Without the `host`, maps can't be loaded from files and nothing is reported to the host. The
+/// map resources then have to be inserted by the caller, like the benchmark does.
+fn build_app(app: &mut App, window: Window, host: bool) {
+    if host {
         // Asset sources have to be registered before the `AssetPlugin`
-        .add_plugins(HostPlugin)
-        .add_plugins(
-            DefaultPlugins
-                .set(WindowPlugin {
-                    primary_window: Some(Window {
-                        title: "Ja2 Map Viewer".into(),
-                        canvas: Some(canvas_selector),
-                        fit_canvas_to_parent: true,
-                        // Keep keyboard input working in the rest of the page
-                        prevent_default_event_handling: false,
-                        ..default()
-                    }),
-                    ..default()
-                })
-                .set(AssetPlugin {
-                    // None of the JA2 assets have .meta files, don't look for them
-                    meta_check: AssetMetaCheck::Never,
-                    ..default()
-                }),
-        )
-        .add_plugins(FrameTimeDiagnosticsPlugin::default())
-        .add_plugins(embed_shaders)
-        .insert_resource(ClearColor(CLEAR_COLOR))
-        .insert_resource(WinitSettings::continuous())
-        .init_resource::<UiFont>()
-        .init_state::<AppState>()
-        .add_sub_state::<LoadingPhase>()
-        .add_sub_state::<DebugOverlay>()
-        .add_plugins((
-            Ja2AssetsPlugin,
-            tileset::TilesetPlugin,
-            item::ItemPlugin,
-            light::LightPlugin,
-            states::loading::LoadingPlugin,
-            states::map::MapPlugin,
-            states::tile_debug::TileDebugPlugin,
-            render::RenderPlugin,
-            soldier::SoldierPlugin,
-            systems::camera::CameraPlugin,
-            systems::pixel_view::PixelViewPlugin,
-            systems::bake::BakePlugin,
-            systems::radar::RadarPlugin,
-            systems::cursor::CursorPlugin,
-            EditorPlugin,
-        ))
-        .add_plugins(systems::configure_map_systems)
-        .add_systems(Update, apply_active)
-        // Returns immediately on wasm, the event loop is driven by the browser
-        .run();
+        app.add_plugins(HostPlugin);
+    }
+    app.add_plugins(
+        DefaultPlugins
+            .set(WindowPlugin {
+                primary_window: Some(window),
+                ..default()
+            })
+            .set(AssetPlugin {
+                // None of the JA2 assets have .meta files, don't look for them
+                meta_check: AssetMetaCheck::Never,
+                ..default()
+            }),
+    )
+    .add_plugins(FrameTimeDiagnosticsPlugin::default())
+    .add_plugins(embed_shaders)
+    .insert_resource(ClearColor(CLEAR_COLOR))
+    .insert_resource(WinitSettings::continuous())
+    .init_resource::<UiFont>()
+    .init_state::<AppState>()
+    .add_sub_state::<LoadingPhase>()
+    .add_sub_state::<DebugOverlay>()
+    .add_plugins((
+        Ja2AssetsPlugin,
+        tileset::TilesetPlugin,
+        item::ItemPlugin,
+        light::LightPlugin,
+    ));
+    if host {
+        app.add_plugins(states::loading::LoadingPlugin);
+    }
+    app.add_plugins((
+        states::map::MapPlugin,
+        states::tile_debug::TileDebugPlugin,
+        render::RenderPlugin,
+        soldier::SoldierPlugin,
+        systems::camera::CameraPlugin,
+        systems::pixel_view::PixelViewPlugin,
+        systems::view_replay::ViewReplayPlugin,
+        systems::radar::RadarPlugin,
+        systems::cursor::CursorPlugin,
+        EditorPlugin,
+    ))
+    .add_plugins(systems::configure_map_systems)
+    .add_systems(Update, apply_active);
 }
 
 /// Requests loading the map at `path`, relative to the data root (e.g. `maps/A9.dat`)

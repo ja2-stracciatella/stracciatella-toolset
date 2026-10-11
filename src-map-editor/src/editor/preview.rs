@@ -13,6 +13,7 @@ use bevy::input::mouse::MouseButton;
 
 use bevy::{
     asset::RenderAssetUsages,
+    camera::visibility::RenderLayers,
     image::ImageSampler,
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
@@ -32,7 +33,7 @@ use crate::{
         RenderOptions,
     },
     states::{loading::MapAssets, AppState},
-    systems::cursor::CursorInfo,
+    systems::{cursor::CursorInfo, pixel_view::OVERLAY_LAYER},
     tileset::{StciSheet, Tile, TileIndex, Tileset},
 };
 
@@ -483,7 +484,8 @@ pub fn update_preview(
             draw_position.y -= WALL_HEIGHT;
         }
         let top_left = game_to_world(draw_position + geometry.offset);
-        // Above the regions of the map at z 0, in the order the game draws them
+        // In the order the game draws them. The overlay camera draws them on top of the map, they
+        // change with the mouse.
         let z = 1. + index as f32 * 0.001;
         commands.spawn((
             PreviewSprite,
@@ -491,6 +493,7 @@ pub fn update_preview(
             Sprite::from_image(image),
             Anchor::TOP_LEFT,
             Transform::from_translation(top_left.extend(z)),
+            RenderLayers::layer(OVERLAY_LAYER),
         ));
     }
 }

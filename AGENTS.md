@@ -12,6 +12,7 @@ Electron desktop app (React 19 + Ant Design + Redux Toolkit) for creating mods f
 - `npm start`: dev mode (rebuilds Rust, builds main, serves renderer with hot reload; electronmon restarts on `src/main/**` changes)
 - `npm run rebuild:rust`: `cargo build --release` in `src-rust/`, then copies the cdylib to `src-rust/target/stracciatella-toolset.node`. Rerun this after any Rust change.
 - `npm run rebuild:map-editor`: builds the map viewer wasm and its wasm-bindgen glue into `src-map-editor/pkg/` (needs the pinned `wasm-bindgen-cli`). Rerun this after any change in `src-map-editor/`. `prestart` and `build:renderer` run it.
+- `cargo run -p ja2-map-editor --example bench --features bench --release -- --scenario idle --duration 60`: native GPU memory and frame time benchmark of the map viewer on a synthetic map, prints JSON lines (see `src-map-editor/README.md`, `--list` for the scenarios)
 - `npm run tsc:check`: typecheck the app and `.erb/`
 - `npm run lint`: ESLint with Prettier (single quotes)
 - `npm test` / `npm run test:watch`: Vitest (jsdom)

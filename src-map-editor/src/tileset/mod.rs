@@ -177,7 +177,9 @@ impl Tileset {
     }
 }
 
-#[cfg(test)]
+/// Also the fixtures of the benchmark
+#[cfg(any(test, feature = "bench"))]
+#[cfg_attr(not(test), allow(dead_code, unused_imports))]
 pub(crate) mod tests {
     use super::*;
     /// Tile types for building test maps
@@ -278,6 +280,11 @@ pub(crate) mod tests {
     /// - `DOOR1` to `DOOR4`: 5 frames for each of outside right, outside left, inside right and
     ///   inside left, each with a single tile door structure that is open in the last frame.
     pub(crate) fn building_tileset() -> Tileset {
+        Tileset::from_database(Ja2TileDatabase::build(building_surfaces()).unwrap())
+    }
+
+    /// The surfaces of `building_tileset`
+    pub(crate) fn building_surfaces() -> Vec<Option<TileSurfaceInfo>> {
         // The orientations of the structure files, which the game converts to the flags
         const IL: u8 = 1;
         const IR: u8 = 2;
@@ -352,7 +359,7 @@ pub(crate) mod tests {
                 Ja2StructureFile::parse(&jsd_bytes(count, Some((&aux, &[])), &structures)).unwrap(),
             );
         }
-        Tileset::from_database(Ja2TileDatabase::build(surfaces).unwrap())
+        surfaces
     }
 
     /// Aux data of a sub image that only has a wall orientation, unlike `aux_bytes` it is not

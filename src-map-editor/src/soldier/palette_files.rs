@@ -93,7 +93,7 @@ impl PaletteReplacements {
     /// Replacements with the given names: those ending in `HEAD`, `PANTS` and `SKIN` replace
     /// palette indices 10 and 11, 12 and 13, 14 and 15, the others 16 and 17. Each has its own
     /// colours.
-    #[cfg(test)]
+    #[cfg(any(test, feature = "bench"))]
     pub(crate) fn coloured(names: &[&str]) -> Self {
         Self {
             ranges: vec![(10, 11), (12, 13), (14, 15), (16, 17)],

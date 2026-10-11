@@ -17,10 +17,9 @@ use crate::{
     map::{AmbientLight, GridNo, LightId, LightTime, MapLight, TacticalMap},
     render::{
         lighting::{light_tiles, scene_lights, PreviewLight},
-        PendingSceneUpdate,
+        PendingSceneUpdate, RendererIdle,
     },
     states::loading::MapToLoad,
-    systems::bake::MapBake,
 };
 
 use super::{
@@ -236,7 +235,7 @@ impl SyncedLights {
             pending.full = true;
         } else {
             pending
-                .tiles
+                .relit
                 .extend(changed_light_tiles(&self.lights, &new.lights));
         }
         *self = new;
@@ -280,14 +279,14 @@ pub fn sync_light_scene(
     mut document: ResMut<EditorDocument>,
     map: Res<TacticalMap>,
     preview: Res<PreviewLight>,
-    bake: Res<MapBake>,
+    idle: Res<RendererIdle>,
     mut synced: ResMut<SyncedLights>,
     mut pending: ResMut<PendingSceneUpdate>,
 ) {
     if preview.is_changed() {
         synced.preview_dirty = true;
     }
-    let preview_due = synced.preview_dirty && pending.is_empty() && bake.is_idle();
+    let preview_due = synced.preview_dirty && pending.is_empty() && idle.0;
     if !document.lights_dirty && !preview_due {
         return;
     }
@@ -422,8 +421,8 @@ mod tests {
     ) -> BTreeSet<GridNo> {
         let mut pending = PendingSceneUpdate::default();
         synced.sync(fixture.map(), preview, &mut pending);
-        assert!(!pending.full);
-        pending.tiles
+        assert!(!pending.full && pending.tiles.is_empty());
+        pending.relit
     }
 
     /// The light that placing with the mode would add next
@@ -490,13 +489,13 @@ mod tests {
         let light = preview(&fixture, &mode(1, LightTime::Always), grid(30, 30));
         let mut world = World::new();
         world.init_resource::<EditorDocument>();
-        world.init_resource::<MapBake>();
+        world.init_resource::<RendererIdle>();
         world.init_resource::<SyncedLights>();
         world.init_resource::<PreviewLight>();
         world.insert_resource(TacticalMap::empty(TilesetId::new(0)));
         world.insert_resource(PendingSceneUpdate {
-            full: false,
             tiles: BTreeSet::from([grid(1, 1)]),
+            ..default()
         });
         world.run_system_once(reset_synced_lights).unwrap();
         let system = world.register_system(sync_light_scene);
@@ -508,9 +507,10 @@ mod tests {
         assert_eq!(world.resource::<PendingSceneUpdate>().tiles.len(), 1);
         world.resource_mut::<PendingSceneUpdate>().tiles.clear();
         world.run_system(system).unwrap();
-        let tiles = &world.resource::<PendingSceneUpdate>().tiles;
+        let pending = world.resource::<PendingSceneUpdate>();
+        assert!(pending.tiles.is_empty());
         assert_eq!(
-            *tiles,
+            pending.relit,
             BTreeSet::from_iter(light_tiles(light.0.as_ref().unwrap()))
         );
     }

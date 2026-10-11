@@ -8,7 +8,18 @@ edition.workspace = true
 rust-version.workspace = true
 
 [lib]
-crate-type = ["cdylib"]
+# The rlib is only for the benchmark example
+crate-type = ["cdylib", "rlib"]
+# The doc examples are from the stracciatella crate, they were never run as a cdylib
+doctest = false
+
+[features]
+# Native GPU memory benchmark, see the README
+bench = []
+
+[[example]]
+name = "bench"
+required-features = ["bench"]
 
 [dependencies]
 bevy = { version = "0.20.0", default-features = false, features = [

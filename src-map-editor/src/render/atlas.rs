@@ -98,7 +98,7 @@ pub struct SceneParams {
 /// The sprites, palettes and animations that the draws of a scene refer to
 ///
 /// Only grows: draws that were packed once stay valid when more draws are packed later, so the
-/// regions of a scene can be packed one at a time. `version` changes whenever something is added.
+/// draws of a scene can be packed in parts. `version` changes whenever something is added.
 #[derive(Clone, Debug, Default)]
 pub struct SceneAtlas {
     /// Added to all palettes (`g_light_color`)
@@ -121,7 +121,7 @@ pub struct SceneAtlas {
     pub version: u64,
 }
 
-/// The buffers of a `SceneAtlas`, shared by all regions
+/// The buffers of a `SceneAtlas`, shared by all draws packed with it
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SharedBuffers {
     pub atlas: Vec<u32>,
@@ -302,9 +302,9 @@ impl SceneAtlas {
     }
 }
 
-/// The draws and bins of one region, packed with a `SceneAtlas`
+/// The draws and bins of an area, packed with a `SceneAtlas`
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct RegionScene {
+pub struct PackedDraws {
     /// `DRAW_WORDS` per draw
     pub draws: Vec<u32>,
     /// Bin offsets, then the draw indices of the bins
@@ -313,11 +313,9 @@ pub struct RegionScene {
     pub bins_count: UVec2,
     /// Start of the draw indices in `bins`
     pub bin_indices_offset: u32,
-    /// Whether any draw is animated
-    pub animated: bool,
 }
 
-impl RegionScene {
+impl PackedDraws {
     /// Packs the draws that overlap `area` (in draw list order) with bins covering `area`
     pub fn build(
         draws: &[Draw],
@@ -335,14 +333,11 @@ impl RegionScene {
             bins_origin: bins.origin,
             bins_count: bins.count,
             bin_indices_offset,
-            animated: draws
-                .iter()
-                .any(|draw| matches!(draw.sprite, DrawSprite::Animated(_))),
         }
     }
 }
 
-/// The data of the replay shader for one region, as the material sees it
+/// The data of the replay shader for an area, as the material sees it
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GpuScene {
     /// `DRAW_WORDS` per draw
@@ -371,31 +366,30 @@ impl GpuScene {
         let mut bin_buffer = bins.offsets.clone();
         let bin_indices_offset = bin_buffer.len() as u32;
         bin_buffer.extend(&bins.indices);
-        let region = RegionScene {
+        let packed = PackedDraws {
             draws: packed,
             bins: bin_buffer,
             bins_origin: bins.origin,
             bins_count: bins.count,
             bin_indices_offset,
-            animated: false,
         };
-        Self::from_parts(&atlas.shared_buffers(), &region, sheets.tileset)
+        Self::from_parts(&atlas.shared_buffers(), &packed, sheets.tileset)
     }
 
-    /// The scene of one region of a scene with a shared atlas
-    pub fn from_parts(shared: &SharedBuffers, region: &RegionScene, tileset: &Tileset) -> Self {
+    /// The scene of packed draws with the buffers of their atlas
+    pub fn from_parts(shared: &SharedBuffers, packed: &PackedDraws, tileset: &Tileset) -> Self {
         GpuScene {
-            draws: region.draws.clone(),
-            bins: region.bins.clone(),
+            draws: packed.draws.clone(),
+            bins: packed.bins.clone(),
             atlas: shared.atlas.clone(),
             palettes: shared.palettes.clone(),
             sprites: shared.sprites.clone(),
             animation_frames: current_animation_frames(&shared.animations, tileset),
             animations: shared.animations.clone(),
             params: SceneParams {
-                bins_origin: region.bins_origin,
-                bins_count: region.bins_count,
-                bin_indices_offset: region.bin_indices_offset,
+                bins_origin: packed.bins_origin,
+                bins_count: packed.bins_count,
+                bin_indices_offset: packed.bin_indices_offset,
                 animations_offset: shared.animations_offset,
             },
         }

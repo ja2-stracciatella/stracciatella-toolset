@@ -169,11 +169,10 @@ mod tests {
     use crate::{
         map::GridNo,
         render::{
-            atlas::{RegionScene, SceneAtlas, SpriteSheets},
+            atlas::SpriteSheets,
             bins::Bins,
             draw_list::{Draw, DrawSprite, PaletteKey, SpriteKey},
             palette::{pack_rgba, shade_palette, shadow},
-            regions::RegionLayout,
         },
         tileset::{
             tests::{test_tile_id, test_tileset, FIRSTTEXTURE},
@@ -306,70 +305,5 @@ mod tests {
         assert_eq!(scene.replay_pixel(IVec2::new(0, 1), CLEAR), normal[2]);
         assert_eq!(scene.replay_pixel(IVec2::new(1, 2), CLEAR), outline_color);
         assert_eq!(scene.replay_pixel(IVec2::new(2, 2), CLEAR), normal[1]);
-    }
-
-    #[test]
-    fn regions_replay_like_the_whole_scene() {
-        let tileset = test_tileset();
-        let sheet = sheet();
-        let mut surface_sheets = vec![None; tileset.surfaces().len()];
-        let surface = tileset.surface_of_type(FIRSTTEXTURE).unwrap();
-        surface_sheets[surface.id.index()] = Some(&sheet);
-        let sheets = SpriteSheets {
-            tileset: &tileset,
-            surface_sheets,
-            soldier_sheets: vec![],
-            soldier_palettes: vec![],
-        };
-        let first = test_tile_id(&tileset, FIRSTTEXTURE, 1);
-        let second = test_tile_id(&tileset, FIRSTTEXTURE, 2);
-        let draws = [
-            // Straddles the border between the regions at x = 0
-            draw(first, IVec2::new(-1, 0), Blitter::TransZ, 10, 4),
-            draw(second, IVec2::new(-2, 0), Blitter::TransZ, 5, 6),
-            draw(second, IVec2::new(0, 0), Blitter::TransZNB, 10, 8),
-            draw(first, IVec2::new(1, 1), Blitter::Transparent, 0, 2),
-            draw(first, IVec2::new(-1, 1), Blitter::ShadowZ, 20, 4),
-            draw(second, IVec2::new(-4, -1), Blitter::TransZ, 1, 3),
-        ];
-        let area = IRect::new(-4, -4, 4, 4);
-        let bins = Bins::build(area, draws.iter().map(|d| d.bounds));
-        let whole = GpuScene::build(&draws, &bins, &sheets, [0; 3]);
-
-        let layout = RegionLayout {
-            origin: area.min,
-            count: UVec2::new(2, 2),
-            size: UVec2::new(4, 4),
-        };
-        let mut atlas = SceneAtlas::new([0; 3]);
-        let regions: Vec<_> = (0..layout.len())
-            .map(|index| {
-                let rect = layout.rect(index);
-                let region_draws: Vec<_> = draws
-                    .iter()
-                    .filter(|draw| !draw.bounds.intersect(rect).is_empty())
-                    .cloned()
-                    .collect();
-                (
-                    rect,
-                    RegionScene::build(&region_draws, rect, &mut atlas, &sheets),
-                )
-            })
-            .collect();
-        // The atlas is shared, the regions packed first stay valid
-        let shared = atlas.shared_buffers();
-        for (rect, region) in &regions {
-            let scene = GpuScene::from_parts(&shared, region, &tileset);
-            for y in rect.min.y..rect.max.y {
-                for x in rect.min.x..rect.max.x {
-                    let pixel = IVec2::new(x, y);
-                    assert_eq!(
-                        scene.replay_pixel(pixel, CLEAR),
-                        whole.replay_pixel(pixel, CLEAR),
-                        "pixel {pixel}"
-                    );
-                }
-            }
-        }
     }
 }

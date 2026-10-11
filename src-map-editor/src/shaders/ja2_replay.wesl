@@ -1,4 +1,5 @@
-// Replays the blits of the game for every pixel of a baked map region
+// Replays the blits of the game for every pixel that the world camera shows (`VIEW_REPLAY`), or
+// for every pixel of a texture, e.g. the radar map
 //
 // Each pixel starts with the clear colour and z 0 and applies the draws that cover it in draw list
 // order, with the depth rules of the game's blitters. See `render/draw_list.rs` for the blitters,
@@ -8,8 +9,9 @@
 import bevy_sprite_render::mesh2d::vertex_output::VertexOutput;
 
 struct ReplayParams {
-    // Game pixel of the top left texel of the region
-    region_origin: vec2<i32>,
+    // With `VIEW_REPLAY` the game pixel at the world origin, otherwise the game pixel of the top
+    // left texel
+    origin: vec2<i32>,
     // Game pixel of the top left corner of the first bin
     bins_origin: vec2<i32>,
     bins_count: vec2<u32>,
@@ -121,7 +123,15 @@ fn srgb_to_linear(value: f32) -> f32 {
 
 @fragment
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
-    let pixel = params.region_origin + vec2<i32>(floor(mesh.position.xy));
+    var pixel: vec2<i32>;
+    @if(VIEW_REPLAY) {
+        // The world camera renders 1:1 from an integer position, so the fragments are at the
+        // centers of world pixels. World y goes up, game y down.
+        let world = mesh.world_position.xy;
+        pixel = params.origin + vec2<i32>(floor(vec2<f32>(world.x, -world.y)));
+    } @else {
+        pixel = params.origin + vec2<i32>(floor(mesh.position.xy));
+    }
     // The checker pattern of the obscured blitters
     let checker = ((pixel.x ^ pixel.y) & 1) == 0;
 

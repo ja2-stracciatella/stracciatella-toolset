@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 
-pub mod bake;
 pub mod camera;
 pub mod cursor;
 pub mod pixel_view;
 pub mod radar;
+pub mod view_replay;
 
 /// Ordering of the systems that run every frame while a map is shown
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]

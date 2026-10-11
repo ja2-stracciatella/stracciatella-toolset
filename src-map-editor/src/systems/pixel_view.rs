@@ -1,41 +1,59 @@
 //! Renders the world pixel-perfect into an off-screen texture and draws it to the screen
 //!
 //! The world camera renders at exactly 1 world px = 1 texel, without MSAA and from an integer
-//! position, so the sprites of the baked map regions (see `bake.rs`, sampled with nearest
-//! filtering) can't leave gaps between each other. The screen camera then draws that texture as a single, bilinear filtered sprite scaled
-//! by the zoom and shifted by the sub-pixel part of the camera position. This keeps scrolling and
-//! zooming smooth.
+//! position, so every fragment of the map is at the center of a world pixel and the replay shader
+//! (see `view_replay.rs`) computes exactly one game pixel for it. The screen camera then draws
+//! that texture as a single, bilinear filtered sprite scaled by the zoom and shifted by the
+//! sub-pixel part of the camera position. This keeps scrolling and zooming smooth.
 //!
 //! The texture is sized for the window at [`MIN_ZOOM`], and the world camera only renders into a
 //! centered viewport that fits the current zoom. The texture therefore only changes size when the
-//! window does. Bevy picks up a resized render target one frame late, so resizing it while zooming
-//! would draw the texture with a mismatching projection for a frame.
+//! window does. Replaying the map is expensive, so the world camera only renders when the view or
+//! the map changed ([`MapRedraw`]).
+//!
+//! The gizmos and the previews of the editor change with the mouse, so they are not drawn into the
+//! world texture but by the overlay camera ([`OVERLAY_LAYER`]), which looks at the world directly
+//! on the screen.
+//!
+//! A texture of a new size is a new image. Bevy picks up a new render target one frame late, so
+//! the screen keeps showing the old texture until the world camera has rendered into the new one.
 
 use bevy::{
     camera::{visibility::RenderLayers, RenderTarget, Viewport},
     image::ImageSampler,
     prelude::*,
-    render::render_resource::{Extent3d, TextureFormat},
+    render::render_resource::{TextureFormat, TextureUsages},
     ui::IsDefaultUiCamera,
     window::PrimaryWindow,
 };
 
 use crate::{
-    components::camera::{ScreenCamera, TileCamera},
+    components::camera::{OverlayCamera, ScreenCamera, TileCamera},
     systems::MapSystems,
     CLEAR_COLOR,
 };
 
 /// Render layer of the screen camera and the sprite showing the world texture
 pub const SCREEN_LAYER: usize = 1;
+/// Render layer of the overlay camera, the gizmos and the previews of the editor
+pub const OVERLAY_LAYER: usize = 2;
+/// Width of the gizmo lines in physical pixels at any zoom
+///
+/// A whole number: the view moves by fractions of a pixel, and a horizontal or vertical line of a
+/// fractional width would cover one pixel more or less depending on where it lands.
+const GIZMO_LINE_WIDTH: f32 = 2.;
 /// The world texture grows and shrinks in steps of this many texels (must be even), so that it
 /// isn't recreated on every frame while the window is resized
 const TEXTURE_SIZE_STEP: u32 = 128;
+/// How many frames the world camera renders after the map changed, more than one in case a
+/// pipeline only becomes ready a frame later
+const MAP_REDRAW_FRAMES: u32 = 2;
 
 /// Current view onto the world
 #[derive(Resource, Debug, Clone)]
 pub struct PixelView {
-    /// Texture the world camera renders into
+    /// Texture shown on the screen, the world camera renders into it (or into its successor of
+    /// a new size, see the module documentation)
     pub image: Handle<Image>,
     /// World position at the center of the screen
     pub position: Vec2,
@@ -72,6 +90,35 @@ impl PixelView {
     }
 }
 
+/// When the world camera renders
+///
+/// It renders when its position, viewport or texture changed, or when the renderer asks for it
+/// with `changed`. Otherwise the texture keeps showing the last frame.
+#[derive(Resource, Debug, Clone, Default)]
+pub struct MapRedraw {
+    /// The map looks different, set by the renderer and reset once the camera renders
+    pub changed: bool,
+    /// What the camera rendered last
+    last_view: Option<RenderedView>,
+    frames_left: u32,
+}
+
+impl MapRedraw {
+    /// Whether the world texture shows the current view and map
+    #[cfg(feature = "bench")]
+    pub fn is_idle(&self) -> bool {
+        !self.changed && self.frames_left == 0
+    }
+}
+
+/// What the world camera renders: its position, viewport and texture
+#[derive(Debug, Clone, PartialEq)]
+struct RenderedView {
+    position: Vec2,
+    viewport: Option<(UVec2, UVec2)>,
+    target: Option<AssetId<Image>>,
+}
+
 /// Sprite showing the world texture on the screen
 #[derive(Component)]
 struct PixelCanvas;
@@ -80,21 +127,41 @@ pub struct PixelViewPlugin;
 
 impl Plugin for PixelViewPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup)
+        app.init_resource::<MapRedraw>()
+            .add_systems(Startup, setup)
             // Keep the view fitted to the window in every state
-            .add_systems(Update, fit_pixel_view.in_set(MapSystems::View));
+            .add_systems(
+                Update,
+                (fit_pixel_view, fit_overlay)
+                    .chain()
+                    .in_set(MapSystems::View),
+            )
+            // After the renderer updated its material
+            .add_systems(PostUpdate, redraw_on_change);
     }
 }
 
-fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
-    let size = fit_texture_size(UVec2::ZERO, required_texture_size(UVec2::ZERO, MIN_ZOOM));
+/// A world texture of `size` texels
+fn world_texture(size: UVec2) -> Image {
     let mut image = Image::new_target_texture(size.x, size.y, TextureFormat::Rgba8UnormSrgb, None);
     image.sampler = ImageSampler::linear();
-    // The world camera overwrites the whole texture every frame, so there is no need to allocate
-    // and upload the texels or to copy the old texture on every resize
+    // The benchmark reads it back
+    image.texture_descriptor.usage |= TextureUsages::COPY_SRC;
+    // The world camera clears the whole texture whenever it renders, so there is no need to
+    // allocate and upload the texels. A texture of a new size is a new image, there is nothing to
+    // copy over.
     image.data = None;
     image.copy_on_resize = false;
-    let image = images.add(image);
+    image
+}
+
+fn setup(
+    mut commands: Commands,
+    mut images: ResMut<Assets<Image>>,
+    mut gizmos: ResMut<GizmoConfigStore>,
+) {
+    let size = fit_texture_size(UVec2::ZERO, required_texture_size(UVec2::ZERO, MIN_ZOOM));
+    let image = images.add(world_texture(size));
 
     commands.insert_resource(PixelView {
         image: image.clone(),
@@ -120,7 +187,6 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
         Camera2d,
         ScreenCamera,
         Msaa::Off,
-        IsDefaultUiCamera,
         RenderLayers::layer(SCREEN_LAYER),
     ));
     commands.spawn((
@@ -128,6 +194,29 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
         PixelCanvas,
         RenderLayers::layer(SCREEN_LAYER),
     ));
+    commands.spawn((
+        Camera2d,
+        OverlayCamera,
+        Camera {
+            order: 1,
+            clear_color: ClearColorConfig::None,
+            ..default()
+        },
+        Msaa::Off,
+        IsDefaultUiCamera,
+        RenderLayers::layer(OVERLAY_LAYER),
+    ));
+    let (config, _) = gizmos.config_mut::<DefaultGizmoConfigGroup>();
+    config.render_layers = RenderLayers::layer(OVERLAY_LAYER);
+    config.line.width = GIZMO_LINE_WIDTH;
+}
+
+/// The image of an image render target
+fn target_image(target: &RenderTarget) -> Option<&Handle<Image>> {
+    match target {
+        RenderTarget::Image(image) => Some(&image.handle),
+        _ => None,
+    }
 }
 
 fn fit_pixel_view(
@@ -135,7 +224,7 @@ fn fit_pixel_view(
     mut pixel_view: ResMut<PixelView>,
     mut images: ResMut<Assets<Image>>,
     mut world_camera: Single<
-        (&mut Camera, &mut Transform),
+        (&mut Camera, &mut RenderTarget, &mut Transform),
         (With<TileCamera>, Without<PixelCanvas>),
     >,
     mut screen_camera: Single<&mut Projection, With<ScreenCamera>>,
@@ -150,22 +239,29 @@ fn fit_pixel_view(
     }
     let zoom = pixel_view.zoom;
     let position = pixel_view.position;
+    let (camera, target, camera_transform) = &mut *world_camera;
 
-    let Some(current_size) = images.get(&pixel_view.image).map(|image| image.size()) else {
+    let Some(target_handle) = target_image(target).cloned() else {
+        return;
+    };
+    let Some(current_size) = images.get(&target_handle).map(|image| image.size()) else {
         return;
     };
     let size = fit_texture_size(
         current_size,
         required_texture_size(window.physical_size(), MIN_ZOOM),
     );
-    if size != current_size {
-        if let Some(mut image) = images.get_mut(&pixel_view.image) {
-            image.resize(Extent3d {
-                width: size.x,
-                height: size.y,
-                ..default()
-            });
-        }
+    let target_handle = if size != current_size {
+        let image = images.add(world_texture(size));
+        **target = RenderTarget::Image(image.clone().into());
+        image
+    } else {
+        target_handle
+    };
+    // The camera reports the size of a new target once it renders into it
+    if pixel_view.image != target_handle && camera.physical_target_size() == Some(size) {
+        pixel_view.image = target_handle.clone();
+        canvas.0.image = target_handle.clone();
     }
 
     // 1 unit of the screen camera = 1 physical pixel. With `ScalingMode::WindowSize` the camera
@@ -177,9 +273,8 @@ fn fit_pixel_view(
         }
     }
 
-    let (camera, camera_transform) = &mut *world_camera;
-    // The camera only sees the new size of a resized texture in the next frame, stay within the
-    // size it knows so that the viewport is valid
+    // The camera only sees the size of a new texture in the next frame, stay within the size it
+    // knows so that the viewport is valid
     let known_size = camera.physical_target_size().unwrap_or(size).min(size);
     let (view_position, view_size) = view_rect(
         known_size,
@@ -197,8 +292,14 @@ fn fit_pixel_view(
     }
 
     let rounded = position.round();
-    camera_transform.translation = rounded.extend(camera_transform.translation.z);
+    if camera_transform.translation.truncate() != rounded {
+        camera_transform.translation = rounded.extend(camera_transform.translation.z);
+    }
 
+    // The screen keeps showing the old texture as it was until the new one is rendered
+    if pixel_view.image != target_handle {
+        return;
+    }
     let (sprite, transform) = &mut *canvas;
     let rect = Some(Rect::from_corners(
         view_position.as_vec2(),
@@ -213,6 +314,57 @@ fn fit_pixel_view(
     }
     // Both cameras have y pointing up, so the sub-pixel offset needs no flip
     transform.translation = (-(position - rounded) * zoom).extend(transform.translation.z);
+}
+
+/// Moves the overlay camera to the view, unrounded like the map on the screen
+fn fit_overlay(
+    window: Single<&Window, With<PrimaryWindow>>,
+    pixel_view: Res<PixelView>,
+    mut overlay_camera: Single<(&mut Projection, &mut Transform), With<OverlayCamera>>,
+) {
+    let (projection, transform) = &mut *overlay_camera;
+    // `ScalingMode::WindowSize` shows `logical size * scale` units, see `fit_pixel_view`
+    if let Projection::Orthographic(projection) = &mut **projection {
+        let scale = window.scale_factor() / pixel_view.zoom;
+        if projection.scale != scale {
+            projection.scale = scale;
+        }
+    }
+    if transform.translation.truncate() != pixel_view.position {
+        transform.translation = pixel_view.position.extend(transform.translation.z);
+    }
+}
+
+/// Switches the world camera on only when its texture would look different
+fn redraw_on_change(
+    mut redraw: ResMut<MapRedraw>,
+    mut world_camera: Single<(&mut Camera, &RenderTarget, &Transform), With<TileCamera>>,
+) {
+    let (camera, target, transform) = &mut *world_camera;
+    let view = RenderedView {
+        position: transform.translation.truncate(),
+        viewport: camera
+            .viewport
+            .as_ref()
+            .map(|viewport| (viewport.physical_position, viewport.physical_size)),
+        target: target_image(target).map(Handle::id),
+    };
+    let redraw = &mut *redraw;
+    if redraw.changed {
+        redraw.changed = false;
+        redraw.frames_left = MAP_REDRAW_FRAMES;
+    }
+    if redraw.last_view.as_ref() != Some(&view) {
+        redraw.frames_left = redraw.frames_left.max(1);
+    }
+    let active = redraw.frames_left > 0;
+    if active {
+        redraw.frames_left -= 1;
+        redraw.last_view = Some(view);
+    }
+    if camera.is_active != active {
+        camera.is_active = active;
+    }
 }
 
 /// Smallest zoom (physical px per world px)

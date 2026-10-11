@@ -122,6 +122,15 @@ impl<T: Clone> GridArray<T> {
     }
 }
 
+impl GridArray<bool> {
+    /// The grid numbers whose flag is set, in ascending order
+    pub fn flagged(&self) -> impl DoubleEndedIterator<Item = GridNo> + '_ {
+        self.iter()
+            .filter(|(_, &flag)| flag)
+            .map(|(grid_no, _)| grid_no)
+    }
+}
+
 impl<T: Default> Default for GridArray<T> {
     fn default() -> Self {
         Self::from_fn(|_| T::default())

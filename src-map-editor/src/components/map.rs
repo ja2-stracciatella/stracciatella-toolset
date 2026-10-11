@@ -66,6 +66,27 @@ pub fn game_rect_to_world(min: IVec2, max: IVec2) -> Rect {
     Rect::from_corners(game_to_world(min), game_to_world(max))
 }
 
+/// How far sprites may reach outside of the tile boxes of the map, in game pixels. Tall sprites
+/// and raised terrain reach above the top corner. `warn_about_draws_outside` in
+/// `systems/view_replay.rs` warns about draws outside of the drawn area.
+const MARGIN_SIDES: i32 = 64;
+const MARGIN_BOTTOM: i32 = 64;
+const MARGIN_TOP: i32 = 320;
+
+/// Game pixel area that the sprites of a map can cover
+pub fn map_bounds() -> IRect {
+    let size = i32::from(JA2_MAP_SIZE);
+    let half_tile = JA2_TILE_WIDTH / 2;
+    // The tile boxes reach from the left corner (0, 159) to the right corner (159, 0) and from
+    // the top corner (0, 0) to the bottom corner (159, 159)
+    IRect::new(
+        -(size - 1) * half_tile - MARGIN_SIDES,
+        -MARGIN_TOP,
+        (size + 1) * half_tile + MARGIN_SIDES,
+        size * JA2_TILE_HEIGHT + MARGIN_BOTTOM,
+    )
+}
+
 /// Fractional tile coordinates of a game pixel position, ignoring the terrain height
 ///
 /// The tile (x, y) covers the coordinates `[x, x + 1) × [y, y + 1)`.
@@ -165,6 +186,16 @@ mod tests {
         assert_eq!(world_to_game(Vec2::new(1., -1.)), center.as_vec2() + 1.);
         let rect = game_rect_to_world(center, center + IVec2::new(2, 3));
         assert_eq!(rect, Rect::new(0., -3., 2., 0.));
+    }
+
+    #[test]
+    fn map_bounds_contain_the_tile_boxes() {
+        let bounds = map_bounds();
+        // Left, right, top and bottom corners
+        assert!(bounds.contains(tile_box(0, 159)));
+        assert!(bounds.contains(tile_box(159, 0) + IVec2::new(39, 0)));
+        assert!(bounds.contains(IVec2::new(20, 0)));
+        assert!(bounds.contains(tile_box(159, 159) + IVec2::new(20, 19)));
     }
 
     #[test]

@@ -519,7 +519,9 @@ fn compute_z_strip_info(structure: &DbStructure, sub_image: &SubImageInfo) -> ZS
     }
 }
 
-#[cfg(test)]
+/// Also the fixtures of the benchmark
+#[cfg(any(test, feature = "bench"))]
+#[cfg_attr(not(test), allow(dead_code, unused_imports))]
 pub(crate) mod tests {
     use super::*;
     use crate::file_formats::stci::{indexed::STCI_APP_DATA_SIZE, StciAppDataFlags};

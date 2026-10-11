@@ -144,17 +144,18 @@ pub fn quantize(pixels: &[[u8; 3]]) -> (Box<[[u8; 3]; 256]>, Vec<u8>) {
                     .map(|(&a, &b)| (i32::from(a) - i32::from(b)).pow(2) as u32)
                     .sum()
             };
-            let (best, _) = colors
-                .iter()
-                .enumerate()
-                .fold((0, u32::MAX), |(best, lowest), (index, color)| {
-                    let distance = distance(color);
-                    if distance < lowest {
-                        (index, distance)
-                    } else {
-                        (best, lowest)
-                    }
-                });
+            let (best, _) =
+                colors
+                    .iter()
+                    .enumerate()
+                    .fold((0, u32::MAX), |(best, lowest), (index, color)| {
+                        let distance = distance(color);
+                        if distance < lowest {
+                            (index, distance)
+                        } else {
+                            (best, lowest)
+                        }
+                    });
             (best + 1) as u8
         })
         .collect();
@@ -167,7 +168,13 @@ mod tests {
 
     #[test]
     fn few_colours_are_kept() {
-        let pixels = [[255, 0, 0], [0, 255, 0], [255, 0, 0], [0, 0, 252], [8, 12, 16]];
+        let pixels = [
+            [255, 0, 0],
+            [0, 255, 0],
+            [255, 0, 0],
+            [0, 0, 252],
+            [8, 12, 16],
+        ];
         let (palette, indices) = quantize(&pixels);
         assert_eq!(palette[0], [0, 0, 0]);
         for (pixel, index) in pixels.iter().zip(&indices) {

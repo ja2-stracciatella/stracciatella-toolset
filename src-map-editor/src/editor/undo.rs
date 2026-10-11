@@ -5,11 +5,11 @@
 //! pressing and releasing the mouse button, i.e. one stroke. The tiles hold `Arc`s of the tiles of
 //! the tileset, so keeping copies of them is cheap.
 
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::VecDeque;
 
 use crate::map::{
-    AmbientLight, Door, EditorSmoothing, ExitGrid, GridNo, MapInfo, MapItem, MapLight, MapTile,
-    Schedule, SoldierPlacement,
+    AmbientLight, Door, EditorSmoothing, ExitGrid, GridArray, GridNo, MapInfo, MapItem, MapLight,
+    MapTile, Schedule, SoldierPlacement,
 };
 
 /// The lights, the light colour and the ambient light of a map
@@ -18,11 +18,64 @@ pub type LightState = (Vec<MapLight>, [u8; 3], Option<AmbientLight>);
 /// How many commands can be undone (`MAX_UNDO_COMMAND_LENGTH` in the original editor)
 pub const MAX_UNDO_COMMANDS: usize = 10;
 
+/// Tiles with their grid numbers, each at most once
+///
+/// The tiles of an ended command are in ascending order. A command can hold all tiles of the map,
+/// so this is a plain list rather than a map: [`UndoStack`] tells which tiles were recorded.
+#[derive(Clone, Debug, Default)]
+pub struct TileSnapshots(Vec<(GridNo, MapTile)>);
+
+impl TileSnapshots {
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// The tile of a grid number, a linear search
+    pub fn get(&self, grid_no: GridNo) -> Option<&MapTile> {
+        self.0
+            .iter()
+            .find(|(other, _)| *other == grid_no)
+            .map(|(_, tile)| tile)
+    }
+
+    pub fn grid_nos(&self) -> impl Iterator<Item = GridNo> + '_ {
+        self.0.iter().map(|(grid_no, _)| *grid_no)
+    }
+
+    /// Adds a tile, which must not be there yet
+    pub fn push(&mut self, grid_no: GridNo, tile: MapTile) {
+        self.0.push((grid_no, tile));
+    }
+
+    fn sort(&mut self) {
+        self.0.sort_unstable_by_key(|(grid_no, _)| *grid_no);
+    }
+}
+
+impl IntoIterator for TileSnapshots {
+    type Item = (GridNo, MapTile);
+    type IntoIter = std::vec::IntoIter<(GridNo, MapTile)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl FromIterator<(GridNo, MapTile)> for TileSnapshots {
+    fn from_iter<I: IntoIterator<Item = (GridNo, MapTile)>>(iter: I) -> Self {
+        Self(iter.into_iter().collect())
+    }
+}
+
 /// What a command changed, to restore it
 #[derive(Clone, Debug, Default)]
 pub struct UndoCommand {
     /// The tiles before the command changed them
-    pub tiles: BTreeMap<GridNo, MapTile>,
+    pub tiles: TileSnapshots,
     /// The background texture before the command changed it
     pub background: Option<String>,
     /// The smoothing of the map before the command changed it
@@ -66,6 +119,8 @@ pub struct UndoStack {
     /// The commands that restore what was undone, the last undone one last
     redo: VecDeque<UndoCommand>,
     current: Option<UndoCommand>,
+    /// The tiles of the current command, allocated on the first one
+    recorded: Option<GridArray<bool>>,
     /// How often anything was recorded, to tell whether an edit changed something
     records: u64,
 }
@@ -79,12 +134,13 @@ impl UndoStack {
 
     /// Ends recording the current command, commands that changed nothing are dropped
     pub fn end(&mut self) {
-        let Some(command) = self.current.take() else {
+        let Some(mut command) = self.take_current() else {
             return;
         };
         if command.is_empty() {
             return;
         }
+        command.tiles.sort();
         // A new edit can't be followed by what was undone before
         self.redo.clear();
         self.push_undo(command);
@@ -113,11 +169,16 @@ impl UndoStack {
     /// Starts a command if none is being recorded.
     pub fn record_tile(&mut self, grid_no: GridNo, tile: &MapTile) {
         self.records += 1;
+        let recorded = self
+            .recorded
+            .get_or_insert_with(|| GridArray::filled(false));
+        if std::mem::replace(&mut recorded[grid_no], true) {
+            return;
+        }
         self.current
             .get_or_insert_with(UndoCommand::default)
             .tiles
-            .entry(grid_no)
-            .or_insert_with(|| tile.clone());
+            .push(grid_no, tile.clone());
     }
 
     /// Records the background texture before it is changed
@@ -239,7 +300,18 @@ impl UndoStack {
     pub fn clear(&mut self) {
         self.commands.clear();
         self.redo.clear();
-        self.current = None;
+        self.take_current();
+    }
+
+    /// Takes the current command, no tile is recorded afterwards
+    fn take_current(&mut self) -> Option<UndoCommand> {
+        let command = self.current.take()?;
+        if let Some(recorded) = &mut self.recorded {
+            for grid_no in command.tiles.grid_nos() {
+                recorded[grid_no] = false;
+            }
+        }
+        Some(command)
     }
 }
 
@@ -281,9 +353,32 @@ mod tests {
 
         let command = stack.pop().unwrap();
         assert_eq!(command.tiles.len(), 2);
-        assert_eq!(command.tiles[&grid(1)].height, 1);
-        assert_eq!(command.tiles[&grid(2)].height, 3);
+        assert_eq!(command.tiles.get(grid(1)).unwrap().height, 1);
+        assert_eq!(command.tiles.get(grid(2)).unwrap().height, 3);
         assert!(stack.pop().is_none());
+
+        // The next command records the tiles again
+        stack.begin();
+        stack.record_tile(grid(1), &tile(4));
+        stack.record_tile(grid(1), &tile(5));
+        assert_eq!(stack.pop().unwrap().tiles.get(grid(1)).unwrap().height, 4);
+        stack.record_tile(grid(1), &tile(6));
+        stack.clear();
+        stack.record_tile(grid(1), &tile(7));
+        assert_eq!(stack.pop().unwrap().tiles.get(grid(1)).unwrap().height, 7);
+    }
+
+    #[test]
+    fn the_tiles_of_a_command_are_in_ascending_order() {
+        let mut stack = UndoStack::default();
+        for index in [5, 1, 3, 1] {
+            stack.record_tile(grid(index), &tile(0));
+        }
+        let command = stack.pop().unwrap();
+        assert_eq!(
+            command.tiles.grid_nos().collect::<Vec<_>>(),
+            [grid(1), grid(3), grid(5)]
+        );
     }
 
     #[test]
@@ -298,7 +393,7 @@ mod tests {
         stack.end();
         assert_eq!(stack.depth(), MAX_UNDO_COMMANDS);
         let heights: Vec<u8> = std::iter::from_fn(|| stack.pop())
-            .map(|command| command.tiles[&grid(0)].height)
+            .map(|command| command.tiles.get(grid(0)).unwrap().height)
             .collect();
         assert_eq!(heights, (5..15).rev().collect::<Vec<_>>());
     }
@@ -340,12 +435,15 @@ mod tests {
         let mut stack = UndoStack::default();
         for height in 0..15 {
             stack.push_redo(UndoCommand {
-                tiles: BTreeMap::from([(grid(0), tile(height))]),
+                tiles: TileSnapshots::from_iter([(grid(0), tile(height))]),
                 ..Default::default()
             });
         }
         assert_eq!(stack.redo_depth(), MAX_UNDO_COMMANDS);
-        assert_eq!(stack.pop_redo().unwrap().tiles[&grid(0)].height, 14);
+        assert_eq!(
+            stack.pop_redo().unwrap().tiles.get(grid(0)).unwrap().height,
+            14
+        );
     }
 
     #[test]

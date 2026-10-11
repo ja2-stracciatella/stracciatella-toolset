@@ -801,7 +801,7 @@ fn building_edits_equal_full_builds_with(seed: u64) {
         let changed: BTreeSet<GridNo> = document
             .undo
             .pop()
-            .map(|command| command.tiles.keys().copied().collect())
+            .map(|command| command.tiles.grid_nos().collect())
             .unwrap_or_default();
         incremental.update(&map, &tileset, &changed);
         let full = Built::new(&map, &tileset);

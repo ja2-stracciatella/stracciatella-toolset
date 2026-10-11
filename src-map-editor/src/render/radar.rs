@@ -440,7 +440,9 @@ mod tests {
         world.tiles[a].structs.push(item);
         world.tiles[b].height = 30;
         // Outside of the overhead image
-        world.tiles[grid_no(0, 0)].structs.push(node(FIRSTOSTRUCT, 1));
+        world.tiles[grid_no(0, 0)]
+            .structs
+            .push(node(FIRSTOSTRUCT, 1));
 
         let draws = overhead_draws(&world, tile_sprites);
         let order: Vec<_> = draws
@@ -464,7 +466,9 @@ mod tests {
                 (b, t),
             ]
         );
-        assert!(draws.iter().all(|draw| draw.z == 0 && draw.z_strip.is_none()));
+        assert!(draws
+            .iter()
+            .all(|draw| draw.z == 0 && draw.z_strip.is_none()));
         // Raised by the terrain height, roofs a wall height higher
         let land = tile_box(41, 60) - IVec2::new(0, 30);
         assert_eq!(draws[1].position, land);
@@ -686,8 +690,8 @@ mod tests {
                         dir,
                         &format!("tilesets/{}/{}", resolved.tileset_id, resolved.filename),
                     );
-                    sheets[surface.id.index()] = file
-                        .and_then(|file| StciSheet::parse(&std::fs::read(file).ok()?).ok());
+                    sheets[surface.id.index()] =
+                        file.and_then(|file| StciSheet::parse(&std::fs::read(file).ok()?).ok());
                 }
                 (Fixture::with_tileset(tileset), sheets)
             });
@@ -710,7 +714,8 @@ mod tests {
             let mut rgba = vec![0u8; width * height * 4];
             for y in 0..height {
                 for x in 0..width {
-                    let color = scene.replay_pixel(rect.min + IVec2::new(x as i32, y as i32), clear);
+                    let color =
+                        scene.replay_pixel(rect.min + IVec2::new(x as i32, y as i32), clear);
                     rgba[(y * width + x) * 4..][..4].copy_from_slice(&color.to_le_bytes());
                 }
             }
@@ -722,7 +727,11 @@ mod tests {
             let difference = ours
                 .iter()
                 .zip(&theirs)
-                .flat_map(|(a, b)| a.iter().zip(b).map(|(&a, &b)| (i32::from(a) - i32::from(b)).abs()))
+                .flat_map(|(a, b)| {
+                    a.iter()
+                        .zip(b)
+                        .map(|(&a, &b)| (i32::from(a) - i32::from(b)).abs())
+                })
                 .sum::<i32>() as f64
                 / (ours.len() * 3) as f64;
             eprintln!("{}: mean difference {:.1}", name, difference);

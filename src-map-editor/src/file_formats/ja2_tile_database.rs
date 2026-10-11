@@ -501,7 +501,9 @@ fn fix_double_door(element: &mut TileElement, structure_file: &mut Ja2StructureF
     }
 }
 
-#[cfg(test)]
+/// Also the fixtures of the benchmark
+#[cfg(any(test, feature = "bench"))]
+#[cfg_attr(not(test), allow(dead_code, unused_imports))]
 pub(crate) mod tests {
     use super::*;
     use crate::file_formats::{

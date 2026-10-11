@@ -213,7 +213,8 @@ pub fn reset_reported_item(mut reported: ResMut<ReportedItem>) {
 /// Tells the host about the selected tile when it or its items change, and about failed edits
 ///
 /// The selection is dropped here when its tile has no items on the floor any more, after the
-/// world caught up with the edits of the frame.
+/// world caught up with the edits of the frame. The pools are only computed again when one of
+/// the resources that the event is made of changed.
 pub fn report_item(
     map_to_load: Res<MapToLoad>,
     map: Res<TacticalMap>,
@@ -223,6 +224,17 @@ pub fn report_item(
     mut selection: ResMut<ItemSelection>,
     mut reported: ResMut<ReportedItem>,
 ) {
+    // The item table is removed and inserted again together with the map
+    let unchanged = reported.0.is_some()
+        && !map_to_load.is_changed()
+        && !map.is_changed()
+        && !world.is_changed()
+        && !options.is_changed()
+        && !items.as_ref().is_some_and(|items| items.is_changed())
+        && !selection.is_changed();
+    if unchanged {
+        return;
+    }
     if let Some(message) = selection.notice.take() {
         report_editor_event(&NoticeEvent {
             map: map_to_load.0.clone(),
