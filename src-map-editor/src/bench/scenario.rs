@@ -137,7 +137,7 @@ pub fn drive(
             let (sin, cos) = pan_angle.sin_cos();
             pixel_view.position = world.center() + radii * Vec2::new(cos, sin);
             // The view can't move where it is clamped to the map, e.g. at zoom 0.5. The world
-            // camera then still renders every frame, like for a moving cursor.
+            // pass is then still drawn every frame, like for a moving cursor.
             redraw.changed = true;
         }
         Scenario::LightPreview(radius) => {

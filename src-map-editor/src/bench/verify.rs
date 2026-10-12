@@ -2,13 +2,11 @@
 //!
 //! After the warmup, the edits of the scenario pause and the view steps at zoom 1 over a grid
 //! of positions covering the map. At each position the world texture is read back and every
-//! texel within the map bounds is compared with the replay of the whole map. The gizmos of the
-//! editor, which the world camera draws on top of the map, are switched off meanwhile.
+//! texel within the map bounds is compared with the replay of the whole map.
 
 use std::sync::Arc;
 
 use bevy::{
-    camera::RenderTarget,
     prelude::*,
     render::gpu_readback::{Readback, ReadbackComplete},
     window::PrimaryWindow,
@@ -17,13 +15,11 @@ use serde_json::{json, Value};
 
 use super::{report::Report, Bench};
 use crate::{
-    components::{
-        camera::TileCamera,
-        map::{game_rect_to_world, map_bounds, world_to_game},
-    },
+    components::map::{game_rect_to_world, map_bounds, world_to_game},
     render::{
         atlas::{GpuScene, PackedDraws},
         palette::pack_rgba,
+        replay_pass::{RenderedWorldTexture, ReplayPasses},
         sprite_sheets, MapSoldiers, PendingSceneUpdate, RendererIdle, SceneSources,
     },
     states::loading::MapAssets,
@@ -60,10 +56,10 @@ enum Stage {
     Done,
 }
 
-/// Where the world camera was when the texture was read back
+/// Where the view was when the texture was read back
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct ReadView {
-    /// World position of the camera, an integer
+    /// World position of the view, an integer
     position: Vec2,
     viewport_position: UVec2,
     viewport_size: UVec2,
@@ -110,7 +106,7 @@ impl Comparison {
 #[derive(Resource, Default)]
 pub struct Verify {
     stage: Stage,
-    /// Camera positions of the steps
+    /// View positions of the steps
     steps: Vec<Vec2>,
     reference: Option<Arc<GpuScene>>,
     /// The pixels read back for the current step, with the bytes per row
@@ -159,7 +155,7 @@ impl ReferenceSources<'_> {
     }
 }
 
-/// Camera positions at zoom 1 whose views cover the map
+/// View positions at zoom 1 whose views cover the map
 fn grid_steps(view_size: Vec2) -> Vec<Vec2> {
     let bounds = map_bounds();
     let world = game_rect_to_world(bounds.min, bounds.max);
@@ -188,7 +184,9 @@ pub fn step(
     redraw: Res<MapRedraw>,
     reference: ReferenceSources,
     window: Single<&Window, With<PrimaryWindow>>,
-    camera: Single<(&Camera, &RenderTarget, &Transform), With<TileCamera>>,
+    passes: Res<ReplayPasses>,
+    rendered: Res<RenderedWorldTexture>,
+    images: Res<Assets<Image>>,
     mut last_position: Local<Option<Vec2>>,
 ) {
     if !bench.args.verify {
@@ -231,25 +229,26 @@ pub fn step(
                 pixel_view.zoom = 1.;
                 pixel_view.target_zoom = 1.;
             }
-            // Wait until the camera has stayed at the clamped position for a few frames and
-            // the screen shows its texture
-            let (camera, render_target, transform) = *camera;
-            let position = transform.translation.truncate();
+            // Wait until the view has stayed at the clamped position for a few frames and the
+            // screen shows the texture that the world pass draws into
+            let world = &passes.world;
+            let position = pixel_view.pass_position;
             let still = *last_position == Some(position);
             *last_position = Some(position);
-            let shown = matches!(render_target, RenderTarget::Image(image) if image.handle == pixel_view.image);
+            let shown =
+                world.target == pixel_view.image && rendered.get() == Some(world.target.id());
             let frames = if settled && still && shown {
                 frames + 1
             } else {
                 0
             };
-            match (&camera.viewport, camera.physical_target_size()) {
-                (Some(viewport), Some(size)) if frames >= SETTLE_FRAMES => {
+            match images.get(&world.target) {
+                Some(image) if frames >= SETTLE_FRAMES => {
                     let view = ReadView {
                         position,
-                        viewport_position: viewport.physical_position,
-                        viewport_size: viewport.physical_size,
-                        texture_width: size.x,
+                        viewport_position: world.viewport_position,
+                        viewport_size: world.viewport_size,
+                        texture_width: image.width(),
                     };
                     let readback = commands
                         .spawn(Readback::texture(pixel_view.image.clone()))
@@ -417,7 +416,7 @@ mod tests {
             texture_width: 32,
         };
         // The texel right below and right of the center shows the game pixel whose top left
-        // corner is at the camera position
+        // corner is at the view position
         let center = view.game_pixel(UVec2::new(14, 23));
         assert_eq!(game_to_world(center), view.position);
         assert_eq!(view.game_pixel(UVec2::new(15, 23)), center + IVec2::X);

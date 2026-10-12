@@ -5,8 +5,8 @@
 //! The final colour of a pixel only depends on the ordered list of blits that cover it. So the
 //! CPU builds the game's draw list (`draw_list.rs`), sorts it into bins (`bins.rs`) and packs it
 //! with the sprites and palettes into storage buffers (`atlas.rs`). The replay shader then applies
-//! the draws to each pixel independently (`replay_material.rs`, `shaders/ja2_replay.wesl`) that
-//! the world camera shows (`systems/view_replay.rs`).
+//! the draws to each pixel independently (`replay_pass.rs`, `shaders/ja2_replay.wesl`) of the
+//! world texture of the view (`systems/view_replay.rs`).
 //!
 //! The colours are computed with 8 bits per channel instead of the game's 16 bit frame buffer.
 
@@ -55,7 +55,7 @@ pub mod radar;
 pub mod reachable;
 #[cfg(any(test, feature = "bench"))]
 mod reference;
-pub mod replay_material;
+pub mod replay_pass;
 pub mod soldiers;
 #[cfg(test)]
 mod tests;
@@ -99,7 +99,7 @@ impl MapSoldiers {
     }
 }
 
-/// Whether the renderer of the map is done with the current scene: its material is prepared and
+/// Whether the renderer of the map is done with the current scene: its bindings are prepared and
 /// shown. Set by `systems/view_replay.rs`.
 #[derive(Resource, Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RendererIdle(pub bool);
@@ -187,7 +187,7 @@ pub struct RenderPlugin;
 
 impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(replay_material::ReplayMaterialPlugin)
+        app.add_plugins(replay_pass::ReplayPassPlugin)
             .init_resource::<RenderOptions>()
             .init_resource::<ReplayScene>()
             .init_resource::<ReplayAnimation>()
@@ -314,7 +314,7 @@ fn update_scene(
     mut scene: ResMut<ReplayScene>,
     mut animation: ResMut<ReplayAnimation>,
 ) {
-    // Updating the scene while the renderer waits for its materials would delay it again and
+    // Updating the scene while the renderer waits for its bindings would delay it again and
     // again, e.g. while painting
     if pending.is_empty() || !idle.0 {
         return;

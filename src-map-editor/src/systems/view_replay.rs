@@ -1,30 +1,26 @@
-//! Replays the draw list for every pixel that the world camera shows
+//! Replays the draw list for every texel of the world texture
 //!
-//! The map is drawn by replaying the game's draw list (see `render/`). One quad covering
-//! `map_bounds()` has the replay material of the whole map (`ReplayScene::draws`) with the
-//! `VIEW_REPLAY` variant of the shader, which computes the game pixel from the world position.
-//! That is too expensive to do every frame, so the world camera only renders when the view or the
-//! map changed (`MapRedraw`, see `pixel_view.rs`).
+//! The map is drawn by replaying the game's draw list (see `render/`). The world pass
+//! (`ReplayPasses::world`) has the bindings of the whole map (`ReplayScene::draws`), the view
+//! sets where it draws (`pixel_view.rs`). That is too expensive to do every frame, so the pass is
+//! only drawn when the view or the map changed (`MapRedraw`).
 //!
-//! Buffers and materials are never modified: every change creates new ones. A new material
-//! replaces the one of the quad once the render world has prepared it, so the camera can render
-//! the old one meanwhile.
+//! Buffers are never modified: every change creates new ones. New bindings replace the ones of
+//! the pass once the render world has prepared them, so the pass can draw the old ones meanwhile.
 
 use bevy::{prelude::*, render::storage::ShaderBuffer};
 
 use crate::{
-    components::map::{game_rect_to_world, map_bounds, world_to_game},
+    components::map::map_bounds,
     render::{
         atlas::{PackedDraws, DRAW_WORDS},
-        palette::pack_rgba,
-        replay_material::{
-            storage_buffer, PendingReplayMaterials, ReadyReplayMaterials, ReplayMaterial,
-            ReplayParams,
+        replay_pass::{
+            storage_buffer, PendingReplayBindings, ReadyReplayBindings, ReplayBindings,
+            ReplayPasses,
         },
         RendererIdle, ReplayAnimation, ReplayScene,
     },
     systems::{pixel_view::MapRedraw, MapSystems},
-    CLEAR_COLOR,
 };
 
 /// The buffers of the `PackedDraws` of a scene
@@ -106,83 +102,58 @@ impl SharedReplayBuffers {
         }
     }
 
-    /// The material drawn by the world camera, `origin` is the game pixel at the world origin.
-    /// `None` before the first update.
-    fn material(&self, origin: IVec2, scene: &SceneBuffers) -> Option<ReplayMaterial> {
+    /// The bindings of the world pass, `None` before the first update
+    fn bindings(&self, scene: &SceneBuffers) -> Option<ReplayBindings> {
         let (Some(shared), Some(animation_frames)) = (&self.shared, &self.animation_frames) else {
             return None;
         };
-        Some(ReplayMaterial {
-            params: ReplayParams {
-                origin,
-                bins_origin: scene.bins_origin,
-                bins_count: scene.bins_count,
-                bin_indices_offset: scene.bin_indices_offset,
-                animations_offset: shared.animations_offset,
-                clear_color: pack_rgba(CLEAR_COLOR.to_srgba().to_u8_array_no_alpha()),
-            },
+        Some(ReplayBindings {
+            bins_origin: scene.bins_origin,
+            bins_count: scene.bins_count,
+            bin_indices_offset: scene.bin_indices_offset,
+            animations_offset: shared.animations_offset,
             draws: scene.draws.clone(),
             bins: scene.bins.clone(),
             atlas: shared.atlas.clone(),
             palettes: shared.palettes.clone(),
             sprites: shared.sprites.clone(),
             animation_frames: animation_frames.clone(),
-            view: true,
         })
     }
 }
 
-/// State of the quad and its material
+/// State of the buffers and bindings of the world pass
 #[derive(Resource, Debug, Default)]
 struct ViewReplay {
-    quad: Option<Entity>,
     buffers: SharedReplayBuffers,
     /// Version of the draws whose buffers were uploaded
     version: Option<u64>,
     draws: Option<SceneBuffers>,
-    /// The material of the quad
-    material: Option<Handle<ReplayMaterial>>,
-    /// The material that replaces it once it is prepared, with its generation
-    next: Option<(Handle<ReplayMaterial>, u32)>,
+    /// The bindings that replace the ones of the pass once they are prepared, with their
+    /// generation
+    next: Option<(ReplayBindings, u32)>,
 }
 
 pub struct ViewReplayPlugin;
 
 impl Plugin for ViewReplayPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<ViewReplay>()
-            .add_systems(Startup, setup)
-            .add_systems(
-                Update,
-                (update_material, swap_material)
-                    .chain()
-                    .in_set(MapSystems::View),
-            );
+        app.init_resource::<ViewReplay>().add_systems(
+            Update,
+            (update_bindings, swap_bindings)
+                .chain()
+                .in_set(MapSystems::View),
+        );
     }
 }
 
-fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut replay: ResMut<ViewReplay>) {
-    let bounds = map_bounds();
-    let rect = game_rect_to_world(bounds.min, bounds.max);
-    // Seen by the world camera on the default render layer 0, the material is added once there
-    // is a scene
-    let quad = commands
-        .spawn((
-            Mesh2d(meshes.add(Rectangle::from_size(rect.size()))),
-            Transform::from_translation(rect.center().extend(0.)),
-        ))
-        .id();
-    replay.quad = Some(quad);
-}
-
-/// Creates new buffers and a new material for what changed
-fn update_material(
+/// Creates new buffers and new bindings for what changed
+fn update_bindings(
     scene: Option<Res<ReplayScene>>,
     animation: Option<Res<ReplayAnimation>>,
     mut replay: ResMut<ViewReplay>,
     mut buffers: ResMut<Assets<ShaderBuffer>>,
-    mut materials: ResMut<Assets<ReplayMaterial>>,
-    mut pending: ResMut<PendingReplayMaterials>,
+    mut pending: ResMut<PendingReplayBindings>,
 ) {
     let (Some(scene), Some(animation)) = (scene, animation) else {
         return;
@@ -206,46 +177,28 @@ fn update_material(
     let Some(draws) = &replay.draws else {
         return;
     };
-    // The game pixel at the world origin
-    let origin = world_to_game(Vec2::ZERO).as_ivec2();
-    let Some(material) = replay.buffers.material(origin, draws) else {
+    let Some(bindings) = replay.buffers.bindings(draws) else {
         return;
     };
-    let material = materials.add(material);
-    pending.generation = pending.generation.wrapping_add(1);
-    pending.materials = vec![material.id()];
-    replay.next = Some((material, pending.generation));
+    let generation = pending.world.wait_for(&bindings);
+    replay.next = Some((bindings, generation));
 }
 
-/// Puts the new material on the quad once it is prepared
-///
-/// The first material goes on the quad right away, so that its pipeline is compiled while the
-/// render world prepares it.
-fn swap_material(
-    mut commands: Commands,
+/// Puts the new bindings into the world pass once they are prepared
+fn swap_bindings(
     mut replay: ResMut<ViewReplay>,
-    ready: Res<ReadyReplayMaterials>,
+    mut passes: ResMut<ReplayPasses>,
+    ready: Res<ReadyReplayBindings>,
     mut redraw: ResMut<MapRedraw>,
     mut idle: ResMut<RendererIdle>,
 ) {
-    let replay = &mut *replay;
-    let Some(quad) = replay.quad else {
-        return;
-    };
-    if let Some((material, generation)) = &replay.next {
-        let first = replay.material.is_none();
-        let prepared = ready.generation() == *generation;
-        let on_quad = replay.material.as_ref() == Some(material);
-        if (first || prepared) && !on_quad {
-            commands
-                .entity(quad)
-                .insert(MeshMaterial2d(material.clone()));
-            replay.material = Some(material.clone());
-            redraw.changed = true;
-        }
-        if prepared {
-            replay.next = None;
-        }
+    let prepared = replay
+        .next
+        .as_ref()
+        .is_some_and(|(_, generation)| ready.world() == *generation);
+    if prepared {
+        passes.world.bindings = replay.next.take().map(|(bindings, _)| bindings);
+        redraw.changed = true;
     }
     idle.set_if_neq(RendererIdle(replay.next.is_none()));
 }

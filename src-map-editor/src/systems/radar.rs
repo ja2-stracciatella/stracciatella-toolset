@@ -5,27 +5,25 @@
 //! shrunk to the radar map. The scene and the view of the editor are left alone.
 
 use bevy::{
-    camera::{visibility::RenderLayers, RenderTarget},
     image::ImageSampler,
     prelude::*,
     render::{
         gpu_readback::{Readback, ReadbackComplete},
-        render_resource::{TextureFormat, TextureUsages},
+        render_resource::TextureUsages,
         storage::ShaderBuffer,
     },
 };
 
 use crate::{
-    components::map::game_rect_to_world,
     host::{finish_radars, requested_radar_maps},
     map::TacticalMap,
     map_requested,
     render::{
         atlas::{current_animation_frames, PackedDraws, SceneAtlas, DRAW_WORDS},
-        palette::pack_rgba,
         radar::{light_for_radar, overhead_draws, radar_map, radar_rect},
-        replay_material::{
-            storage_buffer, PendingRadarMaterial, ReadyRadarMaterial, ReplayMaterial, ReplayParams,
+        replay_pass::{
+            storage_buffer, PendingReplayBindings, ReadyReplayBindings, ReplayBindings, ReplayPass,
+            ReplayPasses, REPLAY_TEXTURE_FORMAT,
         },
         sprite_sheets,
         world::MapWorld,
@@ -38,19 +36,16 @@ use crate::{
     tileset::{StciSheet, Tileset},
 };
 
-/// Render layer of the radar quad, only seen by the radar camera
-const RADAR_LAYER: usize = 3;
-
-/// How many frames the camera renders once the material is ready. More than one, in case a
+/// How many frames the radar pass is drawn once its bindings are ready. More than one, in case a
 /// pipeline only becomes ready a frame later.
 const RENDER_FRAMES: u32 = 2;
 
 /// Where a radar map render is
 #[derive(Debug)]
 enum Stage {
-    /// Waiting for the render world to prepare the material of this generation
-    WaitingForMaterial(u32),
-    /// The camera renders for this many more frames
+    /// Waiting for the render world to prepare the bindings of this generation
+    WaitingForBindings(u32),
+    /// The pass is drawn for this many more frames
     Rendering(u32),
     /// The texture is being read back
     ReadingBack,
@@ -62,8 +57,6 @@ struct RadarJob {
     map: String,
     restricted: bool,
     image: Handle<Image>,
-    camera: Entity,
-    quad: Entity,
     readback: Option<Entity>,
     stage: Stage,
 }
@@ -127,10 +120,9 @@ struct RadarSources<'w> {
     soldiers: Option<Res<'w, MapSoldiers>>,
     sheets: Res<'w, Assets<StciSheet>>,
     images: ResMut<'w, Assets<Image>>,
-    meshes: ResMut<'w, Assets<Mesh>>,
     buffers: ResMut<'w, Assets<ShaderBuffer>>,
-    materials: ResMut<'w, Assets<ReplayMaterial>>,
-    pending: ResMut<'w, PendingRadarMaterial>,
+    pending: ResMut<'w, PendingReplayBindings>,
+    passes: ResMut<'w, ReplayPasses>,
 }
 
 /// Answers the requests of the host for radar maps, one map at a time
@@ -141,8 +133,7 @@ fn render_radar_maps(
     phase: Option<Res<State<LoadingPhase>>>,
     map_to_load: Option<Res<MapToLoad>>,
     error: Option<Res<LoadingError>>,
-    ready: Res<ReadyRadarMaterial>,
-    mut cameras: Query<&mut Camera>,
+    ready: Res<ReadyReplayBindings>,
     mut sources: RadarSources,
 ) {
     let radar = &mut *radar;
@@ -165,7 +156,7 @@ fn render_radar_maps(
                 &job.map,
                 Err(format!("The map {} was replaced while rendering", job.map)),
             );
-            despawn_job(&mut commands, job);
+            despawn_job(&mut commands, &mut sources.passes, job);
         }
     }
 
@@ -175,7 +166,7 @@ fn render_radar_maps(
                 MapReadiness::Waiting => {}
                 MapReadiness::Failed(message) => finish_radars(&map, Err(message)),
                 MapReadiness::Ready if radar.job.is_none() => {
-                    match start_job(&mut commands, &mut sources, map.clone()) {
+                    match start_job(&mut sources, map.clone()) {
                         Ok(job) => radar.job = Some(job),
                         Err(message) => finish_radars(&map, Err(message)),
                     }
@@ -190,9 +181,9 @@ fn render_radar_maps(
         return;
     };
     match job.stage {
-        Stage::WaitingForMaterial(generation) => {
-            if ready.generation() == generation {
-                set_camera_active(&mut cameras, job.camera, true);
+        Stage::WaitingForBindings(generation) => {
+            if ready.radar() == generation {
+                set_pass_active(&mut sources.passes, true);
                 job.stage = Stage::Rendering(RENDER_FRAMES);
             }
         }
@@ -200,7 +191,7 @@ fn render_radar_maps(
             let frames = frames.saturating_sub(1);
             job.stage = Stage::Rendering(frames);
             if frames == 0 {
-                set_camera_active(&mut cameras, job.camera, false);
+                set_pass_active(&mut sources.passes, false);
                 let readback = commands
                     .spawn(Readback::texture(job.image.clone()))
                     .observe(on_readback)
@@ -229,14 +220,14 @@ fn render_radar_maps(
                 info!("Rendered the radar map of {}", job.map);
             }
             finish_radars(&job.map, result);
-            despawn_job(&mut commands, job);
+            despawn_job(&mut commands, &mut sources.passes, job);
         }
     }
 }
 
-fn set_camera_active(cameras: &mut Query<&mut Camera>, entity: Entity, active: bool) {
-    if let Ok(mut camera) = cameras.get_mut(entity) {
-        camera.is_active = active;
+fn set_pass_active(passes: &mut ReplayPasses, active: bool) {
+    if let Some(pass) = &mut passes.radar {
+        pass.active = active;
     }
 }
 
@@ -260,20 +251,15 @@ fn on_readback(
     radar.pixels = Some((std::mem::take(&mut event.data), stride));
 }
 
-fn despawn_job(commands: &mut Commands, job: RadarJob) {
-    commands.entity(job.camera).despawn();
-    commands.entity(job.quad).despawn();
+fn despawn_job(commands: &mut Commands, passes: &mut ReplayPasses, job: RadarJob) {
+    passes.radar = None;
     if let Some(readback) = job.readback {
         commands.entity(readback).despawn();
     }
 }
 
-/// Builds the overhead draws of the loaded map and sets up the camera that renders them
-fn start_job(
-    commands: &mut Commands,
-    sources: &mut RadarSources,
-    map_path: String,
-) -> Result<RadarJob, String> {
+/// Builds the overhead draws of the loaded map and sets up the pass that draws them
+fn start_job(sources: &mut RadarSources, map_path: String) -> Result<RadarJob, String> {
     let (Some(world), Some(map), Some(tileset), Some(map_assets), Some(soldiers)) = (
         sources.world.as_deref(),
         sources.map.as_deref(),
@@ -299,66 +285,41 @@ fn start_job(
     );
 
     let buffers = &mut sources.buffers;
-    let material = sources.materials.add(ReplayMaterial {
-        params: ReplayParams {
-            origin: rect.min,
-            bins_origin: packed.bins_origin,
-            bins_count: packed.bins_count,
-            bin_indices_offset: packed.bin_indices_offset,
-            animations_offset: shared.animations_offset,
-            clear_color: pack_rgba([0, 0, 0]),
-        },
+    let bindings = ReplayBindings {
+        bins_origin: packed.bins_origin,
+        bins_count: packed.bins_count,
+        bin_indices_offset: packed.bin_indices_offset,
+        animations_offset: shared.animations_offset,
         draws: storage_buffer(buffers, &packed.draws, DRAW_WORDS),
         bins: storage_buffer(buffers, &packed.bins, 1),
         atlas: storage_buffer(buffers, &shared.atlas, 1),
         palettes: storage_buffer(buffers, &shared.palettes, 1),
         sprites: storage_buffer(buffers, &shared.sprites, 1),
         animation_frames: storage_buffer(buffers, &frames, 1),
-        view: false,
-    });
-    sources.pending.generation = sources.pending.generation.wrapping_add(1);
-    sources.pending.material = Some(material.id());
+    };
+    let generation = sources.pending.radar.wait_for(&bindings);
 
     let size = rect.size().as_uvec2();
-    let mut image = Image::new_target_texture(size.x, size.y, TextureFormat::Rgba8UnormSrgb, None);
+    let mut image = Image::new_target_texture(size.x, size.y, REPLAY_TEXTURE_FORMAT, None);
     image.texture_descriptor.usage |= TextureUsages::COPY_SRC;
     image.sampler = ImageSampler::nearest();
     image.data = None;
     image.copy_on_resize = false;
     let image = sources.images.add(image);
-
-    let center = game_rect_to_world(rect.min, rect.max).center();
-    let camera = commands
-        .spawn((
-            Camera2d,
-            Camera {
-                // Before the world camera, the order doesn't matter
-                order: -3,
-                is_active: false,
-                clear_color: ClearColorConfig::Custom(Color::BLACK),
-                ..default()
-            },
-            RenderTarget::Image(image.clone().into()),
-            Msaa::Off,
-            RenderLayers::layer(RADAR_LAYER),
-            Transform::from_translation(center.extend(0.)),
-        ))
-        .id();
-    let quad = commands
-        .spawn((
-            Mesh2d(sources.meshes.add(Rectangle::from_size(size.as_vec2()))),
-            MeshMaterial2d(material),
-            RenderLayers::layer(RADAR_LAYER),
-            Transform::from_translation(center.extend(0.)),
-        ))
-        .id();
+    sources.passes.radar = Some(ReplayPass {
+        target: image.clone(),
+        viewport_position: UVec2::ZERO,
+        viewport_size: size,
+        origin: rect.min,
+        clear_color: Color::BLACK,
+        bindings: Some(bindings),
+        active: false,
+    });
     Ok(RadarJob {
         map: map_path,
         restricted: world.restricted_scroll,
         image,
-        camera,
-        quad,
         readback: None,
-        stage: Stage::WaitingForMaterial(sources.pending.generation),
+        stage: Stage::WaitingForBindings(generation),
     })
 }

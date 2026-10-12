@@ -1,16 +1,14 @@
-// Replays the blits of the game for every pixel that the world camera shows (`VIEW_REPLAY`), or
-// for every pixel of a texture, e.g. the radar map
+// Replays the blits of the game for every texel of a texture, the world texture of the view or the
+// radar map. It is drawn as a fullscreen triangle into a viewport of the texture
+// (`render/replay_pass.rs`).
 //
 // Each pixel starts with the clear colour and z 0 and applies the draws that cover it in draw list
 // order, with the depth rules of the game's blitters. See `render/draw_list.rs` for the blitters,
 // `render/atlas.rs` for the buffer layouts and `render/reference.rs` for the same function on the
 // CPU.
 
-import bevy_sprite_render::mesh2d::vertex_output::VertexOutput;
-
 struct ReplayParams {
-    // With `VIEW_REPLAY` the game pixel at the world origin, otherwise the game pixel of the top
-    // left texel
+    // Game pixel of the top left texel of the texture
     origin: vec2<i32>,
     // Game pixel of the top left corner of the first bin
     bins_origin: vec2<i32>,
@@ -39,13 +37,13 @@ struct Draw {
     outline_color: u32,
 }
 
-@group(constants::MATERIAL_BIND_GROUP) @binding(0) var<uniform> params: ReplayParams;
-@group(constants::MATERIAL_BIND_GROUP) @binding(1) var<storage, read> draws: array<Draw>;
-@group(constants::MATERIAL_BIND_GROUP) @binding(2) var<storage, read> bins: array<u32>;
-@group(constants::MATERIAL_BIND_GROUP) @binding(3) var<storage, read> atlas: array<u32>;
-@group(constants::MATERIAL_BIND_GROUP) @binding(4) var<storage, read> palettes: array<u32>;
-@group(constants::MATERIAL_BIND_GROUP) @binding(5) var<storage, read> sprites: array<u32>;
-@group(constants::MATERIAL_BIND_GROUP) @binding(6) var<storage, read> animation_frames: array<u32>;
+@group(0) @binding(0) var<uniform> params: ReplayParams;
+@group(0) @binding(1) var<storage, read> draws: array<Draw>;
+@group(0) @binding(2) var<storage, read> bins: array<u32>;
+@group(0) @binding(3) var<storage, read> atlas: array<u32>;
+@group(0) @binding(4) var<storage, read> palettes: array<u32>;
+@group(0) @binding(5) var<storage, read> sprites: array<u32>;
+@group(0) @binding(6) var<storage, read> animation_frames: array<u32>;
 
 const BIN_SIZE: i32 = 32;
 const ANIMATED_SPRITE: u32 = 0x80000000u;
@@ -122,16 +120,9 @@ fn srgb_to_linear(value: f32) -> f32 {
 }
 
 @fragment
-fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
-    var pixel: vec2<i32>;
-    @if(VIEW_REPLAY) {
-        // The world camera renders 1:1 from an integer position, so the fragments are at the
-        // centers of world pixels. World y goes up, game y down.
-        let world = mesh.world_position.xy;
-        pixel = params.origin + vec2<i32>(floor(vec2<f32>(world.x, -world.y)));
-    } @else {
-        pixel = params.origin + vec2<i32>(floor(mesh.position.xy));
-    }
+fn fragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
+    // The fragments are at the texel centers, one game pixel per texel
+    let pixel = params.origin + vec2<i32>(floor(position.xy));
     // The checker pattern of the obscured blitters
     let checker = ((pixel.x ^ pixel.y) & 1) == 0;
 
