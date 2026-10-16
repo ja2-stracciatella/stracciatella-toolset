@@ -54,6 +54,10 @@ const configuration: webpack.Configuration = {
   resolve: {
     extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
     modules: [webpackPaths.srcPath, 'node_modules'],
+    alias: {
+      // wasm-bindgen glue of the tactical map viewer, see src/renderer/lib/mapViewer.ts
+      'ja2-map-editor$': webpackPaths.mapEditorGluePath,
+    },
   },
 
   plugins: [

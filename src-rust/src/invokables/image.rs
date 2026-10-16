@@ -40,10 +40,17 @@ impl Serialize for Base64Image {
     }
 }
 
+/// Palette index of the outline pixels of item graphics, which the game only draws with an outline
+const OUTLINE_INDEX: u8 = 254;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Render {
     file: String,
     subimage: Option<usize>,
+    /// Makes the outline pixels transparent
+    #[serde(default)]
+    transparent_outline: bool,
 }
 
 impl Invokable for Render {
@@ -96,10 +103,11 @@ impl Invokable for Render {
                 for y in 0..height {
                     for x in 0..width {
                         let index = (y * width) + x;
-                        let stci_pixel = palette.colors[usize::from(sub_image.data[index])];
+                        let px = sub_image.data[index];
+                        let stci_pixel = palette.colors[usize::from(px)];
                         let pixel = image.get_pixel_mut(x as u32, y as u32);
 
-                        if sub_image.data[index] == 0 {
+                        if px == 0 || (self.transparent_outline && px == OUTLINE_INDEX) {
                             pixel[3] = 0;
                         } else {
                             pixel[0] = stci_pixel.0;

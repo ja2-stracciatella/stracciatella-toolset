@@ -37,6 +37,7 @@ import { InventoryGraphicsField } from './components/visual/form/InventoryGraphi
 import { SamSitesAirControlForm } from './components/visual/SamSitesAirControlForm';
 import { MovementCostsForm } from './components/visual/MovementCostsForm';
 import { NormalizedSectorId } from './components/content/StrategicMap';
+import { TacticalMaps } from './components/content/TacticalMaps';
 
 const baseItemProps = [
   'itemIndex',
@@ -1063,6 +1064,12 @@ export const MENU: Readonly<Array<Readonly<MenuItem>>> = [
         }),
       ),
     ],
+  },
+  {
+    type: 'Item',
+    id: 'tactical-maps',
+    label: 'Tactical Maps',
+    component: TacticalMaps,
   },
   makeFileItem(
     'tactical-npc-action-params.json',

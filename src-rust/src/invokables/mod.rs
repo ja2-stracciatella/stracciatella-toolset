@@ -47,6 +47,9 @@ impl Invokables {
         new.register::<mods::UpdateSelected>();
         new.register::<mods::Create>();
         new.register::<resources::List>();
+        new.register::<resources::Read>();
+        new.register::<resources::Exists>();
+        new.register::<resources::Persist>();
         new.register::<sounds::Read>();
         new.register::<toolset::ToolsetReadConfig>();
         new.register::<toolset::ToolsetUpdateConfig>();

@@ -21,6 +21,11 @@ Install build dependencies:
 
 - [NodeJS / NPM](https://nodejs.org/)
 - [https://rustup.rs/](rustup)
+- [wasm-bindgen CLI](https://github.com/wasm-bindgen/wasm-bindgen) for the tactical map viewer, in the exact version pinned in `src-map-editor/Cargo.toml`:
+
+  ```bash
+  cargo install wasm-bindgen-cli --version 0.2.129 --locked
+  ```
 
 Clone the repo and install node dependencies:
 

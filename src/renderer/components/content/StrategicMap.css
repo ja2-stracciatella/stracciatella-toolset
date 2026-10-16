@@ -1,17 +1,16 @@
 .strategic-map {
+  display: grid;
+  grid-template-columns: repeat(16, 21px);
+  grid-template-rows: repeat(16, 18px);
   width: 338px;
   height: 290px;
-  flex-wrap: wrap;
+  flex-shrink: 0;
   background-repeat: no-repeat;
   box-sizing: border-box;
-  padding: 1px;
-  padding-right: 0;
+  padding: 2px 0 0 2px;
 }
 
 .strategic-map .strategic-map-tile {
-  float: left;
-  width: 22px;
-  height: 19px;
   cursor: pointer;
   transition: border-color 0.25s;
   box-sizing: border-box;
@@ -22,11 +21,15 @@
 }
 
 .strategic-map .strategic-map-tile.col-0 {
-  width: 23px;
+  margin-left: -2px;
+}
+
+.strategic-map .strategic-map-tile.col-15 {
+  margin-right: -1px;
 }
 
 .strategic-map .strategic-map-tile.row-0 {
-  height: 20px;
+  margin-top: -2px;
 }
 
 .strategic-map .strategic-map-tile:hover,

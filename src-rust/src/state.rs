@@ -114,25 +114,46 @@ impl ToolsetState {
     }
 
     pub fn open_file(&self, file: &str) -> Result<Box<dyn std::io::Read>> {
+        self.try_open_file(file)?
+            .ok_or_else(|| anyhow!("failed to open file from vfs: file not found"))
+    }
+
+    /// Opens a file from the selected mod or the vfs, `None` if it exists in neither
+    pub fn try_open_file(&self, file: &str) -> Result<Option<Box<dyn std::io::Read>>> {
         let selected_mod = self
             .try_selected_mod()
             .context("failed to get selected mod")?;
         let path = selected_mod.data_path(file);
 
-        Ok(if path.exists() {
-            Box::new(
+        if path.exists() {
+            return Ok(Some(Box::new(
                 OpenOptions::new()
+                    .read(true)
                     .open(&path)
                     .context("failed to open file from mod")?,
-            )
-        } else {
-            Box::new(
-                selected_mod
-                    .vfs
-                    .open(&Nfc::caseless(file))
-                    .context("failed to open file from vfs")?,
-            )
-        })
+            )));
+        }
+        match selected_mod.vfs.open(&Nfc::caseless(file)) {
+            Ok(f) => Ok(Some(Box::new(f))),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+            Err(e) => Err(anyhow::Error::new(e).context("failed to open file from vfs")),
+        }
+    }
+
+    /// Whether a file exists in the selected mod or the vfs
+    pub fn try_file_exists(&self, file: &str) -> Result<bool> {
+        let selected_mod = self
+            .try_selected_mod()
+            .context("failed to get selected mod")?;
+
+        if selected_mod.data_path(file).exists() {
+            return Ok(true);
+        }
+        match selected_mod.vfs.open(&Nfc::caseless(file)) {
+            Ok(_) => Ok(true),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(false),
+            Err(e) => Err(anyhow::Error::new(e).context("failed to open file from vfs")),
+        }
     }
 }
 

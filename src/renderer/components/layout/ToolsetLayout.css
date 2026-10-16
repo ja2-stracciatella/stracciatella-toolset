@@ -1,21 +1,21 @@
 .editor-layout {
-    height: 100vh;
-    width: 100vw;
-    overflow-x: hidden;
-    overflow-y: hidden;
+  height: 100vh;
+  width: 100vw;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 .editor-layout .editor-layout-header {
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
 }
 
 .editor-layout .editor-layout-title {
-    color: white;
-    margin-bottom: 0;
+  color: white;
+  margin-bottom: 0;
 }
 
 .editor-layout .editor-layout-sidebar {
-    overflow-y: scroll;
+  overflow-y: scroll;
 }
